@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/Integrantes/">
+    <File Path="Integrantes.txt" />
+  </Folder>
+  <Project Path="ArtemisBankingPro.Application/ArtemisBankingPro.Application.csproj" Id="3b543418-14d7-4628-8aad-a4d0587f48e4" />
+  <Project Path="ArtemisBankingPro.Domain/ArtemisBankingPro.Domain.csproj" />
+  <Project Path="ArtemisBankingPro.Infrastructure/ArtemisBankingPro.Infrastructure.csproj" Id="96323d5b-e60e-45b6-8847-146ccccf9c2b" />
+  <Project Path="ArtemisBankingPro.Persistence/ArtemisBankingPro.Persistence.csproj" Id="3301d5f2-4d3a-4cbe-a71d-b2ed39a92cb9" />
+  <Project Path="ArtemisBankingPro.Tests/ArtemisBankingPro.Tests.csproj" Id="079a8fc3-7fd9-483f-8a72-e9003cd6e42b" />
+  <Project Path="ArtemisBankingPro.WebApi/ArtemisBankingPro.WebApi.csproj" Id="b2ea6f59-310d-4c7e-998e-2e8fda65a8fb" />
+  <Project Path="ArtemisBankingPro.WebApp/ArtemisBankingPro.WebApp.csproj" Id="d7590b1f-d233-4f74-9631-cdfc0fe5c45f" />
+</Solution>
