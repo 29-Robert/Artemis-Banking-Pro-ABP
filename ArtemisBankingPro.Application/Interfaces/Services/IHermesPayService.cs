@@ -1,4 +1,4 @@
-﻿using ArtemisBankingPro.Application.DTOs;
+﻿using ArtemisBankingPro.Application.DTOs.Account;
 using System;
 using System.Collections.Generic;
 using System.Linq;
