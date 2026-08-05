@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ArtemisBankingPro.Domain.Common;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,9 +7,8 @@ using System.Threading.Tasks;
 
 namespace ArtemisBankingPro.Domain.Entities
 {
-    public class CreditCard
+    public class CreditCard : BaseEntity
     {
-        public int Id { get; set; }
         public string ClientId { get; set; } 
         public string CardNumber { get; set; } 
         public decimal CreditLimit { get; set; }
@@ -18,8 +18,6 @@ namespace ArtemisBankingPro.Domain.Entities
         public string CvcHash { get; set; } 
         public string Status { get; set; } 
         public string AdminId { get; set; } 
-        public DateTime CreatedAt { get; set; }
-
 
         // Navegación
         public ICollection<CreditCardConsumption> Consumptions { get; set; }

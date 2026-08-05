@@ -18,5 +18,7 @@ namespace ArtemisBankingPro.Domain.Entities
         public Role Role { get; set; }
         public ICollection<ConfirmationToken> ConfirmationTokens { get; set; }
         public ICollection<SavingsAccount> SavingsAccounts { get; set; }
+        public int? CommerceId { get; set; }
+        public Commerce? Commerce { get; set; }
     }
 }

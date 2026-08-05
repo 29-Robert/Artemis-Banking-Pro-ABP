@@ -48,16 +48,11 @@ namespace ArtemisBankingPro.Persistence.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
 
                     b.HasIndex("RNC")
                         .IsUnique()
                         .HasFilter("[RNC] IS NOT NULL");
-
-                    b.HasIndex("UserId");
 
                     b.ToTable("Commerces");
                 });
@@ -160,11 +155,11 @@ namespace ArtemisBankingPro.Persistence.Migrations
                     b.Property<decimal>("Balance")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<int>("ClientId")
-                        .HasColumnType("int");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsPrincipal")
+                        .HasColumnType("bit");
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
@@ -175,13 +170,16 @@ namespace ArtemisBankingPro.Persistence.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
                     b.HasIndex("AccountNumber")
                         .IsUnique()
                         .HasFilter("[AccountNumber] IS NOT NULL");
 
-                    b.HasIndex("ClientId");
+                    b.HasIndex("UserId");
 
                     b.ToTable("SavingsAccounts");
                 });
@@ -242,6 +240,9 @@ namespace ArtemisBankingPro.Persistence.Migrations
                     b.Property<string>("Cedula")
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<int?>("CommerceId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -281,6 +282,10 @@ namespace ArtemisBankingPro.Persistence.Migrations
                         .IsUnique()
                         .HasFilter("[Cedula] IS NOT NULL");
 
+                    b.HasIndex("CommerceId")
+                        .IsUnique()
+                        .HasFilter("[CommerceId] IS NOT NULL");
+
                     b.HasIndex("Email")
                         .IsUnique()
                         .HasFilter("[Email] IS NOT NULL");
@@ -292,17 +297,6 @@ namespace ArtemisBankingPro.Persistence.Migrations
                         .HasFilter("[Username] IS NOT NULL");
 
                     b.ToTable("Users");
-                });
-
-            modelBuilder.Entity("ArtemisBankingPro.Domain.Entities.Commerce", b =>
-                {
-                    b.HasOne("ArtemisBankingPro.Domain.Entities.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("ArtemisBankingPro.Domain.Entities.ConfirmationToken", b =>
@@ -318,13 +312,13 @@ namespace ArtemisBankingPro.Persistence.Migrations
 
             modelBuilder.Entity("ArtemisBankingPro.Domain.Entities.SavingsAccount", b =>
                 {
-                    b.HasOne("ArtemisBankingPro.Domain.Entities.User", "Client")
+                    b.HasOne("ArtemisBankingPro.Domain.Entities.User", "User")
                         .WithMany("SavingsAccounts")
-                        .HasForeignKey("ClientId")
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Client");
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("ArtemisBankingPro.Domain.Entities.Transaction", b =>
@@ -338,13 +332,24 @@ namespace ArtemisBankingPro.Persistence.Migrations
 
             modelBuilder.Entity("ArtemisBankingPro.Domain.Entities.User", b =>
                 {
+                    b.HasOne("ArtemisBankingPro.Domain.Entities.Commerce", "Commerce")
+                        .WithOne("User")
+                        .HasForeignKey("ArtemisBankingPro.Domain.Entities.User", "CommerceId");
+
                     b.HasOne("ArtemisBankingPro.Domain.Entities.Role", "Role")
                         .WithMany("Users")
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.Navigation("Commerce");
+
                     b.Navigation("Role");
+                });
+
+            modelBuilder.Entity("ArtemisBankingPro.Domain.Entities.Commerce", b =>
+                {
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("ArtemisBankingPro.Domain.Entities.Role", b =>

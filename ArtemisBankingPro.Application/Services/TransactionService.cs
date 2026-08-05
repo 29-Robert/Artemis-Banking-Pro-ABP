@@ -3,6 +3,9 @@ using ArtemisBankingPro.Application.Interfaces.Repositories;
 using ArtemisBankingPro.Application.Interfaces.Services;
 using ArtemisBankingPro.Domain.Entities;
 using ArtemisBankingPro.Domain.Enums; 
+using ArtemisBankingPro.Domain.Interfaces.Repositories;
+using System;
+using System.Threading.Tasks;
 
 namespace ArtemisBankingPro.Application.Services
 {
@@ -24,7 +27,7 @@ namespace ArtemisBankingPro.Application.Services
 
         public async Task ExpressTransactionAsync(ExpressTransactionDto dto)
         {
-            
+            throw new NotImplementedException("La transferencia a terceros aún no está implementada.");
         }
 
         public async Task<TransferResponseDto> OwnAccountTransferAsync(OwnAccountTransferDto dto, string clientId)
@@ -52,7 +55,7 @@ namespace ArtemisBankingPro.Application.Services
             var sourceAccount = await _accountRepository.GetByAccountNumberAsync(dto.SourceAccountNumber);
             var destAccount = await _accountRepository.GetByAccountNumberAsync(dto.DestinationAccountNumber);
 
-            if (sourceAccount == null || sourceAccount.ClientId != idCliente || destAccount == null || destAccount.ClientId != idCliente)
+            if (sourceAccount == null || sourceAccount.UserId != idCliente || destAccount == null || destAccount.UserId != idCliente)
             {
                 return new TransferResponseDto { IsSuccess = false, Message = "Las cuentas seleccionadas no son válidas o no le pertenecen." };
             }
@@ -112,7 +115,7 @@ namespace ArtemisBankingPro.Application.Services
 
                 string emailDestino = "correo@ejemplo.com"; 
 
-                await _emailService.SendEmailAsync(emailDestino, "Transferencia entre cuentas realizada", body);
+                await _emailService.SendNotificationEmailAsync(emailDestino, "Transferencia entre cuentas realizada", body);
 
                 return new TransferResponseDto { IsSuccess = true, Message = "Transferencia realizada con éxito." };
             }

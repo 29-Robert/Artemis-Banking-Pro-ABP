@@ -14,12 +14,19 @@
 
   <ItemGroup>
     <PackageReference Include="AutoMapper" Version="16.2.0" />
+    <PackageReference Include="BCrypt.Net-Next" Version="4.2.0" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
     <PackageReference Include="MediatR" Version="14.2.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\ArtemisBankingPro.Domain\ArtemisBankingPro.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="DTOs\" />
+    <Folder Include="Features\" />
+    <Folder Include="Interfaces\Repositories\" />
   </ItemGroup>
 
 </Project>

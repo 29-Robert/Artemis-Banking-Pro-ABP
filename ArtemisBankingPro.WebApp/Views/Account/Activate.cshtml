@@ -1,0 +1,32 @@
+﻿@{
+    ViewData["Title"] = "Activación de Cuenta";
+}
+
+<div class="row justify-content-center mt-5 mb-5">
+    <div class="col-md-6">
+        <div class="card shadow text-center border-0">
+            <div class="card-body mt-4 mb-4">
+
+                @if (ViewBag.Error != null)
+                {
+                    <h2 class="text-danger mb-3 fw-bold">Error de Activación</h2>
+                    <p class="fs-5 text-muted">@ViewBag.Error</p>
+
+                    <hr class="my-4" />
+                    <p>Por favor, solicite un nuevo enlace o intente nuevamente.</p>
+                    <a asp-controller="Account" asp-action="Login" class="btn btn-outline-primary mt-2">Volver al Inicio</a>
+                }
+                else
+                {
+                    <h2 class="text-success mb-3 fw-bold">¡Cuenta Activada!</h2>
+                    <p class="fs-5 text-muted">@ViewBag.Message</p>
+
+                    <hr class="my-4" />
+                    <p>Bienvenido a Artemis Banking Pro. Todo está listo para usted.</p>
+                    <a asp-controller="Account" asp-action="Login" class="btn btn-success mt-2 px-5">Iniciar Sesión</a>
+                }
+
+            </div>
+        </div>
+    </div>
+</div>
