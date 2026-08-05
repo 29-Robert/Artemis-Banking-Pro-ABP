@@ -18,7 +18,6 @@
 
   <ItemGroup>
     <Folder Include="Features\" />
-    <Folder Include="Interfaces\Repositories\" />
   </ItemGroup>
 
 </Project>
