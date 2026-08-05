@@ -26,7 +26,17 @@ builder.Services.AddInfrastructureLayer(builder.Configuration);
 builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 builder.Services.AddScoped(typeof(IGenericService<>), typeof(GenericService<>));
 
+builder.Services.AddScoped<ILoanRepository, LoanRepository>();
+builder.Services.AddScoped<ICreditCardRepository, CreditCardRepository>();
+builder.Services.AddScoped<ILoanInstallmentRepository, LoanInstallmentRepository>();
+builder.Services.AddScoped<ICreditCardConsumptionRepository, CreditCardConsumptionRepository>();
+
+//builder.Services.AddScoped<ILoanService, LoanService>();
+builder.Services.AddScoped<ICreditCardService, CreditCardService>();
+//builder.Services.AddScoped<ICashierService, CashierService>();
+
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
+
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -48,7 +58,6 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "Artemis Banking Pro API", Version = "v1" });
@@ -91,10 +100,7 @@ else
 }
 
 app.UseHttpsRedirection();
-
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
-
 app.Run();
