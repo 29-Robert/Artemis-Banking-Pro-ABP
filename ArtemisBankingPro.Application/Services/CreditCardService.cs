@@ -1,14 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using ArtemisBankingPro.Application.DTOs.CreditCard;
+﻿using ArtemisBankingPro.Application.DTOs.CreditCard;
 using ArtemisBankingPro.Application.Interfaces.Services;
 using ArtemisBankingPro.Domain.Entities;
 using ArtemisBankingPro.Domain.Interfaces.Repositories;
+using AutoMapper;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text;
+using System.Threading.Tasks;
 
 
 
@@ -17,7 +18,13 @@ namespace ArtemisBankingPro.Application.Services
     public class CreditCardService : ICreditCardService
     {
         private readonly ICreditCardRepository _creditCardRepository;
-       
+        private readonly IMapper _mapper;
+        
+        public CreditCardService(ICreditCardRepository creditCardRepository, IMapper mapper)
+        {
+            _creditCardRepository = creditCardRepository;
+            _mapper = mapper;
+        }
 
         public CreditCardService(ICreditCardRepository creditCardRepository)
         {
@@ -86,6 +93,19 @@ namespace ArtemisBankingPro.Application.Services
             using var sha256 = SHA256.Create();
             var bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(input));
             return BitConverter.ToString(bytes).Replace("-", "").ToLower();
+        }
+
+
+        public async Task<List<CreditCardResponseDto>> GetAllCreditCardsAsync()
+        {
+            var cards = await _creditCardRepository.GetAllAsync();
+            return _mapper.Map<List<CreditCardResponseDto>>(cards);
+        }
+        public async Task<CreditCardResponseDto> GetCreditCardByIdAsync(int id)
+        {
+            var card = await _creditCardRepository.GetByIdAsync(id);
+            if (card == null) throw new Exception($"No se encontró una tarjeta con Id {id}.");
+            return _mapper.Map<CreditCardResponseDto>(card);
         }
     }
 }

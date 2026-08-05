@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ArtemisBankingPro.Application\ArtemisBankingPro.Application.csproj" />
+    <ProjectReference Include="..\ArtemisBankingPro.Persistence\ArtemisBankingPro.Persistence.csproj" />
   </ItemGroup>
 
 </Project>
