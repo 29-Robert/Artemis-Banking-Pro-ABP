@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ArtemisBankingPro.Application.DTOs.Commerces;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,7 +9,7 @@ namespace ArtemisBankingPro.Application.Interfaces.Services
 {
     public interface ICommerceService
     {
-        Task<CommerceResponseDto> CreateCommerceAsync(CreateCommerceDto dto);
+        Task<CommerceListItemDto> CreateCommerceAsync(CreateCommerceDto dto);
 
         Task UpdateCommerceAsync(int id, UpdateCommerceDto dto);
 

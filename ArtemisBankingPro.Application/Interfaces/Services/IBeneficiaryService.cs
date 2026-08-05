@@ -1,4 +1,6 @@
-﻿using System;
+﻿using ArtemisBankingPro.Application.DTOs.Beneficiaries;
+using ArtemisBankingPro.Application.DTOs.Transactions;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,10 +10,10 @@ namespace ArtemisBankingPro.Application.Interfaces.Services
 {
     public interface IBeneficiaryService
     {
-        Task<BeneficiaryResponseDto> AddBeneficiaryAsync(AddBeneficiaryDto dto);
+        Task<BeneficiaryDto> AddBeneficiaryAsync(CreateBeneficiaryDto dto);
 
         Task RemoveBeneficiaryAsync(int id);
 
-        Task TransferToBeneficiaryAsync(TransferDto dto);
+        Task TransferToBeneficiaryAsync(ExpressTransactionDto dto);
     }
 }
