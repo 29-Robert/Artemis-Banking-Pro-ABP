@@ -14,5 +14,6 @@ namespace ArtemisBankingPro.Application.Interfaces.Repositories
         Task<SavingsAccount> GetByAccountNumberAsync(string accountNumber);
         Task<SavingsAccount> GetPrincipalByClientAsync(int clientId);
         Task<object> GetPagedAsync(int page, int pageSize, AccountStatus status, AccountType type, string cedula);
+        Task<int> CountActiveAccountsByClientIdAsync(int clientId);
     }
 }

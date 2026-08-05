@@ -16,8 +16,4 @@
     <ProjectReference Include="..\ArtemisBankingPro.Domain\ArtemisBankingPro.Domain.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Features\" />
-  </ItemGroup>
-
 </Project>

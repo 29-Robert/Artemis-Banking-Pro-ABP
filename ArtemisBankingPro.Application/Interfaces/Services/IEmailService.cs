@@ -5,5 +5,6 @@
         Task SendActivationEmailAsync(string to, string token);
         Task SendPasswordResetEmailAsync(string to, string token);
         Task SendNotificationEmailAsync(string to, string subject, string body);
+        Task SendEmailAsync(string to, string subject, string body);
     }
 }
