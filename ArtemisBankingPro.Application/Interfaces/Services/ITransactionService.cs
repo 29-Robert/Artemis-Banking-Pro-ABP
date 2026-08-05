@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ArtemisBankingPro.Application.DTOs.Transactions;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -10,6 +11,6 @@ namespace ArtemisBankingPro.Application.Interfaces.Services
     {
         Task ExpressTransactionAsync(ExpressTransactionDto dto);
 
-        Task TransferBetweenOwnAccountsAsync(TransferOwnAccountDto dto);
+        Task TransferBetweenOwnAccountsAsync(OwnAccountTransferDto dto);
     }
 }

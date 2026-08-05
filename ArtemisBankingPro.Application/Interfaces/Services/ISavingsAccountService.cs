@@ -9,7 +9,7 @@ namespace ArtemisBankingPro.Application.Interfaces.Services
 {
     public interface ISavingsAccountService
     {
-        Task<AccountResponseDto> CreateSecondaryAccountAsync(CreateSecondaryAccountDto dto);
+        Task<SavingsAccountDetailDto> CreateSecondaryAccountAsync(CreateSavingsAccountDto dto);
 
         Task CancelSecondaryAccountAsync(string accountNumber);
 
