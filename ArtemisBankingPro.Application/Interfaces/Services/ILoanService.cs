@@ -7,17 +7,18 @@ using System.Text;
 using System.Threading.Tasks;
 
 
-namespace ArtemisBankingPro.Application.Interfaces.Services { 
-    
-        public interface ILoanService
-        {
-            Task<List<LoanResponseDto>> GetAllLoansAsync();
-            Task<LoanResponseDto> GetLoanByIdAsync(int id);
-            Task<LoanResponseDto> AssignLoanAsync(CreateLoanRequestDto request, string adminId);
-            Task UpdateLoanRateAsync(int loanId, decimal newRate);
-            Task<List<LoanInstallment>> GenerateAmortizationTableAsync(decimal capital, decimal annualRate, int months);
-        }
-    
+namespace ArtemisBankingPro.Application.Interfaces.Services {
+
+    public interface ILoanService
+    {
+        Task<List<LoanResponseDto>> GetAllLoansAsync();
+        Task<LoanResponseDto> GetLoanByIdAsync(int id);
+        Task<LoanResponseDto> AssignLoanAsync(CreateLoanRequestDto request, string adminId);
+        Task UpdateLoanRateAsync(int loanId, decimal newRate);
+        Task<List<LoanInstallment>> GenerateAmortizationTableAsync(decimal capital, decimal annualRate, int months);
+    }
 }
+    
+
 
 

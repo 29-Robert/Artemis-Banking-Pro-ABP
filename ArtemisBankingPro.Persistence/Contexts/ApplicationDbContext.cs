@@ -12,6 +12,10 @@ namespace ArtemisBankingPro.Persistence.Contexts
         public DbSet<Commerce> Commerces { get; set; }
         public DbSet<SavingsAccount> SavingsAccounts { get; set; }
         public DbSet<Transaction> Transactions { get; set; }
+        public DbSet<Loan> Loans { get; set; }
+        public DbSet<LoanInstallment> LoanInstallments { get; set; }
+        public DbSet<CreditCard> CreditCards { get; set; }
+        public DbSet<CreditCardConsumption> CreditCardConsumptions { get; set; }
 
         public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = new CancellationToken())
         {
