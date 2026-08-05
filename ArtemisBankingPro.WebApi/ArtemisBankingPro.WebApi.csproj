@@ -8,6 +8,14 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.18" />
+    <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="9.0.6" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ArtemisBankingPro.Application\ArtemisBankingPro.Application.csproj" />
+    <ProjectReference Include="..\ArtemisBankingPro.Infrastructure\ArtemisBankingPro.Infrastructure.csproj" />
+    <ProjectReference Include="..\ArtemisBankingPro.Persistence\ArtemisBankingPro.Persistence.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,4 +1,4 @@
-namespace ArtemisBankingPro.WebApp.Models
+﻿namespace ArtemisBankingPro.WebApp.ViewModels
 {
     public class ErrorViewModel
     {
