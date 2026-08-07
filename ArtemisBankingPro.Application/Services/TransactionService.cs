@@ -1,4 +1,4 @@
-﻿using ArtemisBankingPro.Application.DTOs.Transactions;
+using ArtemisBankingPro.Application.DTOs.Transactions;
 using ArtemisBankingPro.Application.Interfaces.Repositories;
 using ArtemisBankingPro.Application.Interfaces.Services;
 using ArtemisBankingPro.Domain.Entities;
@@ -30,26 +30,26 @@ namespace ArtemisBankingPro.Application.Services
             throw new NotImplementedException("La transferencia a terceros aún no está implementada.");
         }
 
-        public async Task<TransferResponseDto> OwnAccountTransferAsync(OwnAccountTransferDto dto, string clientId)
+        public async Task<AccountResponseDto> OwnAccountTransferAsync(OwnAccountTransferDto dto, string clientId)
         {
             int idCliente = int.Parse(clientId);
 
             if (dto.SourceAccountNumber == dto.DestinationAccountNumber)
             {
                 await LogRejectedTransactionAsync(dto.SourceAccountNumber, "La cuenta de origen y la cuenta de destino no pueden ser la misma.");
-                return new TransferResponseDto { IsSuccess = false, Message = "La cuenta de origen y la cuenta de destino no pueden ser la misma." };
+                return new AccountResponseDto { IsSuccess = false, Message = "La cuenta de origen y la cuenta de destino no pueden ser la misma." };
             }
 
             if (dto.Amount <= 0)
             {
                 await LogRejectedTransactionAsync(dto.SourceAccountNumber, "El monto a transferir debe ser mayor que cero.");
-                return new TransferResponseDto { IsSuccess = false, Message = "El monto a transferir debe ser mayor que cero." };
+                return new AccountResponseDto { IsSuccess = false, Message = "El monto a transferir debe ser mayor que cero." };
             }
 
             var activeAccountsCount = await _accountRepository.CountActiveAccountsByClientIdAsync(idCliente);
             if (activeAccountsCount < 2)
             {
-                return new TransferResponseDto { IsSuccess = false, Message = "Debe tener al menos dos cuentas de ahorro activas para realizar una transferencia entre cuentas." };
+                return new AccountResponseDto { IsSuccess = false, Message = "Debe tener al menos dos cuentas de ahorro activas para realizar una transferencia entre cuentas." };
             }
 
             var sourceAccount = await _accountRepository.GetByAccountNumberAsync(dto.SourceAccountNumber);
@@ -57,15 +57,23 @@ namespace ArtemisBankingPro.Application.Services
 
             if (sourceAccount == null || sourceAccount.UserId != idCliente || destAccount == null || destAccount.UserId != idCliente)
             {
-                return new TransferResponseDto { IsSuccess = false, Message = "Las cuentas seleccionadas no son válidas o no le pertenecen." };
+                return new AccountResponseDto { IsSuccess = false, Message = "Las cuentas seleccionadas no son válidas o no le pertenecen." };
+            }
+
+            if (sourceAccount.Status == AccountStatus.Cancelada || destAccount.Status == AccountStatus.Cancelada)
+            {
+                return new AccountResponseDto { IsSuccess = false, Message = "Operación denegada. Una o ambas cuentas se encuentran canceladas." };
             }
 
             if (sourceAccount.Balance < dto.Amount)
             {
                 await LogRejectedTransactionAsync(dto.SourceAccountNumber, "No dispone del monto requerido en la cuenta seleccionada.");
-                return new TransferResponseDto { IsSuccess = false, Message = "No dispone del monto requerido en la cuenta seleccionada." };
+                return new AccountResponseDto { IsSuccess = false, Message = "No dispone del monto requerido en la cuenta seleccionada." };
             }
 
+            // =======================================================
+            // PROCESAMIENTO FINANCIERO
+            // =======================================================
             sourceAccount.Balance -= dto.Amount;
             destAccount.Balance += dto.Amount;
 
@@ -94,6 +102,10 @@ namespace ArtemisBankingPro.Application.Services
             };
             await _transactionRepository.AddAsync(creditTransaction);
 
+
+            // =======================================================
+            // NOTIFICACIÓN POR CORREO
+            // =======================================================
             try
             {
                 string maskSource = dto.SourceAccountNumber.Substring(dto.SourceAccountNumber.Length - 4);
@@ -110,11 +122,11 @@ namespace ArtemisBankingPro.Application.Services
 
                 await _emailService.SendNotificationEmailAsync(emailDestino, "Transferencia entre cuentas realizada", body);
 
-                return new TransferResponseDto { IsSuccess = true, Message = "Transferencia realizada con éxito." };
+                return new AccountResponseDto { IsSuccess = true, Message = "Transferencia realizada con éxito." };
             }
             catch
             {
-                return new TransferResponseDto { IsSuccess = true, Message = "La transferencia fue realizada correctamente, pero no fue posible enviar el correo de notificación." };
+                return new AccountResponseDto { IsSuccess = true, Message = "La transferencia fue realizada correctamente, pero no fue posible enviar el correo de notificación." };
             }
         }
 

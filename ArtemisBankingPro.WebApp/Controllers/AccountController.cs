@@ -1,4 +1,4 @@
-﻿using ArtemisBankingPro.Application.Features.Users.Commands.ActivateUser;
+using ArtemisBankingPro.Application.Features.Users.Commands.ActivateUser;
 using ArtemisBankingPro.Application.Features.Users.Commands.CreateUser;
 using ArtemisBankingPro.Application.Features.Users.Commands.ForgotPassword;
 using ArtemisBankingPro.Application.Features.Users.Commands.ResetPassword;
@@ -187,6 +187,12 @@ namespace ArtemisBankingPro.WebApp.Controllers
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             return RedirectToAction("Login", "Account");
+        }
+
+        [HttpGet]
+        public IActionResult AccessDenied()
+        {
+            return View();
         }
 
         private static string ObtenerNombreDeRol(int roleId)

@@ -1,0 +1,64 @@
+@model IEnumerable<dynamic>
+@{
+    ViewData["Title"] = "Paso 1: Seleccionar Cliente";
+}
+
+<div class="container mt-4">
+    <h2>Asignar Cuenta de Ahorro - Paso 1: Seleccionar Cliente</h2>
+    
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+    }
+
+    <form method="get" class="row g-3 mb-4 mt-2">
+        <div class="col-md-6">
+            <input type="text" name="searchCedula" value="@ViewBag.SearchCedula" class="form-control" placeholder="Buscar por cédula..." />
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-primary w-100">Buscar</button>
+        </div>
+    </form>
+
+    <form asp-action="ValidateSelectedClient" method="post">
+        <table class="table table-striped align-middle">
+            <thead>
+                <tr>
+                    <th style="width: 50px;"></th>
+                    <th>Cédula</th>
+                    <th>Nombre y Apellido</th>
+                    <th>Correo Electrónico</th>
+                    <th>Deuda Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="5" class="text-center text-muted">No se encontraron clientes activos.</td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var client in Model)
+                    {
+                        <tr>
+                            <td>
+                                <input type="radio" name="selectedClientId" value="@client.Id" class="form-check-input" />
+                            </td>
+                            <td>@client.Cedula</td>
+                            <td>@client.FullName</td>
+                            <td>@client.Email</td>
+                            <td class="text-danger">RD$ @client.TotalDebt.ToString("N2")</td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+
+        <div class="mt-4">
+            <button type="submit" class="btn btn-success">Siguiente paso &rarr;</button>
+            <a asp-action="Index" class="btn btn-secondary">Volver atrás</a>
+        </div>
+    </form>
+</div>

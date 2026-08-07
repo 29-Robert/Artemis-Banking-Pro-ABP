@@ -1,0 +1,108 @@
+@model IEnumerable<ArtemisBankingPro.Domain.Entities.SavingsAccount>
+@{
+    ViewData["Title"] = "Gestión de Cuentas de Ahorro";
+}
+
+<div class="container mt-4">
+    <h2>Gestión de Cuentas de Ahorro</h2>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+    }
+
+    <!-- Filtros -->
+    <form method="get" class="row g-3 mb-4 mt-2">
+        <div class="col-md-3">
+            <label class="form-label">Filtrar por Cédula</label>
+            <input type="text" name="cedula" value="@ViewBag.CedulaFilter" class="form-control" placeholder="Cédula del cliente" />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Estado</label>
+            <select name="status" class="form-select">
+                <option value="">Todos</option>
+                <option value="0" selected="@(ViewBag.StatusFilter != null && (int)ViewBag.StatusFilter == 0)">Activa</option>
+                <option value="1" selected="@(ViewBag.StatusFilter != null && (int)ViewBag.StatusFilter == 1)">Cancelada</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Tipo</label>
+            <select name="type" class="form-select">
+                <option value="">Todos</option>
+                <option value="0" selected="@(ViewBag.TypeFilter != null && (int)ViewBag.TypeFilter == 0)">Principal</option>
+                <option value="1" selected="@(ViewBag.TypeFilter != null && (int)ViewBag.TypeFilter == 1)">Secundaria</option>
+            </select>
+        </div>
+        <div class="col-md-3 align-self-end">
+            <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+        </div>
+    </form>
+
+    @if (ViewBag.Message != null)
+    {
+        <div class="alert alert-warning">@ViewBag.Message</div>
+    }
+
+    <div class="mb-3">
+        <a asp-action="SelectClient" class="btn btn-success">Asignar cuenta de ahorro</a>
+    </div>
+
+    <!-- Tabla -->
+    <table class="table table-striped align-middle">
+        <thead>
+            <tr>
+                <th>Número de Cuenta</th>
+                <th>Cliente</th>
+                <th>Cédula</th>
+                <th>Balance</th>
+                <th>Tipo</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.AccountNumber</td>
+                    <td>@(item.User != null ? $"{item.User.FirstName} {item.User.LastName}" : "N/A")</td>
+                    <td>@(item.User != null ? item.User.Cedula : "N/A")</td>
+                    <td>RD$ @item.Balance.ToString("N2")</td>
+                    <td>
+                        <span class="badge @(item.Type == ArtemisBankingPro.Domain.Enums.AccountType.Principal ? "bg-primary" : "bg-info")">
+                            @item.Type
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge @(item.Status == ArtemisBankingPro.Domain.Enums.AccountStatus.Activa ? "bg-success" : "bg-danger")">
+                            @item.Status
+                        </span>
+                    </td>
+                    <td>
+                        <a asp-action="Details" asp-route-accountNumber="@item.AccountNumber" class="btn btn-sm btn-outline-secondary">Ver Historial</a>
+                        @if (item.Type == ArtemisBankingPro.Domain.Enums.AccountType.Secundaria && item.Status == ArtemisBankingPro.Domain.Enums.AccountStatus.Activa)
+                        {
+                            <a asp-action="CancelConfirm" asp-route-accountNumber="@item.AccountNumber" class="btn btn-sm btn-danger">Cancelar</a>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <!-- Paginación -->
+    <nav>
+        <ul class="pagination">
+            @for (int i = 1; i <= ViewBag.TotalPages; i++)
+            {
+                <li class="page-item @(i == ViewBag.CurrentPage ? "active" : "")">
+                    <a class="page-link" href="?page=@i&status=@ViewBag.StatusFilter&type=@ViewBag.TypeFilter&cedula=@ViewBag.CedulaFilter">@i</a>
+                </li>
+            }
+        </ul>
+    </nav>
+</div>
