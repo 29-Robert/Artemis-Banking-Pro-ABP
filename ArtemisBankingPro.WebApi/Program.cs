@@ -1,4 +1,5 @@
 using ArtemisBankingPro.Application;
+using ArtemisBankingPro.Application.Interfaces.Repositories;
 using ArtemisBankingPro.Application.Interfaces.Services;
 using ArtemisBankingPro.Application.Services;
 using ArtemisBankingPro.Domain.Interfaces.Repositories;
@@ -22,7 +23,6 @@ builder.Services.AddScoped<ICreditCardRepository, CreditCardRepository>();
 builder.Services.AddScoped<ILoanInstallmentRepository, LoanInstallmentRepository>();
 builder.Services.AddScoped<ICreditCardConsumptionRepository, CreditCardConsumptionRepository>();
 
-// Servicios (Application)
 builder.Services.AddScoped<ILoanService, LoanService>();
 builder.Services.AddScoped<ICreditCardService, CreditCardService>();
 builder.Services.AddScoped<ICashierService, CashierService>();

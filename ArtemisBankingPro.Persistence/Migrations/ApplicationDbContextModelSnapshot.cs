@@ -98,6 +98,176 @@ namespace ArtemisBankingPro.Persistence.Migrations
                     b.ToTable("ConfirmationTokens");
                 });
 
+            modelBuilder.Entity("ArtemisBankingPro.Domain.Entities.CreditCard", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AdminId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CardNumber")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ClientId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("CreditLimit")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("CurrentDebt")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("CvcHash")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ExpirationMonth")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ExpirationYear")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Status")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("CreditCards");
+                });
+
+            modelBuilder.Entity("ArtemisBankingPro.Domain.Entities.CreditCardConsumption", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("CommerceName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("CreditCardId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Status")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("TransactionDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreditCardId");
+
+                    b.ToTable("CreditCardConsumptions");
+                });
+
+            modelBuilder.Entity("ArtemisBankingPro.Domain.Entities.Loan", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AdminId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("AnnualInterestRate")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("CapitalAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("ClientId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("LoanNumber")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Status")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("TermInMonths")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Loans");
+                });
+
+            modelBuilder.Entity("ArtemisBankingPro.Domain.Entities.LoanInstallment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("CapitalAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("DueDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("InstallmentAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("InstallmentNumber")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("InterestAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<bool>("IsLate")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("LoanId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PaymentStatus")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("PendingInstallmentAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LoanId");
+
+                    b.ToTable("LoanInstallments");
+                });
+
             modelBuilder.Entity("ArtemisBankingPro.Domain.Entities.Role", b =>
                 {
                     b.Property<int>("Id")
@@ -316,6 +486,28 @@ namespace ArtemisBankingPro.Persistence.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("ArtemisBankingPro.Domain.Entities.CreditCardConsumption", b =>
+                {
+                    b.HasOne("ArtemisBankingPro.Domain.Entities.CreditCard", "CreditCard")
+                        .WithMany("Consumptions")
+                        .HasForeignKey("CreditCardId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CreditCard");
+                });
+
+            modelBuilder.Entity("ArtemisBankingPro.Domain.Entities.LoanInstallment", b =>
+                {
+                    b.HasOne("ArtemisBankingPro.Domain.Entities.Loan", "Loan")
+                        .WithMany("Installments")
+                        .HasForeignKey("LoanId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Loan");
+                });
+
             modelBuilder.Entity("ArtemisBankingPro.Domain.Entities.SavingsAccount", b =>
                 {
                     b.HasOne("ArtemisBankingPro.Domain.Entities.User", "Client")
@@ -345,6 +537,21 @@ namespace ArtemisBankingPro.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("Role");
+                });
+
+            modelBuilder.Entity("ArtemisBankingPro.Domain.Entities.Commerce", b =>
+                {
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("ArtemisBankingPro.Domain.Entities.CreditCard", b =>
+                {
+                    b.Navigation("Consumptions");
+                });
+
+            modelBuilder.Entity("ArtemisBankingPro.Domain.Entities.Loan", b =>
+                {
+                    b.Navigation("Installments");
                 });
 
             modelBuilder.Entity("ArtemisBankingPro.Domain.Entities.Role", b =>
