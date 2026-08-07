@@ -6,9 +6,10 @@ using System.Threading.Tasks;
 
 namespace ArtemisBankingPro.Application.DTOs.Account
 {
-    public class CreateSavingsAccountDto
+    public class CreateSecondaryAccountDto
     {
         public string ClientCedula { get; set; } = null!;
         public decimal InitialBalance { get; set; }
+        public int AdminId { get; set; }
     }
 }

@@ -1,4 +1,5 @@
 using ArtemisBankingPro.Application;
+using ArtemisBankingPro.Application.Interfaces.Repositories;
 using ArtemisBankingPro.Application.Interfaces.Services;
 using ArtemisBankingPro.Application.Services;
 using ArtemisBankingPro.Domain.Interfaces.Repositories;
@@ -22,6 +23,15 @@ builder.Services.AddInfrastructureLayer(builder.Configuration);
 
 builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 builder.Services.AddScoped(typeof(IGenericService<>), typeof(GenericService<>));
+
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<ISavingsAccountRepository, SavingsAccountRepository>();
+builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
+builder.Services.AddScoped<ILoanRepository, LoanRepository>();
+builder.Services.AddScoped<ICreditCardRepository, CreditCardRepository>();
+builder.Services.AddScoped<ILoanInstallmentRepository, LoanInstallmentRepository>();
+builder.Services.AddScoped<ICreditCardConsumptionRepository, CreditCardConsumptionRepository>();
+builder.Services.AddScoped<ISavingsAccountService, SavingsAccountService>();
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>

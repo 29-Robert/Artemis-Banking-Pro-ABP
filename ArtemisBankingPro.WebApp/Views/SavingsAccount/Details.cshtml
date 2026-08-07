@@ -1,0 +1,65 @@
+﻿@model IEnumerable<ArtemisBankingPro.Application.DTOs.Account.TransactionDto>
+@{
+    var account = (ArtemisBankingPro.Domain.Entities.SavingsAccount)ViewBag.Account;
+    ViewData["Title"] = "Historial de Cuenta";
+}
+
+<div class="container mt-4">
+    <div class="mb-3">
+        <a asp-action="Index" class="btn btn-outline-secondary">&larr; Volver al Listado</a>
+    </div>
+
+    <h2>Detalle de Cuenta: @account.AccountNumber</h2>
+    <div class="card mb-4 bg-light">
+        <div class="card-body">
+            <h5 class="card-title">Resumen</h5>
+            <p class="card-text mb-1"><strong>Tipo de cuenta:</strong> @account.Type</p>
+            <p class="card-text mb-1"><strong>Balance Actual:</strong> RD$ @account.Balance.ToString("N2")</p>
+            <p class="card-text mb-1"><strong>Estado:</strong> @account.Status</p>
+        </div>
+    </div>
+
+    <h4>Historial de Transacciones</h4>
+    <table class="table table-bordered mt-2">
+        <thead class="table-dark">
+            <tr>
+                <th>Fecha y Hora</th>
+                <th>Descripción</th>
+                <th>Tipo</th>
+                <th>Origen</th>
+                <th>Destino/Beneficiario</th>
+                <th>Monto</th>
+                <th>Estado</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (!Model.Any())
+            {
+                <tr>
+                    <td colspan="7" class="text-center text-muted">No se registran transacciones para esta cuenta.</td>
+                </tr>
+            }
+            else
+            {
+                @foreach (var t in Model)
+                {
+                    <tr>
+                        <td>@t.Date.ToString("dd/MM/yyyy HH:mm:ss")</td>
+                        <td>@t.Description</td>
+                        <td>
+                            <span class="badge @(t.Type == ArtemisBankingPro.Domain.Enums.TransactionType.Credito ? "bg-success" : "bg-danger")">
+                                @t.Type
+                            </span>
+                        </td>
+                        <td>@t.Origin</td>
+                        <td>@t.Beneficiary</td>
+                        <td class="fw-bold @(t.Type == ArtemisBankingPro.Domain.Enums.TransactionType.Credito ? "text-success" : "text-danger")">
+                            @(t.Type == ArtemisBankingPro.Domain.Enums.TransactionType.Credito ? "+" : "-") RD$ @t.Amount.ToString("N2")
+                        </td>
+                        <td>@t.Status</td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>

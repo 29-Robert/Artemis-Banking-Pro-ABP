@@ -1,0 +1,38 @@
+@model ArtemisBankingPro.Application.DTOs.Account.CreateSecondaryAccountDto
+@{
+    var client = ViewBag.Client;
+    ViewData["Title"] = "Paso 2: Configurar Cuenta";
+}
+
+<div class="container mt-4" style="max-width: 600px;">
+    <h2>Asignar Cuenta de Ahorro - Paso 2: Configuración</h2>
+    <hr />
+
+    <div class="card mb-4 bg-light">
+        <div class="card-body">
+            <h5 class="card-title">Cliente Seleccionado</h5>
+            <p class="card-text mb-1"><strong>Nombre:</strong> @client.FirstName @client.LastName</p>
+            <p class="card-text mb-1"><strong>Cédula:</strong> @client.Cedula</p>
+            <p class="card-text"><strong>Correo:</strong> @client.Email</p>
+        </div>
+    </div>
+
+    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+    <form asp-action="ConfigureSecondary" method="post">
+        <input type="hidden" name="clientId" value="@client.Id" />
+        <input type="hidden" asp-for="ClientCedula" value="@client.Cedula" />
+
+        <div class="mb-4">
+            <label asp-for="InitialBalance" class="form-label fw-bold">Balance Inicial (RD$)</label>
+            <div class="input-group">
+                <span class="input-group-text">RD$</span>
+                <input asp-for="InitialBalance" class="form-control" type="number" step="0.01" min="0" required />
+            </div>
+            <span asp-validation-for="InitialBalance" class="text-danger"></span>
+        </div>
+
+        <button type="submit" class="btn btn-success">Asignar Cuenta</button>
+        <a asp-action="SelectClient" class="btn btn-secondary">Volver atrás</a>
+    </form>
+</div>
