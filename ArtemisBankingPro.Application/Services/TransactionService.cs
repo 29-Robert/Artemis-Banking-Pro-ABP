@@ -102,10 +102,8 @@ namespace ArtemisBankingPro.Application.Services
             };
             await _transactionRepository.AddAsync(creditTransaction);
 
+            await _accountRepository.SaveChangesAsync();
 
-            // =======================================================
-            // NOTIFICACIÓN POR CORREO
-            // =======================================================
             try
             {
                 string maskSource = dto.SourceAccountNumber.Substring(dto.SourceAccountNumber.Length - 4);
