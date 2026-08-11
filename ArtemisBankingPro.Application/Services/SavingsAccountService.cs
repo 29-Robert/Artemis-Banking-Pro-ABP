@@ -1,10 +1,15 @@
 using ArtemisBankingPro.Application.DTOs.Account;
+using ArtemisBankingPro.Application.DTOs.Home;
+using ArtemisBankingPro.Application.DTOs.CreditCard;
+using ArtemisBankingPro.Application.DTOs.Loan;
 using ArtemisBankingPro.Application.Interfaces.Repositories;
 using ArtemisBankingPro.Application.Interfaces.Services;
 using ArtemisBankingPro.Domain.Entities;
 using ArtemisBankingPro.Domain.Enums;
 using ArtemisBankingPro.Domain.Interfaces.Repositories;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace ArtemisBankingPro.Application.Services
@@ -15,17 +20,23 @@ namespace ArtemisBankingPro.Application.Services
         private readonly ITransactionRepository _transactionRepository;
         private readonly IUserRepository _userRepository;
         private readonly ILoanRepository _loanRepository;
+        private readonly ICreditCardRepository _creditCardRepository;
+        private readonly IEmailService _emailService;
 
         public SavingsAccountService(
             ISavingsAccountRepository accountRepository,
             ITransactionRepository transactionRepository,
             IUserRepository userRepository,
-            ILoanRepository loanRepository)
+            ILoanRepository loanRepository,
+            ICreditCardRepository creditCardRepository,
+            IEmailService emailService)
         {
             _accountRepository = accountRepository;
             _transactionRepository = transactionRepository;
             _userRepository = userRepository;
             _loanRepository = loanRepository;
+            _creditCardRepository = creditCardRepository;
+            _emailService = emailService;
         }
 
         public async Task<SavingsAccountDetailDto> CreateSecondaryAccountAsync(CreateSecondaryAccountDto dto)
@@ -90,6 +101,8 @@ namespace ArtemisBankingPro.Application.Services
 
                 await _transactionRepository.AddAsync(initialTransaction);
             }
+
+            await _accountRepository.SaveChangesAsync();
 
             return new SavingsAccountDetailDto
             {
@@ -160,6 +173,7 @@ namespace ArtemisBankingPro.Application.Services
             accountToCancel.Status = AccountStatus.Cancelada;
 
             await _accountRepository.UpdateAsync(accountToCancel);
+            await _accountRepository.SaveChangesAsync();
         }
 
         public async Task<IEnumerable<TransactionDto>> GetTransactionHistoryAsync(string accountNumber, int page, int pageSize)
@@ -181,6 +195,252 @@ namespace ArtemisBankingPro.Application.Services
             }).ToList();
 
             return history;
+        }
+
+        public async Task<ClientHomeDto> GetClientHomeDataAsync(string clientId)
+        {
+            int idCliente = int.Parse(clientId);
+            var user = await _userRepository.GetByIdAsync(idCliente);
+            if (user == null) throw new Exception("Cliente no encontrado.");
+
+            var allAccounts = await _accountRepository.GetAllAsync();
+            var clientAccounts = allAccounts
+                .Where(a => a.UserId == idCliente && a.Status == AccountStatus.Activa)
+                .Select(a => new SavingsAccountListItemDto
+                {
+                    AccountNumber = a.AccountNumber,
+                    ClientFullName = $"{user.FirstName} {user.LastName}",
+                    Balance = a.Balance,
+                    Type = a.Type,
+                    Status = a.Status
+                }).ToList();
+
+            var loans = await _loanRepository.GetLoansByClientAsync(user.Cedula);
+            var activeLoans = loans.Where(l => l.Status == "Activo" || l.Status == "Aprobado").ToList();
+            var loanDtos = activeLoans.Select(l => new LoanResponseDto
+            {
+                Id = l.Id,
+                LoanNumber = l.LoanNumber,
+                ClientId = l.ClientId,
+                ClientFullName = $"{user.FirstName} {user.LastName}",
+                CapitalAmount = l.CapitalAmount,
+                TermInMonths = l.TermInMonths,
+                AnnualInterestRate = l.AnnualInterestRate,
+                Status = l.Status,
+                TotalAmountToPay = l.Installments != null ? l.Installments.Sum(i => i.PendingInstallmentAmount) : 0,
+                ClientPaymentStatus = l.Installments != null && l.Installments.Any(i => i.PaymentStatus == "Pendiente" && i.DueDate < DateTime.UtcNow) ? "Atrasado" : "Al día"
+            }).ToList();
+
+            var cards = await _creditCardRepository.GetCardsByClientAsync(user.Cedula);
+            var activeCards = cards.Where(c => c.Status == "Activa").Select(c => new CreditCardResponseDto
+            {
+                Id = c.Id,
+                MaskedCardNumber = c.CardNumber,
+                LastFourDigits = c.CardNumber.Length >= 4 ? c.CardNumber.Substring(c.CardNumber.Length - 4) : c.CardNumber,
+                CreditLimit = c.CreditLimit,
+                CurrentDebt = c.CurrentDebt,
+                AvailableCredit = c.CreditLimit - c.CurrentDebt,
+                ExpirationDate = $"{c.ExpirationMonth}/{c.ExpirationYear}",
+                Status = c.Status
+            }).ToList();
+
+            return new ClientHomeDto
+            {
+                Accounts = clientAccounts,
+                Loans = loanDtos,
+                CreditCards = activeCards
+            };
+        }
+
+        public async Task ProcessCreditCardPaymentOwnAccountAsync(string sourceAccountNumber, string cardNumber, decimal amount, string clientId)
+        {
+            if (amount <= 0) throw new Exception("El monto a pagar debe ser mayor que cero.");
+
+            var account = await _accountRepository.GetByAccountNumberAsync(sourceAccountNumber);
+            if (account == null || account.UserId != int.Parse(clientId))
+                throw new Exception("La cuenta de ahorro de origen no existe o no le pertenece.");
+
+            if (account.Status == AccountStatus.Cancelada)
+                throw new Exception("La cuenta seleccionada está cancelada.");
+
+            if (account.Balance < amount)
+                throw new Exception("Fondos insuficientes en la cuenta de ahorro.");
+
+            var card = await _creditCardRepository.GetByCardNumberAsync(cardNumber);
+            if (card == null)
+                throw new Exception("La tarjeta de crédito no existe.");
+
+            if (card.Status == "Cancelada")
+                throw new Exception("La tarjeta de crédito se encuentra cancelada.");
+
+            if (amount > card.CurrentDebt)
+                throw new Exception("No se permite sobrepagar la tarjeta. El monto máximo a pagar es de RD$ " + card.CurrentDebt.ToString("N2"));
+
+            card.CurrentDebt -= amount;
+            account.Balance -= amount;
+
+            await _creditCardRepository.UpdateAsync(card);
+            await _accountRepository.UpdateAsync(account);
+
+            var transaction = new Transaction
+            {
+                AccountNumber = sourceAccountNumber,
+                Type = TransactionType.Debito,
+                Amount = amount,
+                Status = TransactionStatus.Aprobada,
+                Description = $"Pago de tarjeta de crédito propia {cardNumber}",
+                CreatedAt = DateTime.UtcNow
+            };
+            await _transactionRepository.AddAsync(transaction);
+            await _accountRepository.SaveChangesAsync();
+
+            // Notificación por correo
+            try
+            {
+                string body = $"Hola,\nSe ha realizado el pago de tu tarjeta de crédito desde tu cuenta propia.\n" +
+                              $"Cuenta de ahorro: {sourceAccountNumber}\n" +
+                              $"Tarjeta de crédito: {cardNumber}\n" +
+                              $"Monto pagado: RD$ {amount:N2}\n" +
+                              $"Fecha: {DateTime.Now:dd/MM/yyyy HH:mm:ss}\n";
+                await _emailService.SendNotificationEmailAsync("correo@ejemplo.com", "Pago de Tarjeta de Crédito Realizado", body);
+            }
+            catch { }
+        }
+
+        public async Task ProcessLoanPaymentOwnAccountAsync(string sourceAccountNumber, string loanNumber, decimal amount, string clientId)
+        {
+            if (amount <= 0) throw new Exception("El monto a pagar debe ser mayor que cero.");
+
+            var account = await _accountRepository.GetByAccountNumberAsync(sourceAccountNumber);
+            if (account == null || account.UserId != int.Parse(clientId))
+                throw new Exception("La cuenta de ahorro de origen no existe o no le pertenece.");
+
+            if (account.Status == AccountStatus.Cancelada)
+                throw new Exception("La cuenta seleccionada está cancelada.");
+
+            if (account.Balance < amount)
+                throw new Exception("Fondos insuficientes en la cuenta de ahorro.");
+
+            var loan = await _loanRepository.GetByLoanNumberAsync(loanNumber);
+            if (loan == null)
+                throw new Exception("El préstamo no existe.");
+
+            if (loan.Status == "Cancelado" || loan.Status == "Pagado")
+                throw new Exception("El préstamo ya se encuentra cancelado o pagado.");
+
+            decimal remainingPayment = amount;
+            var pendingInstallments = loan.Installments
+                .Where(i => i.PaymentStatus == "Pendiente")
+                .OrderBy(i => i.InstallmentNumber)
+                .ToList();
+
+            foreach (var installment in pendingInstallments)
+            {
+                if (remainingPayment <= 0) break;
+
+                if (remainingPayment >= installment.PendingInstallmentAmount)
+                {
+                    remainingPayment -= installment.PendingInstallmentAmount;
+                    installment.PendingInstallmentAmount = 0;
+                    installment.PaymentStatus = "Pagada";
+                }
+                else
+                {
+                    installment.PendingInstallmentAmount -= remainingPayment;
+                    remainingPayment = 0;
+                }
+            }
+
+            if (!loan.Installments.Any(i => i.PaymentStatus == "Pendiente"))
+            {
+                loan.Status = "Pagado";
+            }
+
+            await _loanRepository.UpdateAsync(loan);
+
+            account.Balance -= amount;
+            await _accountRepository.UpdateAsync(account);
+
+            var transaction = new Transaction
+            {
+                AccountNumber = sourceAccountNumber,
+                Type = TransactionType.Debito,
+                Amount = amount,
+                Status = TransactionStatus.Aprobada,
+                Description = $"Pago de préstamo propio {loanNumber}",
+                CreatedAt = DateTime.UtcNow
+            };
+            await _transactionRepository.AddAsync(transaction);
+            await _accountRepository.SaveChangesAsync();
+
+            // Notificación por correo
+            try
+            {
+                string body = $"Hola,\nSe ha realizado el pago de tu préstamo desde tu cuenta propia.\n" +
+                              $"Cuenta de ahorro: {sourceAccountNumber}\n" +
+                              $"Préstamo: {loanNumber}\n" +
+                              $"Monto pagado: RD$ {amount:N2}\n" +
+                              $"Fecha: {DateTime.Now:dd/MM/yyyy HH:mm:ss}\n";
+                await _emailService.SendNotificationEmailAsync("correo@ejemplo.com", "Pago de Préstamo Realizado", body);
+            }
+            catch { }
+        }
+
+        public async Task ProcessCashAdvanceAsync(string sourceAccountNumber, string cardNumber, decimal amount, string clientId)
+        {
+            if (amount <= 0) throw new Exception("El monto del avance debe ser mayor que cero.");
+
+            var account = await _accountRepository.GetByAccountNumberAsync(sourceAccountNumber);
+            if (account == null || account.UserId != int.Parse(clientId))
+                throw new Exception("La cuenta de ahorro de destino no existe o no le pertenece.");
+
+            if (account.Status == AccountStatus.Cancelada)
+                throw new Exception("La cuenta seleccionada está cancelada.");
+
+            var card = await _creditCardRepository.GetByCardNumberAsync(cardNumber);
+            if (card == null)
+                throw new Exception("La tarjeta de crédito no existe.");
+
+            if (card.Status == "Cancelada")
+                throw new Exception("La tarjeta de crédito se encuentra cancelada.");
+
+            decimal interest = amount * 0.0625m;
+            decimal totalCharge = amount + interest;
+
+            decimal availableCredit = card.CreditLimit - card.CurrentDebt;
+            if (availableCredit < totalCharge)
+                throw new Exception($"Crédito disponible insuficiente. Requiere RD$ {totalCharge:N2} (Avance: RD$ {amount:N2} + Interés 6.25%: RD$ {interest:N2}), pero solo dispone de RD$ {availableCredit:N2}");
+
+            card.CurrentDebt += totalCharge;
+            account.Balance += amount;
+
+            await _creditCardRepository.UpdateAsync(card);
+            await _accountRepository.UpdateAsync(account);
+
+            var transaction = new Transaction
+            {
+                AccountNumber = sourceAccountNumber,
+                Type = TransactionType.Credito,
+                Amount = amount,
+                Status = TransactionStatus.Aprobada,
+                Description = $"Avance de efectivo desde tarjeta {cardNumber}",
+                CreatedAt = DateTime.UtcNow
+            };
+            await _transactionRepository.AddAsync(transaction);
+            await _accountRepository.SaveChangesAsync();
+
+            // Notificación por correo
+            try
+            {
+                string body = $"Hola,\nSe ha procesado un avance de efectivo en tu tarjeta de crédito.\n" +
+                              $"Tarjeta afectada: {cardNumber}\n" +
+                              $"Monto depositado en cuenta de ahorros {sourceAccountNumber}: RD$ {amount:N2}\n" +
+                              $"Comisión de avance cobrada (6.25%): RD$ {interest:N2}\n" +
+                              $"Total cargado a la tarjeta: RD$ {totalCharge:N2}\n" +
+                              $"Fecha: {DateTime.Now:dd/MM/yyyy HH:mm:ss}\n";
+                await _emailService.SendNotificationEmailAsync("correo@ejemplo.com", "Avance de Efectivo Procesado", body);
+            }
+            catch { }
         }
     }
 }

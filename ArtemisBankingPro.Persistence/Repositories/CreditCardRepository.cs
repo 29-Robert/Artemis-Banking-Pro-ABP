@@ -14,11 +14,8 @@ namespace ArtemisBankingPro.Persistence.Repositories
 {
     public class CreditCardRepository : GenericRepository<CreditCard>, ICreditCardRepository
     {
-        private readonly ApplicationDbContext _dbContext;
-
         public CreditCardRepository(ApplicationDbContext dbContext) : base(dbContext)
         {
-            _dbContext = dbContext;
         }
 
         public async Task<CreditCard> GetByCardNumberAsync(string cardNumber)
