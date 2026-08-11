@@ -1,0 +1,81 @@
+@model ArtemisBankingPro.Domain.Entities.Loan
+@{
+    ViewData["Title"] = "Detalles de Préstamo";
+}
+
+<div class="container mt-4">
+    <div class="mb-3">
+        <a asp-action="Index" class="btn btn-outline-secondary">&larr; Volver al Resumen</a>
+    </div>
+
+    <h2>Detalle del Préstamo: @Model.LoanNumber</h2>
+    
+    <div class="card mb-4 bg-light border-0 shadow-sm col-md-8">
+        <div class="card-body">
+            <h5 class="card-title fw-bold text-dark">Información del Préstamo</h5>
+            <div class="row mt-3">
+                <div class="col-sm-6">
+                    <p class="card-text mb-1"><strong>Monto Capital Original:</strong> RD$ @Model.CapitalAmount.ToString("N2")</p>
+                    <p class="card-text mb-1"><strong>Plazo:</strong> @Model.TermInMonths meses</p>
+                </div>
+                <div class="col-sm-6">
+                    <p class="card-text mb-1"><strong>Tasa de Interés Anual:</strong> @Model.AnnualInterestRate%</p>
+                    <p class="card-text mb-1"><strong>Estado del Préstamo:</strong> <span class="badge bg-info">@Model.Status</span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h4>Tabla de Amortización (Cuotas)</h4>
+    <table class="table table-bordered table-striped mt-3 align-middle">
+        <thead class="table-dark">
+            <tr>
+                <th>No. Cuota</th>
+                <th>Fecha de Vencimiento</th>
+                <th>Monto de Cuota</th>
+                <th>Interés</th>
+                <th>Capital</th>
+                <th>Monto Pendiente</th>
+                <th>Estado</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.Installments == null || !Model.Installments.Any())
+            {
+                <tr>
+                    <td colspan="7" class="text-center text-muted">No se registran cuotas para este préstamo.</td>
+                </tr>
+            }
+            else
+            {
+                @foreach (var installment in Model.Installments.OrderBy(i => i.InstallmentNumber))
+                {
+                    <tr>
+                        <td class="fw-bold text-center">@installment.InstallmentNumber</td>
+                        <td>@installment.DueDate.ToString("dd/MM/yyyy")</td>
+                        <td>RD$ @installment.InstallmentAmount.ToString("N2")</td>
+                        <td>RD$ @installment.InterestAmount.ToString("N2")</td>
+                        <td>RD$ @installment.CapitalAmount.ToString("N2")</td>
+                        <td class="@(installment.PendingInstallmentAmount > 0 ? "text-danger fw-bold" : "text-success")">
+                            RD$ @installment.PendingInstallmentAmount.ToString("N2")
+                        </td>
+                        <td>
+                            @if (installment.PaymentStatus == "Pagada")
+                            {
+                                <span class="badge bg-success">Pagada</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-danger">@installment.PaymentStatus</span>
+                                @if (installment.IsLate)
+                                {
+                                    <span class="badge bg-warning text-dark">Atrasada</span>
+                                }
+                            }
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>

@@ -1,0 +1,151 @@
+@model ArtemisBankingPro.Application.DTOs.Home.ClientHomeDto
+@{
+    ViewData["Title"] = "Mis Productos Financieros";
+}
+
+<div class="container mt-4">
+    <h2>Mi Resumen Financiero</h2>
+    
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success mt-2">@TempData["SuccessMessage"]</div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger mt-2">@TempData["ErrorMessage"]</div>
+    }
+
+    <!-- Cuentas de Ahorro -->
+    <div class="card mb-4 mt-3 border-0 shadow-sm">
+        <div class="card-header bg-success text-white">
+            <h4 class="mb-0">Cuentas de Ahorro</h4>
+        </div>
+        <div class="card-body p-0">
+            <table class="table mb-0 table-striped align-middle">
+                <thead>
+                    <tr>
+                        <th class="ps-3">Número de Cuenta</th>
+                        <th>Tipo</th>
+                        <th>Balance</th>
+                        <th class="text-end pe-3">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var acc in Model.Accounts)
+                    {
+                        <tr>
+                            <td class="ps-3 fw-bold">@acc.AccountNumber @(acc.Type == ArtemisBankingPro.Domain.Enums.AccountType.Principal ? "(Principal)" : "")</td>
+                            <td>@acc.Type</td>
+                            <td class="fw-bold">RD$ @acc.Balance.ToString("N2")</td>
+                            <td class="text-end pe-3">
+                                <a asp-action="AccountDetails" asp-route-accountNumber="@acc.AccountNumber" class="btn btn-sm btn-outline-secondary">Ver Historial</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Tarjetas de Crédito -->
+    <div class="card mb-4 border-0 shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">Tarjetas de Crédito</h4>
+        </div>
+        <div class="card-body p-0">
+            <table class="table mb-0 table-striped align-middle">
+                <thead>
+                    <tr>
+                        <th class="ps-3">Número de Tarjeta</th>
+                        <th>Límite de Crédito</th>
+                        <th>Deuda Actual</th>
+                        <th>Monto Disponible</th>
+                        <th class="text-end pe-3">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var card in Model.CreditCards)
+                    {
+                        var disponible = card.CreditLimit - card.CurrentDebt;
+                        <tr>
+                            <td class="ps-3 fw-bold">@card.MaskedCardNumber</td>
+                            <td>RD$ @card.CreditLimit.ToString("N2")</td>
+                            <td class="text-danger fw-bold">RD$ @card.CurrentDebt.ToString("N2")</td>
+                            <td class="text-success fw-bold">RD$ @disponible.ToString("N2")</td>
+                            <td class="text-end pe-3">
+                                @if (card.CurrentDebt > 0)
+                                {
+                                    <a asp-action="PayCreditCard" asp-route-cardNumber="@card.MaskedCardNumber" class="btn btn-sm btn-success me-1">Pagar</a>
+                                }
+                                <a asp-action="CashAdvance" asp-route-cardNumber="@card.MaskedCardNumber" class="btn btn-sm btn-warning me-1">Avance Efectivo</a>
+                                <a asp-action="CardDetails" asp-route-cardNumber="@card.MaskedCardNumber" class="btn btn-sm btn-outline-secondary">Detalles</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Préstamos -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-dark text-white">
+            <h4 class="mb-0">Préstamos Activos</h4>
+        </div>
+        <div class="card-body p-0">
+            <table class="table mb-0 table-striped align-middle">
+                <thead>
+                    <tr>
+                        <th class="ps-3">Número de Préstamo</th>
+                        <th>Monto Original</th>
+                        <th>Monto Pendiente</th>
+                        <th>Tasa Anual</th>
+                        <th>Estado</th>
+                        <th class="text-end pe-3">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var loan in Model.Loans)
+                    {
+                        <tr>
+                            <td class="ps-3 fw-bold">@loan.LoanNumber</td>
+                            <td>RD$ @loan.CapitalAmount.ToString("N2")</td>
+                            <td class="text-danger fw-bold">RD$ @loan.TotalAmountToPay.ToString("N2")</td>
+                            <td>@loan.AnnualInterestRate %</td>
+                            <td><span class="badge bg-warning text-dark">@loan.ClientPaymentStatus</span></td>
+                            <td class="text-end pe-3">
+                                @if (loan.TotalAmountToPay > 0)
+                                {
+                                    <a asp-action="PayLoan" asp-route-loanNumber="@loan.LoanNumber" class="btn btn-sm btn-success me-1">Pagar</a>
+                                }
+                                <a asp-action="LoanDetails" asp-route-loanNumber="@loan.LoanNumber" class="btn btn-sm btn-outline-secondary">Ver Cuotas</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Accesos Directos a Transferencias -->
+    <div class="row mt-4">
+        <div class="col-md-4 mb-3">
+            <a asp-action="TransferOwn" class="btn btn-outline-success w-100 p-3 shadow-sm">
+                <h5>🔄 Cuentas Propias</h5>
+                <small class="text-muted">Mover dinero entre tus cuentas</small>
+            </a>
+        </div>
+        <div class="col-md-4 mb-3">
+            <a asp-action="TransferExpress" class="btn btn-outline-primary w-100 p-3 shadow-sm">
+                <h5>⚡ Transacción Express</h5>
+                <small class="text-muted">A cualquier cuenta de ahorros activa</small>
+            </a>
+        </div>
+        <div class="col-md-4 mb-3">
+            <a asp-action="Beneficiaries" class="btn btn-outline-dark w-100 p-3 shadow-sm">
+                <h5>👥 Beneficiarios</h5>
+                <small class="text-muted">Tus contactos recurrentes registrados</small>
+            </a>
+        </div>
+    </div>
+</div>

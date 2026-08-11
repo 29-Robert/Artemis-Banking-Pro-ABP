@@ -1,0 +1,59 @@
+@model ArtemisBankingPro.Domain.Entities.CreditCard
+@{
+    ViewData["Title"] = "Detalle de Tarjeta";
+}
+
+<div class="container mt-4">
+    <div class="mb-3">
+        <a asp-action="Index" class="btn btn-outline-secondary">&larr; Volver al Resumen</a>
+    </div>
+
+    <h2>Detalle de Tarjeta de Crédito</h2>
+
+    <div class="card mb-4 bg-light border-0 shadow-sm col-md-8">
+        <div class="card-body">
+            <h5 class="card-title fw-bold text-primary">Información de la Tarjeta</h5>
+            <div class="row mt-3">
+                <div class="col-sm-6">
+                    <p class="card-text mb-1"><strong>Número de Tarjeta:</strong> @Model.CardNumber</p>
+                    <p class="card-text mb-1"><strong>Límite de Crédito:</strong> RD$ @Model.CreditLimit.ToString("N2")</p>
+                    <p class="card-text mb-1"><strong>Deuda Actual:</strong> <span class="text-danger fw-bold">RD$ @Model.CurrentDebt.ToString("N2")</span></p>
+                </div>
+                <div class="col-sm-6">
+                    <p class="card-text mb-1"><strong>Vencimiento:</strong> @Model.ExpirationMonth/@Model.ExpirationYear</p>
+                    <p class="card-text mb-1"><strong>Estado:</strong> <span class="badge bg-success">@Model.Status</span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h4>Historial de Consumos</h4>
+    <table class="table table-bordered table-striped mt-3 align-middle">
+        <thead class="table-dark">
+            <tr>
+                <th>Fecha</th>
+                <th>Establecimiento</th>
+                <th>Monto</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.Consumptions == null || !Model.Consumptions.Any())
+            {
+                <tr>
+                    <td colspan="3" class="text-center text-muted p-3">No se registran consumos para esta tarjeta.</td>
+                </tr>
+            }
+            else
+            {
+                @foreach (var item in Model.Consumptions.OrderByDescending(c => c.TransactionDate))
+                {
+                    <tr>
+                        <td>@item.TransactionDate.ToString("dd/MM/yyyy HH:mm:ss")</td>
+                        <td>@item.CommerceName</td>
+                        <td class="text-danger fw-bold">RD$ @item.Amount.ToString("N2")</td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>
