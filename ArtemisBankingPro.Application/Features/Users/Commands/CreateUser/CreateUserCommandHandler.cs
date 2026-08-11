@@ -1,0 +1,75 @@
+﻿using ArtemisBankingPro.Application.Interfaces.Services;
+using ArtemisBankingPro.Domain.Entities;
+using ArtemisBankingPro.Domain.Enums;
+using ArtemisBankingPro.Domain.Interfaces.Repositories;
+using AutoMapper;
+using MediatR;
+using System.Transactions;
+
+namespace ArtemisBankingPro.Application.Features.Users.Commands.CreateUser
+{
+    public class CreateUserCommandHandler(
+        IGenericRepository<User> userRepository,
+        IGenericRepository<SavingsAccount> accountRepository,
+        IGenericRepository<ConfirmationToken> tokenRepository,
+        IEmailService emailService,
+        IMapper mapper) : IRequestHandler<CreateUserCommand, int>
+    {
+        public async Task<int> Handle(CreateUserCommand request, CancellationToken cancellationToken)
+        {
+            var users = await userRepository.GetAllAsync();
+            if (users.Any(u => u.Username == request.Username || u.Email == request.Email || u.Cedula == request.Cedula))
+            {
+                throw new Exception("Ya existe un usuario con ese nombre de usuario, correo o cédula.");
+            }
+
+            var user = mapper.Map<User>(request);
+
+            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
+
+            using (var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+            {
+                var newUser = await userRepository.AddAsync(user);
+                await userRepository.SaveChangesAsync();
+
+                if (newUser.RoleId == 3 || newUser.RoleId == 4)
+                {
+                    var account = new SavingsAccount
+                    {
+                        UserId = newUser.Id,
+                        AccountNumber = new Random().Next(100000000, 999999999).ToString(),
+                        Balance = 0,
+                        IsPrincipal = true
+                    };
+                    await accountRepository.AddAsync(account);
+                    await accountRepository.SaveChangesAsync();
+                }
+
+                var activationToken = Guid.NewGuid().ToString();
+                var confirmationToken = new ConfirmationToken
+                {
+                    UserId = newUser.Id,
+                    Token = activationToken,
+                    Type = TokenType.Activacion,
+                    ExpirationDate = DateTime.UtcNow.AddHours(24),
+                    IsUsed = false
+                };
+
+                await tokenRepository.AddAsync(confirmationToken);
+                await tokenRepository.SaveChangesAsync();
+
+                transaction.Complete();
+
+                try
+                {
+                    await emailService.SendActivationEmailAsync(newUser.Email, activationToken);
+                }
+                catch
+                {
+                }
+
+                return newUser.Id;
+            }
+        }
+    }
+}

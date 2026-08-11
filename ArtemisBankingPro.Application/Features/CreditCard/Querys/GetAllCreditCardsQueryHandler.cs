@@ -1,24 +1,26 @@
-﻿using ArtemisBankingPro.Application.DTOs.CreditCard;
+﻿using ArtemisBankingPro.Application.Common;
+using ArtemisBankingPro.Application.DTOs.CreditCard;
 using ArtemisBankingPro.Application.Interfaces.Services;
 using MediatR;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ArtemisBankingPro.Application.Features.CreditCard.Querys
 {
-    public class GetAllCreditCardsQueryHandler : IRequestHandler<GetAllCreditCardsQuery, List<CreditCardResponseDto>>
+    public class GetAllCreditCardsQueryHandler : IRequestHandler<GetAllCreditCardsQuery, PagedResult<CreditCardResponseDto>>
     {
         private readonly ICreditCardService _creditCardService;
+
         public GetAllCreditCardsQueryHandler(ICreditCardService creditCardService)
         {
             _creditCardService = creditCardService;
         }
-        public async Task<List<CreditCardResponseDto>> Handle(GetAllCreditCardsQuery request, CancellationToken cancellationToken)
+
+        public async Task<PagedResult<CreditCardResponseDto>> Handle(GetAllCreditCardsQuery request, CancellationToken cancellationToken)
         {
-            return await _creditCardService.GetAllCreditCardsAsync();
+            return await _creditCardService.GetCreditCardsAsync(
+                request.Cedula,
+                request.Status,
+                request.PageNumber,
+                request.PageSize);
         }
     }
 }

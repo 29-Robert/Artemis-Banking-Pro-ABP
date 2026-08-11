@@ -1,48 +1,65 @@
-﻿using ArtemisBankingPro.Application.DTOs.CreditCard;
+﻿using ArtemisBankingPro.Application.Common;
+using ArtemisBankingPro.Application.DTOs.CreditCard;
 using ArtemisBankingPro.Application.Interfaces.Services;
 using ArtemisBankingPro.Domain.Entities;
 using ArtemisBankingPro.Domain.Interfaces.Repositories;
 using AutoMapper;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
-using System.Text;
-using System.Threading.Tasks;
-
-
 
 namespace ArtemisBankingPro.Application.Services
 {
     public class CreditCardService : ICreditCardService
     {
         private readonly ICreditCardRepository _creditCardRepository;
+        private readonly IGenericRepository<User> _userRepository;
+        private readonly IEmailService _emailService;
         private readonly IMapper _mapper;
-        
-        public CreditCardService(ICreditCardRepository creditCardRepository, IMapper mapper)
+
+        public CreditCardService(
+            ICreditCardRepository creditCardRepository,
+            IGenericRepository<User> userRepository,
+            IEmailService emailService,
+            IMapper mapper)
         {
             _creditCardRepository = creditCardRepository;
+            _userRepository = userRepository;
+            _emailService = emailService;
             _mapper = mapper;
         }
 
-        public CreditCardService(ICreditCardRepository creditCardRepository)
+        public async Task<List<CreditCardResponseDto>> GetAllCreditCardsAsync()
         {
-            _creditCardRepository = creditCardRepository;
+            var cards = await _creditCardRepository.GetAllAsync();
+            return _mapper.Map<List<CreditCardResponseDto>>(cards);
+        }
+
+        public async Task<CreditCardResponseDto> GetCreditCardByIdAsync(int id)
+        {
+            var card = await _creditCardRepository.GetByIdAsync(id);
+            if (card == null) throw new Exception($"No se encontró una tarjeta con Id {id}.");
+
+            return _mapper.Map<CreditCardResponseDto>(card);
         }
 
         public async Task<CreditCardResponseDto> AssignCreditCardAsync(CreateCreditCardRequestDto request, string adminId)
         {
-            string cvc = new Random().Next(100, 999).ToString();
-            string cardNumber = GenerateCreditCardNumber();
-            DateTime expirationDate = DateTime.UtcNow.AddYears(3);
+            var client = await _userRepository.GetByIdAsync(int.Parse(request.ClientId));
+
+            if (client == null) throw new Exception("El cliente seleccionado no existe.");
+            if (!client.IsActive) throw new Exception("Solo se puede asignar tarjeta a clientes activos.");
+            if (request.CreditLimit <= 0) throw new Exception("El límite de crédito debe ser mayor a cero.");
+
+            var cvc = RandomNumberGenerator.GetInt32(100, 1000).ToString();
+            var cardNumber = await GenerateUniqueCreditCardNumberAsync();
+            var expirationDate = DateTime.UtcNow.AddYears(3);
 
             var creditCard = new CreditCard
             {
                 ClientId = request.ClientId,
                 CardNumber = cardNumber,
                 CreditLimit = request.CreditLimit,
-                CurrentDebt = 0.00m,
+                CurrentDebt = 0m,
                 ExpirationMonth = expirationDate.ToString("MM"),
                 ExpirationYear = expirationDate.ToString("yyyy"),
                 CvcHash = HashString(cvc),
@@ -52,9 +69,14 @@ namespace ArtemisBankingPro.Application.Services
             };
 
             await _creditCardRepository.AddAsync(creditCard);
+            await _creditCardRepository.SaveChangesAsync();
 
+            await _emailService.SendNotificationEmailAsync(
+                client.Email,
+                "Tarjeta de crédito asignada",
+                $"Se le asignó una tarjeta de crédito terminada en {cardNumber[^4..]} con límite RD${request.CreditLimit:N2}.");
 
-            return new CreditCardResponseDto { /* Mapear DTO de respuesta */ };
+            return _mapper.Map<CreditCardResponseDto>(creditCard);
         }
 
         public async Task UpdateCreditLimitAsync(int cardId, decimal newLimit)
@@ -62,50 +84,70 @@ namespace ArtemisBankingPro.Application.Services
             var card = await _creditCardRepository.GetByIdAsync(cardId);
             if (card == null) throw new Exception("La tarjeta seleccionada no existe.");
             if (card.Status == "Cancelada") throw new Exception("No se puede modificar una tarjeta cancelada.");
-            if (newLimit < card.CurrentDebt) throw new Exception("El límite no puede ser inferior al monto adeudado actualmente.");
+            if (newLimit < card.CurrentDebt) throw new Exception("El límite no puede ser inferior al monto adeudado.");
 
             card.CreditLimit = newLimit;
-            await _creditCardRepository.UpdateAsync(card);
 
-            
+            await _creditCardRepository.UpdateAsync(card);
+            await _creditCardRepository.SaveChangesAsync();
         }
 
         public async Task CancelCreditCardAsync(int cardId)
         {
             var card = await _creditCardRepository.GetByIdAsync(cardId);
             if (card == null) throw new Exception("La tarjeta seleccionada no existe.");
-            if (card.CurrentDebt > 0) throw new Exception("Para cancelar esta tarjeta, el cliente debe saldar la totalidad de la deuda pendiente.");
+            if (card.Status == "Cancelada") throw new Exception("La tarjeta ya está cancelada.");
+            if (card.CurrentDebt > 0) throw new Exception("No se puede cancelar una tarjeta con deuda pendiente.");
 
             card.Status = "Cancelada";
+
             await _creditCardRepository.UpdateAsync(card);
+            await _creditCardRepository.SaveChangesAsync();
         }
 
-        private string GenerateCreditCardNumber()
+        private async Task<string> GenerateUniqueCreditCardNumberAsync()
         {
-            var rnd = new Random();
+            for (var attempt = 0; attempt < 20; attempt++)
+            {
+                var number = GenerateCreditCardNumber();
+                var existing = await _creditCardRepository.GetByCardNumberAsync(number);
+
+                if (existing == null)
+                {
+                    return number;
+                }
+            }
+
+            throw new Exception("No fue posible generar un número de tarjeta único.");
+        }
+
+        private static string GenerateCreditCardNumber()
+        {
             var builder = new StringBuilder(16);
-            for (int i = 0; i < 16; i++) builder.Append(rnd.Next(0, 9));
+
+            for (var i = 0; i < 16; i++)
+            {
+                builder.Append(RandomNumberGenerator.GetInt32(0, 10));
+            }
+
             return builder.ToString();
         }
 
-        private string HashString(string input)
+        private static string HashString(string input)
         {
             using var sha256 = SHA256.Create();
             var bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(input));
-            return BitConverter.ToString(bytes).Replace("-", "").ToLower();
+            return Convert.ToHexString(bytes).ToLower();
         }
 
-
-        public async Task<List<CreditCardResponseDto>> GetAllCreditCardsAsync()
+        public Task<PagedResult<CreditCardResponseDto>> GetCreditCardsAsync(string? cedula, string? status, int pageNumber, int pageSize)
         {
-            var cards = await _creditCardRepository.GetAllAsync();
-            return _mapper.Map<List<CreditCardResponseDto>>(cards);
+            throw new NotImplementedException();
         }
-        public async Task<CreditCardResponseDto> GetCreditCardByIdAsync(int id)
+
+        public Task<CreditCardResponseDto> AssignCreditCardAsync(CreateCreditCardRequestDto request, int adminId)
         {
-            var card = await _creditCardRepository.GetByIdAsync(id);
-            if (card == null) throw new Exception($"No se encontró una tarjeta con Id {id}.");
-            return _mapper.Map<CreditCardResponseDto>(card);
+            throw new NotImplementedException();
         }
     }
 }

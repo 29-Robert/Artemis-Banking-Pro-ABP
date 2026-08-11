@@ -1,6 +1,6 @@
 ﻿using ArtemisBankingPro.Application.DTOs.CreditCard;
-using ArtemisBankingPro.Application.Features.CreditCard;
-using ArtemisBankingPro.Application.Features.CreditCardQuerys;
+using ArtemisBankingPro.Application.Features.CreditCard.Commands;
+using ArtemisBankingPro.Application.Features.CreditCard.Querys;
 using ArtemisBankingPro.Domain.Entities;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -43,7 +43,7 @@ namespace ArtemisBankingPro.WebApi.Controllers
             {
                 ClientId = request.ClientId,
                 CreditLimit = request.CreditLimit,
-                AdminId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                AdminId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value)
             };
             var result = await _mediator.Send(command);
             return Created($"api/credit-card/{result.Id}", result);

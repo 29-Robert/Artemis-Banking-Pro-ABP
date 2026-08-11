@@ -1,0 +1,35 @@
+@model ArtemisBankingPro.Domain.Entities.SavingsAccount
+@{
+    ViewData["Title"] = "Confirmar Cancelación";
+}
+
+<div class="container mt-5" style="max-width: 600px;">
+    <div class="card border-warning">
+        <div class="card-header bg-warning text-dark fw-bold">
+            Confirmación de Cancelación de Cuenta
+        </div>
+        <div class="card-body text-center">
+            <h4 class="card-title my-4">¿Está seguro que desea cancelar la cuenta @Model.AccountNumber?</h4>
+            
+            @if (Model.Balance > 0)
+            {
+                <div class="alert alert-info text-start">
+                    <strong>¡Atención!</strong> Esta cuenta tiene un balance de <strong>RD$ @Model.Balance.ToString("N2")</strong>. 
+                    Al confirmar, estos fondos se transferirán automáticamente a la cuenta principal del cliente.
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-light text-start">
+                    Esta cuenta no cuenta con balance disponible. Se cancelará directamente.
+                </div>
+            }
+
+            <form asp-action="CancelConfirmed" method="post" class="mt-4">
+                <input type="hidden" name="accountNumber" value="@Model.AccountNumber" />
+                <button type="submit" class="btn btn-danger px-4 me-2">Aceptar</button>
+                <a asp-action="Index" class="btn btn-secondary px-4">Cancelar</a>
+            </form>
+        </div>
+    </div>
+</div>

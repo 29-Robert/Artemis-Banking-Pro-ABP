@@ -16,6 +16,7 @@ namespace ArtemisBankingPro.Persistence.Contexts
         public DbSet<LoanInstallment> LoanInstallments { get; set; }
         public DbSet<CreditCard> CreditCards { get; set; }
         public DbSet<CreditCardConsumption> CreditCardConsumptions { get; set; }
+        public DbSet<Beneficiary> Beneficiaries { get; set; }
 
         public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = new CancellationToken())
         {
@@ -44,6 +45,9 @@ namespace ArtemisBankingPro.Persistence.Contexts
 
             modelBuilder.Entity<Commerce>().HasIndex(c => c.RNC).IsUnique();
             modelBuilder.Entity<SavingsAccount>().HasIndex(s => s.AccountNumber).IsUnique();
+
+            modelBuilder.Entity<Loan>().HasIndex(l => l.LoanNumber).IsUnique();
+            modelBuilder.Entity<CreditCard>().HasIndex(cc => cc.CardNumber).IsUnique();
 
             var seedDate = new DateTime(2026, 8, 1, 0, 0, 0, DateTimeKind.Utc);
 

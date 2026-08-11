@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ArtemisBankingPro.Domain.Common;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,9 +7,8 @@ using System.Threading.Tasks;
 
 namespace ArtemisBankingPro.Domain.Entities
 {
-    public class Loan
+    public class Loan : BaseEntity
     {
-        public int Id { get; set; }
         public string ClientId { get; set; } 
         public string LoanNumber { get; set; } 
         public decimal CapitalAmount { get; set; }
@@ -16,7 +16,6 @@ namespace ArtemisBankingPro.Domain.Entities
         public decimal AnnualInterestRate { get; set; }
         public string Status { get; set; } 
         public string AdminId { get; set; } 
-        public DateTime CreatedAt { get; set; }
 
         // Navegación
         public ICollection<LoanInstallment> Installments { get; set; }
