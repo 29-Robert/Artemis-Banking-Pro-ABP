@@ -32,6 +32,8 @@ builder.Services.AddScoped<ICreditCardRepository, CreditCardRepository>();
 builder.Services.AddScoped<ILoanInstallmentRepository, LoanInstallmentRepository>();
 builder.Services.AddScoped<ICreditCardConsumptionRepository, CreditCardConsumptionRepository>();
 builder.Services.AddScoped<ISavingsAccountService, SavingsAccountService>();
+builder.Services.AddScoped<ITransactionService, TransactionService>();
+builder.Services.AddScoped<ICashierService, CashierService>();
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>

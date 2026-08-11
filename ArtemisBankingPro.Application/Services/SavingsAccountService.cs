@@ -91,11 +91,13 @@ namespace ArtemisBankingPro.Application.Services
                 await _transactionRepository.AddAsync(initialTransaction);
             }
 
+            await _accountRepository.SaveChangesAsync();
+
             return new SavingsAccountDetailDto
             {
                 AccountNumber = newAccount.AccountNumber,
                 Balance = newAccount.Balance,
-                Status = newAccount.Status
+                Status = newAccount.Status,
             };
         }
 
@@ -160,6 +162,7 @@ namespace ArtemisBankingPro.Application.Services
             accountToCancel.Status = AccountStatus.Cancelada;
 
             await _accountRepository.UpdateAsync(accountToCancel);
+            await _accountRepository.SaveChangesAsync();
         }
 
         public async Task<IEnumerable<TransactionDto>> GetTransactionHistoryAsync(string accountNumber, int page, int pageSize)
