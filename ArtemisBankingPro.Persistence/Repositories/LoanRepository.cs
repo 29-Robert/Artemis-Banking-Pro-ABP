@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using ArtemisBankingPro.Domain.Entities;
+﻿using ArtemisBankingPro.Domain.Entities;
 using ArtemisBankingPro.Domain.Interfaces.Repositories;
 using ArtemisBankingPro.Persistence.Contexts;
 using Microsoft.EntityFrameworkCore;
@@ -12,11 +7,8 @@ namespace ArtemisBankingPro.Persistence.Repositories
 {
     public class LoanRepository : GenericRepository<Loan>, ILoanRepository
     {
-        private readonly ApplicationDbContext _dbContext;
-
         public LoanRepository(ApplicationDbContext dbContext) : base(dbContext)
         {
-            _dbContext = dbContext;
         }
 
         public async Task<Loan> GetByLoanNumberAsync(string loanNumber)

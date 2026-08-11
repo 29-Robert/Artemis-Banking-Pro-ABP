@@ -27,7 +27,59 @@ namespace ArtemisBankingPro.Application.Services
 
         public async Task ExpressTransactionAsync(ExpressTransactionDto dto)
         {
-            throw new NotImplementedException("La transferencia a terceros aún no está implementada.");
+            if (dto.Amount <= 0) throw new Exception("El monto a transferir debe ser mayor que cero.");
+            if (dto.SourceAccountNumber == dto.DestinationAccountNumber) throw new Exception("La cuenta de origen y destino no pueden ser la misma.");
+
+            var srcAcc = await _accountRepository.GetByAccountNumberAsync(dto.SourceAccountNumber);
+            if (srcAcc == null) throw new Exception("La cuenta de origen no existe.");
+            if (srcAcc.Status == AccountStatus.Cancelada) throw new Exception("Operación denegada. La cuenta de origen se encuentra cancelada.");
+            if (srcAcc.Balance < dto.Amount) throw new Exception("Fondos insuficientes en la cuenta de origen.");
+
+            var tgtAcc = await _accountRepository.GetByAccountNumberAsync(dto.DestinationAccountNumber);
+            if (tgtAcc == null) throw new Exception("La cuenta de destino no existe.");
+            if (tgtAcc.Status == AccountStatus.Cancelada) throw new Exception("Operación denegada. La cuenta de destino se encuentra cancelada.");
+
+            srcAcc.Balance -= dto.Amount;
+            tgtAcc.Balance += dto.Amount;
+
+            await _accountRepository.UpdateAsync(srcAcc);
+            await _accountRepository.UpdateAsync(tgtAcc);
+
+            var debitTx = new Transaction
+            {
+                AccountNumber = dto.SourceAccountNumber,
+                Type = TransactionType.Debito,
+                Amount = dto.Amount,
+                Status = TransactionStatus.Aprobada,
+                Description = $"Transferencia Express hacia cuenta {dto.DestinationAccountNumber}",
+                CreatedAt = DateTime.UtcNow
+            };
+            await _transactionRepository.AddAsync(debitTx);
+
+            var creditTx = new Transaction
+            {
+                AccountNumber = dto.DestinationAccountNumber,
+                Type = TransactionType.Credito,
+                Amount = dto.Amount,
+                Status = TransactionStatus.Aprobada,
+                Description = $"Transferencia Express recibida desde cuenta {dto.SourceAccountNumber}",
+                CreatedAt = DateTime.UtcNow
+            };
+            await _transactionRepository.AddAsync(creditTx);
+
+            await _accountRepository.SaveChangesAsync();
+
+            // Notificación por correo
+            try
+            {
+                string body = $"Hola,\nSe ha realizado una transferencia Express desde tu cuenta propia.\n" +
+                              $"Cuenta de ahorro: {dto.SourceAccountNumber}\n" +
+                              $"Cuenta de destino: {dto.DestinationAccountNumber}\n" +
+                              $"Monto transferido: RD$ {dto.Amount:N2}\n" +
+                              $"Fecha: {DateTime.Now:dd/MM/yyyy HH:mm:ss}\n";
+                await _emailService.SendNotificationEmailAsync("correo@ejemplo.com", "Transferencia Express Realizada", body);
+            }
+            catch { }
         }
 
         public async Task<AccountResponseDto> OwnAccountTransferAsync(OwnAccountTransferDto dto, string clientId)

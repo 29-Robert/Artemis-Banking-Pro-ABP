@@ -1,0 +1,51 @@
+@model ArtemisBankingPro.Application.DTOs.Transactions.OwnAccountTransferDto
+@{
+    ViewData["Title"] = "Transferencia entre Cuentas Propias";
+}
+
+<div class="container mt-4" style="max-width: 600px;">
+    <h2>Transferencia entre Cuentas Propias</h2>
+
+    <div class="card shadow-sm border-0 mt-3">
+        <div class="card-body p-4">
+            <form asp-action="TransferOwn" method="post">
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                <div class="mb-3">
+                    <label class="form-label">Cuenta de Origen</label>
+                    <select asp-for="SourceAccountNumber" class="form-select" required>
+                        <option value="">Seleccione cuenta origen...</option>
+                        @foreach (var acc in (IEnumerable<ArtemisBankingPro.Application.DTOs.Account.SavingsAccountListItemDto>)ViewBag.Accounts)
+                        {
+                            <option value="@acc.AccountNumber">@acc.AccountNumber - RD$ @acc.Balance.ToString("N2")</option>
+                        }
+                    </select>
+                    <span asp-validation-for="SourceAccountNumber" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Cuenta de Destino</label>
+                    <select asp-for="DestinationAccountNumber" class="form-select" required>
+                        <option value="">Seleccione cuenta destino...</option>
+                        @foreach (var acc in (IEnumerable<ArtemisBankingPro.Application.DTOs.Account.SavingsAccountListItemDto>)ViewBag.Accounts)
+                        {
+                            <option value="@acc.AccountNumber">@acc.AccountNumber - RD$ @acc.Balance.ToString("N2")</option>
+                        }
+                    </select>
+                    <span asp-validation-for="DestinationAccountNumber" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Monto a Transferir (RD$)</label>
+                    <input asp-for="Amount" type="number" step="0.01" min="0.01" class="form-control" placeholder="Ej. 1000.00" required />
+                    <span asp-validation-for="Amount" class="text-danger"></span>
+                </div>
+
+                <div class="d-flex justify-content-between mt-4">
+                    <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
+                    <button type="submit" class="btn btn-success">Transferir Fondos</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

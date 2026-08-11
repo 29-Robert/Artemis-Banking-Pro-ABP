@@ -3,14 +3,8 @@ using ArtemisBankingPro.Application.Interfaces.Services;
 using ArtemisBankingPro.Domain.Entities;
 using ArtemisBankingPro.Domain.Interfaces.Repositories;
 using AutoMapper;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
-using System.Text;
-using System.Threading.Tasks;
-
 
 
 namespace ArtemisBankingPro.Application.Services
@@ -24,11 +18,6 @@ namespace ArtemisBankingPro.Application.Services
         {
             _creditCardRepository = creditCardRepository;
             _mapper = mapper;
-        }
-
-        public CreditCardService(ICreditCardRepository creditCardRepository)
-        {
-            _creditCardRepository = creditCardRepository;
         }
 
         public async Task<CreditCardResponseDto> AssignCreditCardAsync(CreateCreditCardRequestDto request, string adminId)
