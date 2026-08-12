@@ -14,11 +14,8 @@ namespace ArtemisBankingPro.Persistence.Repositories
 {
     public class LoanInstallmentRepository : GenericRepository<LoanInstallment>, ILoanInstallmentRepository
     {
-        private readonly ApplicationDbContext _dbContext;
-
         public LoanInstallmentRepository(ApplicationDbContext dbContext) : base(dbContext)
         {
-            _dbContext = dbContext;
         }
 
         public async Task<IReadOnlyList<LoanInstallment>> GetPendingInstallmentsAsync(int loanId)

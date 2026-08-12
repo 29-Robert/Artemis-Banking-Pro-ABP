@@ -7,6 +7,7 @@ using AutoMapper;
 using System.Security.Cryptography;
 using System.Text;
 
+
 namespace ArtemisBankingPro.Application.Services
 {
     public class CreditCardService : ICreditCardService
@@ -26,20 +27,6 @@ namespace ArtemisBankingPro.Application.Services
             _userRepository = userRepository;
             _emailService = emailService;
             _mapper = mapper;
-        }
-
-        public async Task<List<CreditCardResponseDto>> GetAllCreditCardsAsync()
-        {
-            var cards = await _creditCardRepository.GetAllAsync();
-            return _mapper.Map<List<CreditCardResponseDto>>(cards);
-        }
-
-        public async Task<CreditCardResponseDto> GetCreditCardByIdAsync(int id)
-        {
-            var card = await _creditCardRepository.GetByIdAsync(id);
-            if (card == null) throw new Exception($"No se encontró una tarjeta con Id {id}.");
-
-            return _mapper.Map<CreditCardResponseDto>(card);
         }
 
         public async Task<CreditCardResponseDto> AssignCreditCardAsync(CreateCreditCardRequestDto request, string adminId)

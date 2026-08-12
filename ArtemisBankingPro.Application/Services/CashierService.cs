@@ -1,7 +1,11 @@
 ﻿using ArtemisBankingPro.Application.Interfaces.Repositories;
-using ArtemisBankingPro.Application.Interfaces.Services;
+using ArtemisBankingPro.Domain.Enums;
 using ArtemisBankingPro.Domain.Entities;
 using ArtemisBankingPro.Domain.Interfaces.Repositories;
+using ArtemisBankingPro.Application.Interfaces.Services;
+using System;
+using System.Threading.Tasks;
+using System.Linq;
 
 namespace ArtemisBankingPro.Application.Services
 {
@@ -12,65 +16,61 @@ namespace ArtemisBankingPro.Application.Services
         private readonly ICreditCardRepository _creditCardRepository;
         private readonly ISavingsAccountRepository _accountRepository;
         private readonly ITransactionRepository _transactionRepository;
-        private readonly IEmailService _emailService;
+        private readonly ICreditCardRepository _creditCardRepository;
+        private readonly ILoanRepository _loanRepository;
 
         public CashierService(
             ILoanRepository loanRepository,
             ILoanInstallmentRepository installmentRepository,
             ICreditCardRepository creditCardRepository,
-            ISavingsAccountRepository accountRepository,
+            ISavingsAccountRepository accountRepository, 
             ITransactionRepository transactionRepository,
-            IEmailService emailService)
+            ICreditCardRepository creditCardRepository,
+            ILoanRepository loanRepository)
         {
             _loanRepository = loanRepository;
             _installmentRepository = installmentRepository;
             _creditCardRepository = creditCardRepository;
             _accountRepository = accountRepository;
             _transactionRepository = transactionRepository;
-            _emailService = emailService;
+            _creditCardRepository = creditCardRepository;
+            _loanRepository = loanRepository;
         }
 
         public async Task ProcessDepositAsync(string targetAccountNumber, decimal amount, string cashierId)
         {
-            if (amount <= 0) throw new Exception("El monto del depósito debe ser mayor a cero.");
+            if (amount <= 0) throw new Exception("El monto a depositar debe ser mayor que cero.");
 
             var account = await _accountRepository.GetByAccountNumberAsync(targetAccountNumber);
-            if (account == null) throw new Exception("La cuenta destino no existe.");
-            if (account.Status != AccountStatus.Activa) throw new Exception("La cuenta está cancelada.");
+            if (account == null) throw new Exception("La cuenta de destino no existe.");
+            if (account.Status == AccountStatus.Cancelada) throw new Exception("Operación denegada. La cuenta de destino se encuentra cancelada.");
 
             account.Balance += amount;
-
             await _accountRepository.UpdateAsync(account);
-            await _transactionRepository.AddAsync(new Transaction
+
+            var transaction = new Transaction
             {
-                AccountNumber = account.AccountNumber,
+                AccountNumber = targetAccountNumber,
                 Type = TransactionType.Credito,
                 Amount = amount,
                 Status = TransactionStatus.Aprobada,
-                Description = "Depósito realizado por cajero.",
-                RelatedEntity = "CashierDeposit",
-                PerformedByUserId = ParseUserId(cashierId),
+                Description = "Depósito en efectivo por cajero",
+                PerformedByUserId = !string.IsNullOrEmpty(cashierId) ? int.Parse(cashierId) : null,
                 CreatedAt = DateTime.UtcNow
-            });
-
-            await _transactionRepository.SaveChangesAsync();
-
-            if (account.User != null)
-            {
-                await _emailService.SendNotificationEmailAsync(
-                    account.User.Email,
-                    "Depósito realizado",
-                    $"Se realizó un depósito de RD${amount:N2} a su cuenta terminada en {Last4(account.AccountNumber)}.");
-            }
+            };
+            await _transactionRepository.AddAsync(transaction);
+            await _accountRepository.SaveChangesAsync();
+        }
         }
 
         public async Task ProcessWithdrawalAsync(string sourceAccountNumber, decimal amount, string cashierId)
         {
-            if (amount <= 0) throw new Exception("El monto del retiro debe ser mayor a cero.");
+            if (amount <= 0) throw new Exception("El monto a retirar debe ser mayor que cero.");
 
             var account = await _accountRepository.GetByAccountNumberAsync(sourceAccountNumber);
-            if (account == null) throw new Exception("La cuenta origen no existe.");
-            if (account.Status != AccountStatus.Activa) throw new Exception("La cuenta está cancelada.");
+            if (account == null) throw new Exception("La cuenta de origen no existe.");
+            if (account.Status == AccountStatus.Cancelada) throw new Exception("Operación denegada. La cuenta se encuentra cancelada.");
+            if (account.Balance < amount) throw new Exception("Fondos insuficientes en la cuenta de ahorros.");
 
             if (account.Balance < amount)
             {
@@ -79,40 +79,37 @@ namespace ArtemisBankingPro.Application.Services
             }
 
             account.Balance -= amount;
-
             await _accountRepository.UpdateAsync(account);
-            await _transactionRepository.AddAsync(new Transaction
+
+            var transaction = new Transaction
             {
-                AccountNumber = account.AccountNumber,
+                AccountNumber = sourceAccountNumber,
                 Type = TransactionType.Debito,
                 Amount = amount,
                 Status = TransactionStatus.Aprobada,
-                Description = "Retiro realizado por cajero.",
-                RelatedEntity = "CashierWithdrawal",
-                PerformedByUserId = ParseUserId(cashierId),
+                Description = "Retiro en efectivo por cajero",
+                PerformedByUserId = !string.IsNullOrEmpty(cashierId) ? int.Parse(cashierId) : null,
                 CreatedAt = DateTime.UtcNow
-            });
-
-            await _transactionRepository.SaveChangesAsync();
+            };
+            await _transactionRepository.AddAsync(transaction);
+            await _accountRepository.SaveChangesAsync();
         }
 
         public async Task ProcessCreditCardPaymentAsync(string sourceAccountNumber, string cardNumber, decimal amount, string cashierId)
         {
-            if (amount <= 0) throw new Exception("El monto del pago debe ser mayor a cero.");
+            if (amount <= 0) throw new Exception("El monto a pagar debe ser mayor que cero.");
 
             var account = await _accountRepository.GetByAccountNumberAsync(sourceAccountNumber);
-            if (account == null) throw new Exception("La cuenta origen no existe.");
-            if (account.Status != AccountStatus.Activa) throw new Exception("La cuenta está cancelada.");
+            if (account == null) throw new Exception("La cuenta de origen no existe.");
+            if (account.Status == AccountStatus.Cancelada) throw new Exception("Operación denegada. La cuenta se encuentra cancelada.");
+            if (account.Balance < amount) throw new Exception("Fondos insuficientes en la cuenta de ahorros.");
 
             var card = await _creditCardRepository.GetByCardNumberAsync(cardNumber);
-            if (card == null || card.Status != "Activa") throw new Exception("La tarjeta no existe o está cancelada.");
-            if (card.CurrentDebt <= 0) throw new Exception("La tarjeta no tiene deuda pendiente.");
+            if (card == null) throw new Exception("La tarjeta de crédito especificada no existe.");
+            if (card.Status == "Cancelada") throw new Exception("Operación denegada. La tarjeta de crédito se encuentra cancelada.");
 
-            if (amount > card.CurrentDebt)
-            {
-                await RegisterRejectedAsync(account.AccountNumber, amount, "Pago a tarjeta rechazado por sobrepago.", cashierId);
-                throw new Exception("No se permiten sobrepagos a tarjetas.");
-            }
+            card.CurrentDebt = Math.Max(0, card.CurrentDebt - amount);
+            await _creditCardRepository.UpdateAsync(card);
 
             if (account.Balance < amount)
             {
@@ -126,171 +123,129 @@ namespace ArtemisBankingPro.Application.Services
             await _accountRepository.UpdateAsync(account);
             await _creditCardRepository.UpdateAsync(card);
 
-            await _transactionRepository.AddAsync(new Transaction
+            var transaction = new Transaction
             {
-                AccountNumber = account.AccountNumber,
+                AccountNumber = sourceAccountNumber,
                 Type = TransactionType.Debito,
                 Amount = amount,
                 Status = TransactionStatus.Aprobada,
-                Description = $"Pago a tarjeta terminada en {Last4(card.CardNumber)}.",
-                RelatedEntity = "CreditCardPayment",
-                PerformedByUserId = ParseUserId(cashierId),
+                Description = $"Pago de tarjeta de crédito {cardNumber}",
+                PerformedByUserId = !string.IsNullOrEmpty(cashierId) ? int.Parse(cashierId) : null,
                 CreatedAt = DateTime.UtcNow
-            });
-
-            await _transactionRepository.SaveChangesAsync();
+            };
+            await _transactionRepository.AddAsync(transaction);
+            await _accountRepository.SaveChangesAsync();
         }
 
         public async Task ProcessLoanPaymentAsync(string sourceAccountNumber, string loanNumber, decimal amount, string cashierId)
         {
-            if (amount <= 0) throw new Exception("El monto del pago debe ser mayor a cero.");
+            if (amount <= 0) throw new Exception("El monto a pagar debe ser mayor que cero.");
 
             var account = await _accountRepository.GetByAccountNumberAsync(sourceAccountNumber);
-            if (account == null) throw new Exception("La cuenta origen no existe.");
-            if (account.Status != AccountStatus.Activa) throw new Exception("La cuenta está cancelada.");
+            if (account == null) throw new Exception("La cuenta de origen no existe.");
+            if (account.Status == AccountStatus.Cancelada) throw new Exception("Operación denegada. La cuenta se encuentra cancelada.");
+            if (account.Balance < amount) throw new Exception("Fondos insuficientes en la cuenta de ahorros.");
 
             var loan = await _loanRepository.GetByLoanNumberAsync(loanNumber);
-            if (loan == null) throw new Exception("El préstamo no existe.");
-            if (loan.Status == "Completado") throw new Exception("Este préstamo ya fue completado.");
+            if (loan == null) throw new Exception("El préstamo especificado no existe.");
+            if (loan.Status == "Cancelado" || loan.Status == "Pagado") throw new Exception("Operación denegada. El préstamo ya se encuentra cancelado o pagado.");
 
-            var pendingInstallments = await _installmentRepository.GetPendingInstallmentsAsync(loan.Id);
-            var totalPending = pendingInstallments.Sum(x => x.PendingInstallmentAmount);
-
-            if (amount > totalPending)
-            {
-                await RegisterRejectedAsync(account.AccountNumber, amount, "Pago a préstamo rechazado por sobrepago.", cashierId);
-                throw new Exception("No se permiten sobrepagos a préstamos.");
-            }
-
-            if (account.Balance < amount)
-            {
-                await RegisterRejectedAsync(account.AccountNumber, amount, "Pago a préstamo rechazado por fondos insuficientes.", cashierId);
-                throw new Exception("Fondos insuficientes.");
-            }
-
-            account.Balance -= amount;
-            await _accountRepository.UpdateAsync(account);
-
-            var remaining = amount;
+            decimal remainingPayment = amount;
+            var pendingInstallments = loan.Installments
+                .Where(i => i.PaymentStatus == "Pendiente")
+                .OrderBy(i => i.InstallmentNumber)
+                .ToList();
 
             foreach (var installment in pendingInstallments)
             {
-                if (remaining <= 0) break;
+                if (remainingPayment <= 0) break;
 
-                if (remaining >= installment.PendingInstallmentAmount)
+                if (remainingPayment >= installment.PendingInstallmentAmount)
                 {
-                    remaining -= installment.PendingInstallmentAmount;
+                    remainingPayment -= installment.PendingInstallmentAmount;
                     installment.PendingInstallmentAmount = 0;
                     installment.PaymentStatus = "Pagada";
                     installment.IsLate = false;
                 }
                 else
                 {
-                    installment.PendingInstallmentAmount -= remaining;
-                    installment.PaymentStatus = "Parcialmente pagada";
-                    remaining = 0;
+                    installment.PendingInstallmentAmount -= remainingPayment;
+                    remainingPayment = 0;
                 }
+            }
 
-                await _installmentRepository.UpdateAsync(installment);
+            if (!loan.Installments.Any(i => i.PaymentStatus == "Pendiente"))
+            {
+                loan.Status = "Pagado";
             }
 
             if (!(await _installmentRepository.GetPendingInstallmentsAsync(loan.Id)).Any())
             {
                 loan.Status = "Completado";
-                await _loanRepository.UpdateAsync(loan);
-            }
+            await _loanRepository.UpdateAsync(loan);
 
-            await _transactionRepository.AddAsync(new Transaction
+            account.Balance -= amount;
+            await _accountRepository.UpdateAsync(account);
+
+            var transaction = new Transaction
             {
-                AccountNumber = account.AccountNumber,
+                AccountNumber = sourceAccountNumber,
                 Type = TransactionType.Debito,
                 Amount = amount,
                 Status = TransactionStatus.Aprobada,
-                Description = $"Pago a préstamo {loan.LoanNumber}.",
-                RelatedEntity = "LoanPayment",
-                PerformedByUserId = ParseUserId(cashierId),
+                Description = $"Pago de préstamo {loanNumber}",
+                PerformedByUserId = !string.IsNullOrEmpty(cashierId) ? int.Parse(cashierId) : null,
                 CreatedAt = DateTime.UtcNow
-            });
-
-            await _transactionRepository.SaveChangesAsync();
+            };
+            await _transactionRepository.AddAsync(transaction);
+            await _accountRepository.SaveChangesAsync();
         }
 
         public async Task ProcessPartyTransferAsync(string sourceAccount, string targetAccount, decimal amount, string cashierId)
         {
-            if (amount <= 0) throw new Exception("El monto debe ser mayor a cero.");
-            if (sourceAccount == targetAccount) throw new Exception("La cuenta origen y destino no pueden ser la misma.");
+            if (amount <= 0) throw new Exception("El monto a transferir debe ser mayor que cero.");
+            if (sourceAccount == targetAccount) throw new Exception("La cuenta de origen y destino no pueden ser la misma.");
 
-            var source = await _accountRepository.GetByAccountNumberAsync(sourceAccount);
-            var target = await _accountRepository.GetByAccountNumberAsync(targetAccount);
+            var srcAcc = await _accountRepository.GetByAccountNumberAsync(sourceAccount);
+            if (srcAcc == null) throw new Exception("La cuenta de origen no existe.");
+            if (srcAcc.Status == AccountStatus.Cancelada) throw new Exception("Operación denegada. La cuenta de origen se encuentra cancelada.");
+            if (srcAcc.Balance < amount) throw new Exception("Fondos insuficientes en la cuenta de origen.");
 
-            if (source == null) throw new Exception("La cuenta origen no existe.");
-            if (target == null) throw new Exception("La cuenta destino no existe.");
-            if (source.Status != AccountStatus.Activa || target.Status != AccountStatus.Activa) throw new Exception("Ambas cuentas deben estar activas.");
+            var tgtAcc = await _accountRepository.GetByAccountNumberAsync(targetAccount);
+            if (tgtAcc == null) throw new Exception("La cuenta de destino no existe.");
+            if (tgtAcc.Status == AccountStatus.Cancelada) throw new Exception("Operación denegada. La cuenta de destino se encuentra cancelada.");
 
-            if (source.Balance < amount)
+            srcAcc.Balance -= amount;
+            tgtAcc.Balance += amount;
+
+            await _accountRepository.UpdateAsync(srcAcc);
+            await _accountRepository.UpdateAsync(tgtAcc);
+
+            var debitTx = new Transaction
             {
-                await RegisterRejectedAsync(source.AccountNumber, amount, "Transferencia rechazada por fondos insuficientes.", cashierId);
-                throw new Exception("Fondos insuficientes.");
-            }
-
-            source.Balance -= amount;
-            target.Balance += amount;
-
-            await _accountRepository.UpdateAsync(source);
-            await _accountRepository.UpdateAsync(target);
-
-            await _transactionRepository.AddCrossEntryAsync(
-                new Transaction
-                {
-                    AccountNumber = source.AccountNumber,
-                    Type = TransactionType.Debito,
-                    Amount = amount,
-                    Status = TransactionStatus.Aprobada,
-                    Description = $"Transferencia hacia cuenta {target.AccountNumber}.",
-                    RelatedEntity = "ThirdPartyTransfer",
-                    PerformedByUserId = ParseUserId(cashierId),
-                    CreatedAt = DateTime.UtcNow
-                },
-                new Transaction
-                {
-                    AccountNumber = target.AccountNumber,
-                    Type = TransactionType.Credito,
-                    Amount = amount,
-                    Status = TransactionStatus.Aprobada,
-                    Description = $"Transferencia recibida desde cuenta {source.AccountNumber}.",
-                    RelatedEntity = "ThirdPartyTransfer",
-                    PerformedByUserId = ParseUserId(cashierId),
-                    CreatedAt = DateTime.UtcNow
-                });
-        }
-
-        private async Task RegisterRejectedAsync(string accountNumber, decimal amount, string reason, string cashierId)
-        {
-            await _transactionRepository.AddAsync(new Transaction
-            {
-                AccountNumber = accountNumber,
+                AccountNumber = sourceAccount,
                 Type = TransactionType.Debito,
                 Amount = amount,
-                Status = TransactionStatus.Rechazada,
-                Description = reason,
-                RelatedEntity = "CashierRejected",
-                PerformedByUserId = ParseUserId(cashierId),
+                Status = TransactionStatus.Aprobada,
+                Description = $"Transferencia a terceros (Caja) hacia cuenta {targetAccount}",
+                PerformedByUserId = !string.IsNullOrEmpty(cashierId) ? int.Parse(cashierId) : null,
                 CreatedAt = DateTime.UtcNow
-            });
+            };
+            await _transactionRepository.AddAsync(debitTx);
 
-            await _transactionRepository.SaveChangesAsync();
-        }
+            var creditTx = new Transaction
+            {
+                AccountNumber = targetAccount,
+                Type = TransactionType.Credito,
+                Amount = amount,
+                Status = TransactionStatus.Aprobada,
+                Description = $"Transferencia recibida (Caja) desde cuenta {sourceAccount}",
+                PerformedByUserId = !string.IsNullOrEmpty(cashierId) ? int.Parse(cashierId) : null,
+                CreatedAt = DateTime.UtcNow
+            };
+            await _transactionRepository.AddAsync(creditTx);
 
-        private static int? ParseUserId(string userId)
-        {
-            return int.TryParse(userId, out var id) ? id : null;
-        }
-
-        private static string Last4(string value)
-        {
-            return string.IsNullOrWhiteSpace(value) || value.Length < 4
-                ? value
-                : value[^4..];
+            await _accountRepository.SaveChangesAsync();
         }
 
         private async Task RegisterRejectedAsync(string accountNumber, decimal amount, string reason, string cashierId)
