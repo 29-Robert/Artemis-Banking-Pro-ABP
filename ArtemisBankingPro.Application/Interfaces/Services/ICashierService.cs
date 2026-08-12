@@ -12,6 +12,7 @@ namespace ArtemisBankingPro.Application.Interfaces.Services
         Task ProcessWithdrawalAsync(string sourceAccountNumber, decimal amount, string cashierId);
         Task ProcessCreditCardPaymentAsync(string sourceAccountNumber, string cardNumber, decimal amount, string cashierId);
         Task ProcessLoanPaymentAsync(string sourceAccountNumber, string loanNumber, decimal amount, string cashierId);
-        Task ProcessThirdPartyTransferAsync(string sourceAccount, string targetAccount, decimal amount, string cashierId);
+        Task ProcessPartyTransferAsync(string sourceAccount, string targetAccount, decimal amount, string cashierId);
+
     }
 }

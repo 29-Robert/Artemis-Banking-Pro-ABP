@@ -1,7 +1,6 @@
 ﻿using ArtemisBankingPro.Application.Interfaces.Repositories;
 using ArtemisBankingPro.Application.Interfaces.Services;
 using ArtemisBankingPro.Domain.Entities;
-using ArtemisBankingPro.Domain.Enums;
 using ArtemisBankingPro.Domain.Interfaces.Repositories;
 
 namespace ArtemisBankingPro.Application.Services
@@ -216,7 +215,7 @@ namespace ArtemisBankingPro.Application.Services
             await _transactionRepository.SaveChangesAsync();
         }
 
-        public async Task ProcessThirdPartyTransferAsync(string sourceAccount, string targetAccount, decimal amount, string cashierId)
+        public async Task ProcessPartyTransferAsync(string sourceAccount, string targetAccount, decimal amount, string cashierId)
         {
             if (amount <= 0) throw new Exception("El monto debe ser mayor a cero.");
             if (sourceAccount == targetAccount) throw new Exception("La cuenta origen y destino no pueden ser la misma.");
@@ -293,5 +292,23 @@ namespace ArtemisBankingPro.Application.Services
                 ? value
                 : value[^4..];
         }
+
+        private async Task RegisterRejectedAsync(string accountNumber, decimal amount, string reason, string cashierId)
+        {
+            var transaction = new Transaction
+            {
+                AccountNumber = accountNumber,
+                Type = TransactionType.Debito,
+                Amount = amount,
+                Status = TransactionStatus.Rechazada, 
+                Description = reason,
+                PerformedByUserId = !string.IsNullOrEmpty(cashierId) && int.TryParse(cashierId, out var id) ? id : null,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            await _transactionRepository.AddAsync(transaction);
+            await _transactionRepository.SaveChangesAsync();
+        }
     }
 }
+    
