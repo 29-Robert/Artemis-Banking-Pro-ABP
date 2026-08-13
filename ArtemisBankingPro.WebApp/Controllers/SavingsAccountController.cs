@@ -215,5 +215,50 @@ namespace ArtemisBankingPro.WebApp.Controllers
 
             return RedirectToAction("Index");
         }
+
+        [HttpPost]
+        public async Task<IActionResult> BlockAccount(string accountNumber)
+        {
+            try
+            {
+                await accountService.BlockAccountAsync(accountNumber);
+                TempData["SuccessMessage"] = $"La cuenta {accountNumber} ha sido bloqueada exitosamente.";
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = ex.Message;
+            }
+            return RedirectToAction("Index");
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> UnblockAccount(string accountNumber)
+        {
+            try
+            {
+                await accountService.UnblockAccountAsync(accountNumber);
+                TempData["SuccessMessage"] = $"La cuenta {accountNumber} ha sido desbloqueada exitosamente.";
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = ex.Message;
+            }
+            return RedirectToAction("Index");
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> SetBlockedAmount(string accountNumber, decimal amount)
+        {
+            try
+            {
+                await accountService.SetBlockedAmountAsync(accountNumber, amount);
+                TempData["SuccessMessage"] = $"Se ha registrado una retención de RD$ {amount:N2} en la cuenta {accountNumber}.";
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = ex.Message;
+            }
+            return RedirectToAction("Index");
+        }
     }
 }

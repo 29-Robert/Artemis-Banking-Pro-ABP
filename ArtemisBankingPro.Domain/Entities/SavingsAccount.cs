@@ -1,4 +1,4 @@
-﻿using ArtemisBankingPro.Domain.Common;
+using ArtemisBankingPro.Domain.Common;
 using ArtemisBankingPro.Domain.Enums;
 
 namespace ArtemisBankingPro.Domain.Entities
@@ -10,6 +10,8 @@ namespace ArtemisBankingPro.Domain.Entities
         public decimal Balance { get; set; }
         public AccountStatus Status { get; set; }
         public bool IsPrincipal { get; set; }
+        public bool IsBlocked { get; set; }
+        public decimal BlockedAmount { get; set; }
 
         public int UserId { get; set; }
         public User? User { get; set; }
