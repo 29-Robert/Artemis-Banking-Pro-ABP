@@ -163,6 +163,7 @@ namespace ArtemisBankingPro.Application.Services
             };
             await _transactionRepository.AddAsync(creditTransaction);
 
+            await _accountRepository.SaveChangesAsync();
 
             // =======================================================
             // NOTIFICACIÓN POR CORREO

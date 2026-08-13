@@ -1,0 +1,59 @@
+@model IEnumerable<ArtemisBankingPro.Domain.Entities.Beneficiary>
+@{
+    ViewData["Title"] = "Mis Beneficiarios";
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Mis Beneficiarios Registrados</h2>
+        <a asp-action="AddBeneficiary" class="btn btn-primary">Agregar Beneficiario</a>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+    }
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <table class="table mb-0 table-striped align-middle">
+                <thead>
+                    <tr>
+                        <th class="ps-3">Nombre / Alias</th>
+                        <th>Número de Cuenta</th>
+                        <th class="text-end pe-3">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Any())
+                    {
+                        <tr>
+                            <td colspan="3" class="text-center text-muted p-4">No tienes beneficiarios registrados.</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var b in Model)
+                        {
+                            <tr>
+                                <td class="ps-3 fw-bold">@b.Alias</td>
+                                <td>@b.BeneficiaryAccountNumber</td>
+                                <td class="text-end pe-3">
+                                    <a asp-action="TransferBeneficiary" asp-route-destAccount="@b.BeneficiaryAccountNumber" asp-route-alias="@b.Alias" class="btn btn-sm btn-success me-1">Transferir</a>
+                                    <form asp-action="RemoveBeneficiary" method="post" class="d-inline" onsubmit="return confirm('¿Está seguro de que desea eliminar este beneficiario?');">
+                                        <input type="hidden" name="id" value="@b.Id" />
+                                        <button type="submit" class="btn btn-sm btn-danger">Eliminar</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

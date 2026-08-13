@@ -1,10 +1,15 @@
 using ArtemisBankingPro.Application.DTOs.Account;
+using ArtemisBankingPro.Application.DTOs.Home;
+using ArtemisBankingPro.Application.DTOs.CreditCard;
+using ArtemisBankingPro.Application.DTOs.Loan;
 using ArtemisBankingPro.Application.Interfaces.Repositories;
 using ArtemisBankingPro.Application.Interfaces.Services;
 using ArtemisBankingPro.Domain.Entities;
 using ArtemisBankingPro.Domain.Enums;
 using ArtemisBankingPro.Domain.Interfaces.Repositories;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace ArtemisBankingPro.Application.Services
@@ -15,17 +20,23 @@ namespace ArtemisBankingPro.Application.Services
         private readonly ITransactionRepository _transactionRepository;
         private readonly IUserRepository _userRepository;
         private readonly ILoanRepository _loanRepository;
+        private readonly ICreditCardRepository _creditCardRepository;
+        private readonly IEmailService _emailService;
 
         public SavingsAccountService(
             ISavingsAccountRepository accountRepository,
             ITransactionRepository transactionRepository,
             IUserRepository userRepository,
-            ILoanRepository loanRepository)
+            ILoanRepository loanRepository,
+            ICreditCardRepository creditCardRepository,
+            IEmailService emailService)
         {
             _accountRepository = accountRepository;
             _transactionRepository = transactionRepository;
             _userRepository = userRepository;
             _loanRepository = loanRepository;
+            _creditCardRepository = creditCardRepository;
+            _emailService = emailService;
         }
 
         public async Task<SavingsAccountDetailDto> CreateSecondaryAccountAsync(CreateSecondaryAccountDto dto)
@@ -90,6 +101,8 @@ namespace ArtemisBankingPro.Application.Services
 
                 await _transactionRepository.AddAsync(initialTransaction);
             }
+
+            await _accountRepository.SaveChangesAsync();
 
             return new SavingsAccountDetailDto
             {
@@ -170,6 +183,7 @@ namespace ArtemisBankingPro.Application.Services
             accountToCancel.Status = AccountStatus.Cancelada;
 
             await _accountRepository.UpdateAsync(accountToCancel);
+            await _accountRepository.SaveChangesAsync();
         }
 
         public async Task<IEnumerable<TransactionDto>> GetTransactionHistoryAsync(string accountNumber, int page, int pageSize)

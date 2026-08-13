@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace ArtemisBankingPro.Persistence.Repositories
 {
-    public class SavingsAccountRepository(ApplicationDbContext dbContext) : GenericRepository<User>(dbContext), ISavingsAccountRepository
+    public class SavingsAccountRepository(ApplicationDbContext dbContext) : GenericRepository<SavingsAccount>(dbContext), ISavingsAccountRepository
     {
         public Task<SavingsAccount> AddAsync(SavingsAccount entity)
         {

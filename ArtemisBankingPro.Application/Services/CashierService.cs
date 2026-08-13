@@ -1,6 +1,7 @@
 using ArtemisBankingPro.Application.Interfaces.Repositories;
 using ArtemisBankingPro.Domain.Enums;
 using ArtemisBankingPro.Domain.Entities;
+using ArtemisBankingPro.Domain.Enums;
 using ArtemisBankingPro.Domain.Interfaces.Repositories;
 using ArtemisBankingPro.Application.Interfaces.Services;
 using System;
@@ -11,17 +12,26 @@ namespace ArtemisBankingPro.Application.Services
 {
     public class CashierService : ICashierService
     {
+        private readonly ILoanRepository _loanRepository;
+        private readonly ILoanInstallmentRepository _installmentRepository;
+        private readonly ICreditCardRepository _creditCardRepository;
         private readonly ISavingsAccountRepository _accountRepository;
         private readonly ITransactionRepository _transactionRepository;
         private readonly ICreditCardRepository _creditCardRepository;
         private readonly ILoanRepository _loanRepository;
 
         public CashierService(
+            ILoanRepository loanRepository,
+            ILoanInstallmentRepository installmentRepository,
+            ICreditCardRepository creditCardRepository,
             ISavingsAccountRepository accountRepository, 
             ITransactionRepository transactionRepository,
             ICreditCardRepository creditCardRepository,
             ILoanRepository loanRepository)
         {
+            _loanRepository = loanRepository;
+            _installmentRepository = installmentRepository;
+            _creditCardRepository = creditCardRepository;
             _accountRepository = accountRepository;
             _transactionRepository = transactionRepository;
             _creditCardRepository = creditCardRepository;
@@ -53,6 +63,7 @@ namespace ArtemisBankingPro.Application.Services
             await _transactionRepository.AddAsync(transaction);
             await _accountRepository.SaveChangesAsync();
         }
+        }
 
         public async Task ProcessWithdrawalAsync(string sourceAccountNumber, decimal amount, string cashierId)
         {
@@ -63,6 +74,12 @@ namespace ArtemisBankingPro.Application.Services
             if (account.Status == AccountStatus.Cancelada) throw new Exception("Operación denegada. La cuenta se encuentra cancelada.");
             if (account.IsBlocked) throw new Exception("Operación denegada. La cuenta se encuentra bloqueada.");
             if (account.Balance - account.BlockedAmount < amount) throw new Exception("Fondos insuficientes en la cuenta de ahorros (debido a retenciones/embargos).");
+
+            if (account.Balance < amount)
+            {
+                await RegisterRejectedAsync(account.AccountNumber, amount, "Retiro rechazado por fondos insuficientes.", cashierId);
+                throw new Exception("Fondos insuficientes.");
+            }
 
             account.Balance -= amount;
             await _accountRepository.UpdateAsync(account);
@@ -98,8 +115,17 @@ namespace ArtemisBankingPro.Application.Services
             card.CurrentDebt = Math.Max(0, card.CurrentDebt - amount);
             await _creditCardRepository.UpdateAsync(card);
 
+            if (account.Balance < amount)
+            {
+                await RegisterRejectedAsync(account.AccountNumber, amount, "Pago a tarjeta rechazado por fondos insuficientes.", cashierId);
+                throw new Exception("Fondos insuficientes.");
+            }
+
             account.Balance -= amount;
+            card.CurrentDebt -= amount;
+
             await _accountRepository.UpdateAsync(account);
+            await _creditCardRepository.UpdateAsync(card);
 
             var transaction = new Transaction
             {
@@ -144,6 +170,7 @@ namespace ArtemisBankingPro.Application.Services
                     remainingPayment -= installment.PendingInstallmentAmount;
                     installment.PendingInstallmentAmount = 0;
                     installment.PaymentStatus = "Pagada";
+                    installment.IsLate = false;
                 }
                 else
                 {
@@ -157,6 +184,9 @@ namespace ArtemisBankingPro.Application.Services
                 loan.Status = "Pagado";
             }
 
+            if (!(await _installmentRepository.GetPendingInstallmentsAsync(loan.Id)).Any())
+            {
+                loan.Status = "Completado";
             await _loanRepository.UpdateAsync(loan);
 
             account.Balance -= amount;
