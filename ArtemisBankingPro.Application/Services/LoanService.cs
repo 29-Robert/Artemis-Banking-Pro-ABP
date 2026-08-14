@@ -66,8 +66,6 @@ namespace ArtemisBankingPro.Application.Services
             await _installmentRepository.AddRangeAsync(installments);
 
 
-
-            await _accountService.CreditToMainAsync(request.ClientId,request.CapitalAmount);
             
             await _accountService.CreditToMainAccountAsync(request.ClientId, request.CapitalAmount);
             return _mapper.Map<LoanResponseDto>(created);

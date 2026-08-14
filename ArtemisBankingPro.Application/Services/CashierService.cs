@@ -8,7 +8,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using ArtemisBankingPro.Application.DTOs.Ac;
 
 namespace ArtemisBankingPro.Application.Services
 {
@@ -242,7 +241,7 @@ namespace ArtemisBankingPro.Application.Services
         // ============================================================
         // TRANSFERENCIA A TERCEROS
         // ============================================================
-        public async Task<TransactionDto> ProcessThirdPartyTransferAsync(ThirdPartyTransferRequestDto request, int cashierId)
+        public async Task<TransactionResponseDto> ProcessThirdPartyTransferAsync(ThirdPartyTransferRequestDto request, int cashierId)
         {
             if (request.SourceAccountNumber == request.DestinationAccountNumber)
                 throw new InvalidOperationException("La cuenta de origen y destino no pueden ser la misma.");
