@@ -10,7 +10,8 @@ namespace ArtemisBankingPro.Application.Interfaces.Repositories
 {
     public interface ICommerceRepository : IGenericRepository<Commerce>
     {
-        Task<Commerce> GetByRncAsync(string rnc);
-        Task<IEnumerable<Commerce>> GetPagedAsync(int page, int pageSize);
+        Task<Commerce?> GetByRncAsync(string rnc);
+        Task<Commerce?> GetByEmailAsync(string email);
+        Task<Commerce?> GetByIdWithUserAsync(int id);
     }
 }

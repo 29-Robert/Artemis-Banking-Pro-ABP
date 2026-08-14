@@ -1,4 +1,4 @@
-﻿using ArtemisBankingPro.Domain.Common;
+using ArtemisBankingPro.Domain.Common;
 using ArtemisBankingPro.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -44,10 +44,13 @@ namespace ArtemisBankingPro.Persistence.Contexts
             modelBuilder.Entity<User>().HasIndex(u => u.Cedula).IsUnique();
 
             modelBuilder.Entity<Commerce>().HasIndex(c => c.RNC).IsUnique();
+            modelBuilder.Entity<Commerce>().HasIndex(c => c.Email).IsUnique();
             modelBuilder.Entity<SavingsAccount>().HasIndex(s => s.AccountNumber).IsUnique();
 
             modelBuilder.Entity<Loan>().HasIndex(l => l.LoanNumber).IsUnique();
             modelBuilder.Entity<CreditCard>().HasIndex(cc => cc.CardNumber).IsUnique();
+
+            modelBuilder.Entity<Commerce>().HasIndex(c => c.Email).IsUnique();
 
             var seedDate = new DateTime(2026, 8, 1, 0, 0, 0, DateTimeKind.Utc);
 
