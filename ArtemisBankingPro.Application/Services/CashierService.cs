@@ -1,12 +1,9 @@
-﻿using ArtemisBankingPro.Application.Interfaces.Repositories;
+using ArtemisBankingPro.Application.Interfaces.Repositories;
 using ArtemisBankingPro.Domain.Enums;
 using ArtemisBankingPro.Domain.Entities;
-using ArtemisBankingPro.Domain.Enums;
 using ArtemisBankingPro.Domain.Interfaces.Repositories;
 using ArtemisBankingPro.Application.Interfaces.Services;
-using System;
-using System.Threading.Tasks;
-using System.Linq;
+
 
 namespace ArtemisBankingPro.Application.Services
 {
@@ -17,25 +14,19 @@ namespace ArtemisBankingPro.Application.Services
         private readonly ICreditCardRepository _creditCardRepository;
         private readonly ISavingsAccountRepository _accountRepository;
         private readonly ITransactionRepository _transactionRepository;
-        private readonly ICreditCardRepository _creditCardRepository;
-        private readonly ILoanRepository _loanRepository;
 
         public CashierService(
             ILoanRepository loanRepository,
             ILoanInstallmentRepository installmentRepository,
             ICreditCardRepository creditCardRepository,
             ISavingsAccountRepository accountRepository, 
-            ITransactionRepository transactionRepository,
-            ICreditCardRepository creditCardRepository,
-            ILoanRepository loanRepository)
+            ITransactionRepository transactionRepository)
         {
             _loanRepository = loanRepository;
             _installmentRepository = installmentRepository;
             _creditCardRepository = creditCardRepository;
             _accountRepository = accountRepository;
             _transactionRepository = transactionRepository;
-            _creditCardRepository = creditCardRepository;
-            _loanRepository = loanRepository;
         }
 
         public async Task ProcessDepositAsync(string targetAccountNumber, decimal amount, string cashierId)
@@ -45,6 +36,7 @@ namespace ArtemisBankingPro.Application.Services
             var account = await _accountRepository.GetByAccountNumberAsync(targetAccountNumber);
             if (account == null) throw new Exception("La cuenta de destino no existe.");
             if (account.Status == AccountStatus.Cancelada) throw new Exception("Operación denegada. La cuenta de destino se encuentra cancelada.");
+            if (account.IsBlocked) throw new Exception("Operación denegada. La cuenta de destino se encuentra bloqueada.");
 
             account.Balance += amount;
             await _accountRepository.UpdateAsync(account);
@@ -62,7 +54,7 @@ namespace ArtemisBankingPro.Application.Services
             await _transactionRepository.AddAsync(transaction);
             await _accountRepository.SaveChangesAsync();
         }
-        }
+        
 
         public async Task ProcessWithdrawalAsync(string sourceAccountNumber, decimal amount, string cashierId)
         {
@@ -71,7 +63,8 @@ namespace ArtemisBankingPro.Application.Services
             var account = await _accountRepository.GetByAccountNumberAsync(sourceAccountNumber);
             if (account == null) throw new Exception("La cuenta de origen no existe.");
             if (account.Status == AccountStatus.Cancelada) throw new Exception("Operación denegada. La cuenta se encuentra cancelada.");
-            if (account.Balance < amount) throw new Exception("Fondos insuficientes en la cuenta de ahorros.");
+            if (account.IsBlocked) throw new Exception("Operación denegada. La cuenta se encuentra bloqueada.");
+            if (account.Balance - account.BlockedAmount < amount) throw new Exception("Fondos insuficientes en la cuenta de ahorros (debido a retenciones/embargos).");
 
             if (account.Balance < amount)
             {
@@ -103,7 +96,8 @@ namespace ArtemisBankingPro.Application.Services
             var account = await _accountRepository.GetByAccountNumberAsync(sourceAccountNumber);
             if (account == null) throw new Exception("La cuenta de origen no existe.");
             if (account.Status == AccountStatus.Cancelada) throw new Exception("Operación denegada. La cuenta se encuentra cancelada.");
-            if (account.Balance < amount) throw new Exception("Fondos insuficientes en la cuenta de ahorros.");
+            if (account.IsBlocked) throw new Exception("Operación denegada. La cuenta se encuentra bloqueada.");
+            if (account.Balance - account.BlockedAmount < amount) throw new Exception("Fondos insuficientes en la cuenta de ahorros (debido a retenciones/embargos).");
 
             var card = await _creditCardRepository.GetByCardNumberAsync(cardNumber);
             if (card == null) throw new Exception("La tarjeta de crédito especificada no existe.");
@@ -145,7 +139,8 @@ namespace ArtemisBankingPro.Application.Services
             var account = await _accountRepository.GetByAccountNumberAsync(sourceAccountNumber);
             if (account == null) throw new Exception("La cuenta de origen no existe.");
             if (account.Status == AccountStatus.Cancelada) throw new Exception("Operación denegada. La cuenta se encuentra cancelada.");
-            if (account.Balance < amount) throw new Exception("Fondos insuficientes en la cuenta de ahorros.");
+            if (account.IsBlocked) throw new Exception("Operación denegada. La cuenta se encuentra bloqueada.");
+            if (account.Balance - account.BlockedAmount < amount) throw new Exception("Fondos insuficientes en la cuenta de ahorros (debido a retenciones/embargos).");
 
             var loan = await _loanRepository.GetByLoanNumberAsync(loanNumber);
             if (loan == null) throw new Exception("El préstamo especificado no existe.");
@@ -183,23 +178,24 @@ namespace ArtemisBankingPro.Application.Services
             if (!(await _installmentRepository.GetPendingInstallmentsAsync(loan.Id)).Any())
             {
                 loan.Status = "Completado";
-            await _loanRepository.UpdateAsync(loan);
+                await _loanRepository.UpdateAsync(loan);
 
-            account.Balance -= amount;
-            await _accountRepository.UpdateAsync(account);
+                account.Balance -= amount;
+                await _accountRepository.UpdateAsync(account);
 
-            var transaction = new Transaction
-            {
-                AccountNumber = sourceAccountNumber,
-                Type = TransactionType.Debito,
-                Amount = amount,
-                Status = TransactionStatus.Aprobada,
-                Description = $"Pago de préstamo {loanNumber}",
-                PerformedByUserId = !string.IsNullOrEmpty(cashierId) ? int.Parse(cashierId) : null,
-                CreatedAt = DateTime.UtcNow
-            };
-            await _transactionRepository.AddAsync(transaction);
-            await _accountRepository.SaveChangesAsync();
+                var transaction = new Transaction
+                {
+                    AccountNumber = sourceAccountNumber,
+                    Type = TransactionType.Debito,
+                    Amount = amount,
+                    Status = TransactionStatus.Aprobada,
+                    Description = $"Pago de préstamo {loanNumber}",
+                    PerformedByUserId = !string.IsNullOrEmpty(cashierId) ? int.Parse(cashierId) : null,
+                    CreatedAt = DateTime.UtcNow
+                };
+                await _transactionRepository.AddAsync(transaction);
+                await _accountRepository.SaveChangesAsync();
+            }
         }
 
         public async Task ProcessThirdPartyTransferAsync(string sourceAccount, string targetAccount, decimal amount, string cashierId)
@@ -210,11 +206,13 @@ namespace ArtemisBankingPro.Application.Services
             var srcAcc = await _accountRepository.GetByAccountNumberAsync(sourceAccount);
             if (srcAcc == null) throw new Exception("La cuenta de origen no existe.");
             if (srcAcc.Status == AccountStatus.Cancelada) throw new Exception("Operación denegada. La cuenta de origen se encuentra cancelada.");
-            if (srcAcc.Balance < amount) throw new Exception("Fondos insuficientes en la cuenta de origen.");
+            if (srcAcc.IsBlocked) throw new Exception("Operación denegada. La cuenta de origen se encuentra bloqueada.");
+            if (srcAcc.Balance - srcAcc.BlockedAmount < amount) throw new Exception("Fondos insuficientes en la cuenta de origen (debido a retenciones/embargos).");
 
             var tgtAcc = await _accountRepository.GetByAccountNumberAsync(targetAccount);
             if (tgtAcc == null) throw new Exception("La cuenta de destino no existe.");
             if (tgtAcc.Status == AccountStatus.Cancelada) throw new Exception("Operación denegada. La cuenta de destino se encuentra cancelada.");
+            if (tgtAcc.IsBlocked) throw new Exception("Operación denegada. La cuenta de destino se encuentra bloqueada.");
 
             srcAcc.Balance -= amount;
             tgtAcc.Balance += amount;
@@ -247,6 +245,22 @@ namespace ArtemisBankingPro.Application.Services
             await _transactionRepository.AddAsync(creditTx);
 
             await _accountRepository.SaveChangesAsync();
+        }
+
+        private async Task RegisterRejectedAsync(string accountNumber, decimal amount, string description, string cashierId)
+        {
+            var transaction = new Transaction
+            {
+                AccountNumber = accountNumber,
+                Type = TransactionType.Debito,
+                Amount = amount,
+                Status = TransactionStatus.Rechazada,
+                Description = description,
+                PerformedByUserId = !string.IsNullOrEmpty(cashierId) ? int.Parse(cashierId) : null,
+                CreatedAt = DateTime.UtcNow
+            };
+            await _transactionRepository.AddAsync(transaction);
+            await _transactionRepository.SaveChangesAsync();
         }
     }
 }

@@ -1,6 +1,7 @@
-﻿using ArtemisBankingPro.Application.Common;
+using ArtemisBankingPro.Application.Common;
 using ArtemisBankingPro.Application.DTOs.CreditCard;
 using ArtemisBankingPro.Application.Interfaces.Services;
+using ArtemisBankingPro.Application.Interfaces.Repositories;
 using ArtemisBankingPro.Domain.Entities;
 using ArtemisBankingPro.Domain.Interfaces.Repositories;
 using AutoMapper;
@@ -13,13 +14,13 @@ namespace ArtemisBankingPro.Application.Services
     public class CreditCardService : ICreditCardService
     {
         private readonly ICreditCardRepository _creditCardRepository;
-        private readonly IGenericRepository<User> _userRepository;
+        private readonly IUserRepository _userRepository;
         private readonly IEmailService _emailService;
         private readonly IMapper _mapper;
 
         public CreditCardService(
             ICreditCardRepository creditCardRepository,
-            IGenericRepository<User> userRepository,
+            IUserRepository userRepository,
             IEmailService emailService,
             IMapper mapper)
         {
@@ -127,14 +128,56 @@ namespace ArtemisBankingPro.Application.Services
             return Convert.ToHexString(bytes).ToLower();
         }
 
-        public Task<PagedResult<CreditCardResponseDto>> GetCreditCardsAsync(string? cedula, string? status, int pageNumber, int pageSize)
+        public async Task<CreditCardResponseDto> GetCreditCardByIdAsync(int id)
         {
-            throw new NotImplementedException();
+            var card = await _creditCardRepository.GetByIdAsync(id);
+            if (card == null) throw new Exception("La tarjeta seleccionada no existe.");
+            return _mapper.Map<CreditCardResponseDto>(card);
         }
 
-        public Task<CreditCardResponseDto> AssignCreditCardAsync(CreateCreditCardRequestDto request, int adminId)
+        public async Task<PagedResult<CreditCardResponseDto>> GetCreditCardsAsync(string? cedula, string? status, int pageNumber, int pageSize)
         {
-            throw new NotImplementedException();
+            var cards = await _creditCardRepository.GetAllAsync();
+
+            // Filtrar por cedula
+            if (!string.IsNullOrEmpty(cedula))
+            {
+                var user = await _userRepository.GetByCedulaAsync(cedula);
+                if (user == null)
+                {
+                    return new PagedResult<CreditCardResponseDto>
+                    {
+                        Items = new List<CreditCardResponseDto>(),
+                        TotalCount = 0,
+                        PageNumber = pageNumber,
+                        PageSize = pageSize
+                    };
+                }
+                string userIdStr = user.Id.ToString();
+                cards = cards.Where(c => c.ClientId == userIdStr).ToList();
+            }
+
+            // Filtrar por status
+            if (!string.IsNullOrEmpty(status))
+            {
+                cards = cards.Where(c => c.Status.Equals(status, StringComparison.OrdinalIgnoreCase)).ToList();
+            }
+
+            int totalRecords = cards.Count;
+            var pagedCards = cards
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            var dtos = _mapper.Map<List<CreditCardResponseDto>>(pagedCards);
+
+            return new PagedResult<CreditCardResponseDto>
+            {
+                Items = dtos,
+                TotalCount = totalRecords,
+                PageNumber = pageNumber,
+                PageSize = pageSize
+            };
         }
     }
 }

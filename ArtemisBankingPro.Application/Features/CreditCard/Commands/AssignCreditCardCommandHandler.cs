@@ -1,4 +1,4 @@
-﻿using ArtemisBankingPro.Application.DTOs.CreditCard;
+using ArtemisBankingPro.Application.DTOs.CreditCard;
 using ArtemisBankingPro.Application.Interfaces.Services;
 using MediatR;
 
@@ -21,7 +21,7 @@ namespace ArtemisBankingPro.Application.Features.CreditCard.Commands
                 CreditLimit = request.CreditLimit
             };
 
-            return await _creditCardService.AssignCreditCardAsync(createRequest, request.AdminId);
+            return await _creditCardService.AssignCreditCardAsync(createRequest, request.AdminId.ToString());
         }
     }
 }

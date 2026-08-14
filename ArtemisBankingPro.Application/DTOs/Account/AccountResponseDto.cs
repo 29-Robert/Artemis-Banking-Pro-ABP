@@ -1,6 +1,6 @@
-﻿namespace ArtemisBankingPro.Application.DTOs.Transactions
+﻿namespace ArtemisBankingPro.Application.DTOs.Account
 {
-    public class TrasferResponseDto
+    public class AccountResponseDto
     {
         public bool IsSuccess { get; set; }
         public string? Message { get; set; }
