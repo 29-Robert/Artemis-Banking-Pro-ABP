@@ -8,7 +8,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using ArtemisBankingPro.Application.DTOs.Ac;
+using ArtemisBankingPro.Application.DTOs.Account;
+using ArtemisBankingPro.Application.DTOs.Transactions;
 
 namespace ArtemisBankingPro.Application.Services
 {
@@ -37,7 +38,7 @@ namespace ArtemisBankingPro.Application.Services
         // ============================================================
         // DEPÓSITO
         // ============================================================
-        public async Task<TransactionResponseDto> ProcessDepositAsync(DepositRequestDto request, int cashierId)
+        public async Task<TransferResponseDto>ProcessDepositAsync(DepositRequestDto request, int cashierId)
         {
             var account = await _accountRepository.GetByAccountNumberAsync(request.DestinationAccountNumber);
             if (account == null)
@@ -69,7 +70,7 @@ namespace ArtemisBankingPro.Application.Services
         // ============================================================
         // RETIRO
         // ============================================================
-        public async Task<TransactionResponseDto> ProcessWithdrawalAsync(WithdrawRequestDto request, int cashierId)
+        public async Task<TransferResponseDto> ProcessWithdrawalAsync(WithdrawRequestDto request, int cashierId)
         {
             var account = await _accountRepository.GetByAccountNumberAsync(request.SourceAccountNumber);
             if (account == null)
@@ -158,7 +159,7 @@ namespace ArtemisBankingPro.Application.Services
         // ============================================================
         // PAGO A PRÉSTAMO (aplica cuotas en orden, persiste pagos parciales)
         // ============================================================
-        public async Task<TransactionResponseDto> ProcessLoanPaymentAsync(PayLoanRequestDto request, int cashierId)
+        public async Task<TransactionDto> ProcessLoanPaymentAsync(PayLoanRequestDto request, int cashierId)
         {
             var account = await _accountRepository.GetByAccountNumberAsync(request.SourceAccountNumber);
             if (account == null)
