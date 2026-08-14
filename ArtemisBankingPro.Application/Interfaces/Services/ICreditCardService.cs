@@ -1,4 +1,4 @@
-﻿using ArtemisBankingPro.Application.DTOs.CreditCard;
+using ArtemisBankingPro.Application.DTOs.CreditCard;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,15 +13,11 @@ namespace ArtemisBankingPro.Application.Interfaces.Services
         public interface ICreditCardService
         {
          
-            Task<PagedResult<CreditCardResponseDto>> GetCreditCardsAsync(
-                string? cedula,
-                string? status,
-                int pageNumber,
-                int pageSize);
+            Task<PagedResult<CreditCardResponseDto>> GetCreditCardsAsync(string? cedula, string? status, int pageNumber, int pageSize);
 
             Task<CreditCardResponseDto> GetCreditCardByIdAsync(int id);
 
-            Task<CreditCardResponseDto> AssignCreditCardAsync(CreateCreditCardRequestDto request, int adminId);
+            Task<CreditCardResponseDto> AssignCreditCardAsync(CreateCreditCardRequestDto request, string adminId);
 
             Task UpdateCreditLimitAsync(int cardId, decimal newLimit);
 

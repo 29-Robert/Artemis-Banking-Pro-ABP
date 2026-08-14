@@ -1,12 +1,9 @@
 using ArtemisBankingPro.Application.Interfaces.Repositories;
 using ArtemisBankingPro.Domain.Enums;
 using ArtemisBankingPro.Domain.Entities;
-using ArtemisBankingPro.Domain.Enums;
 using ArtemisBankingPro.Domain.Interfaces.Repositories;
 using ArtemisBankingPro.Application.Interfaces.Services;
-using System;
-using System.Threading.Tasks;
-using System.Linq;
+
 
 namespace ArtemisBankingPro.Application.Services
 {
@@ -17,25 +14,19 @@ namespace ArtemisBankingPro.Application.Services
         private readonly ICreditCardRepository _creditCardRepository;
         private readonly ISavingsAccountRepository _accountRepository;
         private readonly ITransactionRepository _transactionRepository;
-        private readonly ICreditCardRepository _creditCardRepository;
-        private readonly ILoanRepository _loanRepository;
 
         public CashierService(
             ILoanRepository loanRepository,
             ILoanInstallmentRepository installmentRepository,
             ICreditCardRepository creditCardRepository,
             ISavingsAccountRepository accountRepository, 
-            ITransactionRepository transactionRepository,
-            ICreditCardRepository creditCardRepository,
-            ILoanRepository loanRepository)
+            ITransactionRepository transactionRepository)
         {
             _loanRepository = loanRepository;
             _installmentRepository = installmentRepository;
             _creditCardRepository = creditCardRepository;
             _accountRepository = accountRepository;
             _transactionRepository = transactionRepository;
-            _creditCardRepository = creditCardRepository;
-            _loanRepository = loanRepository;
         }
 
         public async Task ProcessDepositAsync(string targetAccountNumber, decimal amount, string cashierId)
@@ -63,7 +54,7 @@ namespace ArtemisBankingPro.Application.Services
             await _transactionRepository.AddAsync(transaction);
             await _accountRepository.SaveChangesAsync();
         }
-        }
+        
 
         public async Task ProcessWithdrawalAsync(string sourceAccountNumber, decimal amount, string cashierId)
         {
@@ -187,23 +178,24 @@ namespace ArtemisBankingPro.Application.Services
             if (!(await _installmentRepository.GetPendingInstallmentsAsync(loan.Id)).Any())
             {
                 loan.Status = "Completado";
-            await _loanRepository.UpdateAsync(loan);
+                await _loanRepository.UpdateAsync(loan);
 
-            account.Balance -= amount;
-            await _accountRepository.UpdateAsync(account);
+                account.Balance -= amount;
+                await _accountRepository.UpdateAsync(account);
 
-            var transaction = new Transaction
-            {
-                AccountNumber = sourceAccountNumber,
-                Type = TransactionType.Debito,
-                Amount = amount,
-                Status = TransactionStatus.Aprobada,
-                Description = $"Pago de préstamo {loanNumber}",
-                PerformedByUserId = !string.IsNullOrEmpty(cashierId) ? int.Parse(cashierId) : null,
-                CreatedAt = DateTime.UtcNow
-            };
-            await _transactionRepository.AddAsync(transaction);
-            await _accountRepository.SaveChangesAsync();
+                var transaction = new Transaction
+                {
+                    AccountNumber = sourceAccountNumber,
+                    Type = TransactionType.Debito,
+                    Amount = amount,
+                    Status = TransactionStatus.Aprobada,
+                    Description = $"Pago de préstamo {loanNumber}",
+                    PerformedByUserId = !string.IsNullOrEmpty(cashierId) ? int.Parse(cashierId) : null,
+                    CreatedAt = DateTime.UtcNow
+                };
+                await _transactionRepository.AddAsync(transaction);
+                await _accountRepository.SaveChangesAsync();
+            }
         }
 
         public async Task ProcessThirdPartyTransferAsync(string sourceAccount, string targetAccount, decimal amount, string cashierId)
@@ -253,6 +245,22 @@ namespace ArtemisBankingPro.Application.Services
             await _transactionRepository.AddAsync(creditTx);
 
             await _accountRepository.SaveChangesAsync();
+        }
+
+        private async Task RegisterRejectedAsync(string accountNumber, decimal amount, string description, string cashierId)
+        {
+            var transaction = new Transaction
+            {
+                AccountNumber = accountNumber,
+                Type = TransactionType.Debito,
+                Amount = amount,
+                Status = TransactionStatus.Rechazada,
+                Description = description,
+                PerformedByUserId = !string.IsNullOrEmpty(cashierId) ? int.Parse(cashierId) : null,
+                CreatedAt = DateTime.UtcNow
+            };
+            await _transactionRepository.AddAsync(transaction);
+            await _transactionRepository.SaveChangesAsync();
         }
     }
 }

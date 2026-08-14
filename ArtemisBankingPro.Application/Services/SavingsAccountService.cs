@@ -489,5 +489,34 @@ namespace ArtemisBankingPro.Application.Services
             await _accountRepository.UpdateAsync(account);
             await _accountRepository.SaveChangesAsync();
         }
+
+        public async Task CreditToMainAsync(string clientId, decimal amount)
+        {
+            if (amount < 0)
+                throw new Exception("El monto a acreditar debe ser mayor que cero.");
+            
+
+            int userId = int.Parse(clientId);
+            var principalAccount = await _accountRepository.GetPrincipalByClientAsync(userId);
+
+            if (principalAccount == null || principalAccount.Status != AccountStatus.Activa)
+                throw new Exception("El cliente no tiene una cuenta principal activa.");
+
+            principalAccount.Balance += amount;
+            await _accountRepository.UpdateAsync(principalAccount);
+
+            var transaction = new Transaction
+            {
+                AccountNumber = principalAccount.AccountNumber,
+                Type = TransactionType.Credito,
+                Amount = amount,
+                Status = TransactionStatus.Aprobada,
+                Description = "Desembolso de fondos de préstamo aprobado",
+                CreatedAt = DateTime.UtcNow
+            };
+
+            await _transactionRepository.AddAsync(transaction);
+            await _accountRepository.SaveChangesAsync();
+        }
     }
 }

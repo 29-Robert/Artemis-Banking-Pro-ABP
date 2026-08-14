@@ -14,19 +14,9 @@ namespace ArtemisBankingPro.Persistence.Repositories
 {
     public class SavingsAccountRepository(ApplicationDbContext dbContext) : GenericRepository<SavingsAccount>(dbContext), ISavingsAccountRepository
     {
-        public Task<SavingsAccount> AddAsync(SavingsAccount entity)
-        {
-            throw new NotImplementedException();
-        }
-
         public async Task<int> CountActiveAccountsByClientIdAsync(int clientId)
         {
             return await _dbContext.SavingsAccounts.CountAsync(s => s.UserId == clientId && s.Status == AccountStatus.Activa);
-        }
-
-        public Task DeleteAsync(SavingsAccount entity)
-        {
-            throw new NotImplementedException();
         }
 
         public async Task<SavingsAccount> GetByAccountNumberAsync(string accountNumber)
@@ -67,24 +57,6 @@ namespace ArtemisBankingPro.Persistence.Repositories
             return await _dbContext.SavingsAccounts.FirstOrDefaultAsync(s => s.UserId == clientId && s.IsPrincipal);
         }
 
-        public Task UpdateAsync(SavingsAccount entity)
-        {
-            throw new NotImplementedException();
-        }
 
-        Task<IReadOnlyList<SavingsAccount>> IGenericRepository<SavingsAccount>.GetAllAsync()
-        {
-            throw new NotImplementedException();
-        }
-
-        Task<SavingsAccount> IGenericRepository<SavingsAccount>.GetByIdAsync(int id)
-        {
-            throw new NotImplementedException();
-        }
-
-        Task<(IReadOnlyList<SavingsAccount> Data, int TotalRecords)> IGenericRepository<SavingsAccount>.GetPagedAsync(int page, int pageSize, string filter)
-        {
-            throw new NotImplementedException();
-        }
     }
 }

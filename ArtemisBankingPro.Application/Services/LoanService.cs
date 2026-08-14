@@ -16,14 +16,20 @@ namespace ArtemisBankingPro.Application.Services
         private readonly ILoanRepository _loanRepository;
         private readonly ILoanInstallmentRepository _installmentRepository;
         private readonly IMapper _mapper;
+        private readonly ISavingsAccountService _accountService;
+
         public LoanService(ILoanRepository loanRepository,
                            ILoanInstallmentRepository installmentRepository,
-                           IMapper mapper)
+                           IMapper mapper,
+                           ISavingsAccountService savingsAccountService)
         {
             _loanRepository = loanRepository;
             _installmentRepository = installmentRepository;
             _mapper = mapper;
+            _accountService = savingsAccountService;
         }
+
+
         // GET ALL 
         public async Task<List<LoanResponseDto>> GetAllLoansAsync()
         {
@@ -64,7 +70,7 @@ namespace ArtemisBankingPro.Application.Services
 
 
             // 4. TODO: Desembolso a cuenta principal del cliente (espera Persona 3)
-            //await _accountService.CreditToMainAccountAsync(request.ClientId, request.CapitalAmount);
+            await _accountService.CreditToMainAsync(request.ClientId, request.CapitalAmount);
             return _mapper.Map<LoanResponseDto>(created);
         }
         // UPDATE RATE
@@ -82,7 +88,7 @@ namespace ArtemisBankingPro.Application.Services
         {
             var installments = new List<LoanInstallment>();
             decimal monthlyRate = (annualRate / 100m) / 12m;
-            // Fórmula cuota francesa: C = P * [r(1+r)^n] / [(1+r)^n - 1]
+            // Fórmula cuota mensual: C = P * [r(1+r)^n] / [(1+r)^n - 1]
             decimal monthlyInstallment;
             if (monthlyRate == 0)
             {

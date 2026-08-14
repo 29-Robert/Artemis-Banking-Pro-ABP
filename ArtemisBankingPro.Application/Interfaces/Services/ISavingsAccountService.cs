@@ -21,5 +21,7 @@ namespace ArtemisBankingPro.Application.Interfaces.Services
         Task BlockAccountAsync(string accountNumber);
         Task UnblockAccountAsync(string accountNumber);
         Task SetBlockedAmountAsync(string accountNumber, decimal amount);
+
+        Task CreditToMainAsync(string clientId, decimal amount);
     }
 }
