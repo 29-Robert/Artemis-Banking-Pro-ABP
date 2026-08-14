@@ -37,16 +37,18 @@ builder.Services.AddScoped<ISavingsAccountRepository, SavingsAccountRepository>(
 builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
 builder.Services.AddScoped<ISavingsAccountService, SavingsAccountService>();
 
-//builder.Services.AddScoped<ILoanService, LoanService>();
+builder.Services.AddScoped<ILoanService, LoanService>();
 builder.Services.AddScoped<ILoanService, LoanService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<ISavingsAccountRepository, SavingsAccountRepository>();
 builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
 builder.Services.AddScoped<ISavingsAccountService, SavingsAccountService>();
 
-//builder.Services.AddScoped<ILoanService, LoanService>();
+builder.Services.AddScoped<ILoanService, LoanService>();
 builder.Services.AddScoped<ICreditCardService, CreditCardService>();
-//builder.Services.AddScoped<ICashierService, CashierService>();
+builder.Services.AddScoped<ICommerceRepository, CommerceRepository>();
+builder.Services.AddScoped<ICommerceService, CommerceService>();
+builder.Services.AddScoped<ICashierService, CashierService>();
 
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 

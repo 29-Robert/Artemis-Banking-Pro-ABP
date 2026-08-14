@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MediatR.NotificationPublishers;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,9 +9,11 @@ namespace ArtemisBankingPro.Application.DTOs.Commerces
 {
     public class CreateCommerceDto
     {
-        public string BusinessName { get; set; }
-        public string RNC { get; set; }
-        public string Email { get; set; }
-        public string Password { get; set; }
+        public string BusinessName { get; set; } = string.Empty;
+        public string RNC { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
+        public string Phone { get; set; } = string.Empty;
+        public string Address { get; set; } = string.Empty;
     }
 }

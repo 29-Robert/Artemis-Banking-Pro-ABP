@@ -1,9 +1,14 @@
-using ArtemisBankingPro.Domain.Common;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
-namespace ArtemisBankingPro.Domain.Entities
+namespace ArtemisBankingPro.Application.DTOs.Commerces
 {
-    public class Commerce : BaseEntity
+    public class CommerceDetailDto
     {
+        public int Id { get; set; }
         public string BusinessName { get; set; } = string.Empty;
         public string RNC { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
@@ -11,7 +16,5 @@ namespace ArtemisBankingPro.Domain.Entities
         public string Address { get; set; } = string.Empty;
         public bool IsActive { get; set; }
         public string PrincipalAccountNumber { get; set; } = string.Empty;
-
-        public User? User { get; set; }
     }
 }

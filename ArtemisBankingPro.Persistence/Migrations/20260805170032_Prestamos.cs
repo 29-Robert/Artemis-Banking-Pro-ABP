@@ -12,29 +12,6 @@ namespace ArtemisBankingPro.Persistence.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
-                name: "CreditCards",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    ClientId = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    CardNumber = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    CreditLimit = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    CurrentDebt = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    ExpirationMonth = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    ExpirationYear = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    CvcHash = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Status = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    AdminId = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_CreditCards", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Loans",
                 columns: table => new
                 {
