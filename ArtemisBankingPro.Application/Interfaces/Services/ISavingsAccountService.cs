@@ -16,12 +16,5 @@ namespace ArtemisBankingPro.Application.Interfaces.Services
         Task ProcessCreditCardPaymentOwnAccountAsync(string sourceAccountNumber, string cardNumber, decimal amount, string clientId);
         Task ProcessLoanPaymentOwnAccountAsync(string sourceAccountNumber, string loanNumber, decimal amount, string clientId);
         Task ProcessCashAdvanceAsync(string sourceAccountNumber, string cardNumber, decimal amount, string clientId);
-
-        // Métodos administrativos para bloqueos y retenciones:
-        Task BlockAccountAsync(string accountNumber);
-        Task UnblockAccountAsync(string accountNumber);
-        Task SetBlockedAmountAsync(string accountNumber, decimal amount);
-
-        Task CreditToMainAsync(string clientId, decimal amount);
     }
 }

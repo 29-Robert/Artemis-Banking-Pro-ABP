@@ -61,7 +61,6 @@
                 <th>Balance</th>
                 <th>Tipo</th>
                 <th>Estado</th>
-                <th>Bloqueos</th>
                 <th>Acciones</th>
             </tr>
         </thead>
@@ -84,52 +83,10 @@
                         </span>
                     </td>
                     <td>
-                        @if (item.IsBlocked)
+                        <a asp-action="Details" asp-route-accountNumber="@item.AccountNumber" class="btn btn-sm btn-outline-secondary">Ver Historial</a>
+                        @if (item.Type == ArtemisBankingPro.Domain.Enums.AccountType.Secundaria && item.Status == ArtemisBankingPro.Domain.Enums.AccountStatus.Activa)
                         {
-                            <span class="badge bg-danger d-block mb-1">Bloqueada</span>
-                        }
-                        @if (item.BlockedAmount > 0)
-                        {
-                            <span class="badge bg-warning text-dark d-block">Retenido: RD$ @item.BlockedAmount.ToString("N2")</span>
-                        }
-                        @if (!item.IsBlocked && item.BlockedAmount == 0)
-                        {
-                            <span class="badge bg-secondary">Ninguno</span>
-                        }
-                    </td>
-                    <td>
-                        <a asp-action="Details" asp-route-accountNumber="@item.AccountNumber" class="btn btn-sm btn-outline-secondary">Historial</a>
-                        @if (item.Status == ArtemisBankingPro.Domain.Enums.AccountStatus.Activa)
-                        {
-                            @if (item.IsBlocked)
-                            {
-                                <form asp-action="UnblockAccount" method="post" class="d-inline">
-                                    <input type="hidden" name="accountNumber" value="@item.AccountNumber" />
-                                    <button type="submit" class="btn btn-sm btn-success">Desbloquear</button>
-                                </form>
-                            }
-                            else
-                            {
-                                <form asp-action="BlockAccount" method="post" class="d-inline" onsubmit="return confirm('¿Está seguro de bloquear la cuenta @item.AccountNumber?');">
-                                    <input type="hidden" name="accountNumber" value="@item.AccountNumber" />
-                                    <button type="submit" class="btn btn-sm btn-warning text-dark">Bloquear</button>
-                                </form>
-                            }
-                            
-                            <button type="button" class="btn btn-sm btn-info text-white" data-bs-toggle="collapse" data-bs-target="#retention-@item.AccountNumber">Retener</button>
-                            
-                            @if (item.Type == ArtemisBankingPro.Domain.Enums.AccountType.Secundaria)
-                            {
-                                <a asp-action="CancelConfirm" asp-route-accountNumber="@item.AccountNumber" class="btn btn-sm btn-danger">Cancelar</a>
-                            }
-                            
-                            <div class="collapse mt-2" id="retention-@item.AccountNumber">
-                                <form asp-action="SetBlockedAmount" method="post" class="input-group input-group-sm" style="max-width: 250px;">
-                                    <input type="hidden" name="accountNumber" value="@item.AccountNumber" />
-                                    <input type="number" name="amount" value="@item.BlockedAmount" step="0.01" min="0" class="form-control" placeholder="Monto retención" required />
-                                    <button type="submit" class="btn btn-primary">Fijar</button>
-                                </form>
-                            </div>
+                            <a asp-action="CancelConfirm" asp-route-accountNumber="@item.AccountNumber" class="btn btn-sm btn-danger">Cancelar</a>
                         }
                     </td>
                 </tr>

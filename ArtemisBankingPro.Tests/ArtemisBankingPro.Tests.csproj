@@ -9,7 +9,6 @@
 
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="6.0.2" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="9.0.1" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
     <PackageReference Include="Moq" Version="4.20.72" />
     <PackageReference Include="xunit" Version="2.9.2" />
@@ -17,13 +16,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Using Include="Xunit" />
+    <ProjectReference Include="..\ArtemisBankingPro.Application\ArtemisBankingPro.Application.csproj" />
+    <ProjectReference Include="..\ArtemisBankingPro.Domain\ArtemisBankingPro.Domain.csproj" />
+    <ProjectReference Include="..\ArtemisBankingPro.WebApi\ArtemisBankingPro.WebApi.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ArtemisBankingPro.Domain\ArtemisBankingPro.Domain.csproj" />
-    <ProjectReference Include="..\ArtemisBankingPro.Application\ArtemisBankingPro.Application.csproj" />
-    <ProjectReference Include="..\ArtemisBankingPro.Persistence\ArtemisBankingPro.Persistence.csproj" />
+    <Using Include="Xunit" />
   </ItemGroup>
 
 </Project>

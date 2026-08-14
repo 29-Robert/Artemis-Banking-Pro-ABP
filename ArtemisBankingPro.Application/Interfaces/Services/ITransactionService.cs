@@ -11,6 +11,6 @@ namespace ArtemisBankingPro.Application.Interfaces.Services
     {
         Task ExpressTransactionAsync(ExpressTransactionDto dto);
 
-        Task<TrasferResponseDto> OwnAccountTransferAsync(OwnAccountTransferDto dto, string clientId);
+        Task<AccountResponseDto> OwnAccountTransferAsync(OwnAccountTransferDto dto, string clientId);
     }
 }

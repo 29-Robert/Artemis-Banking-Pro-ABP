@@ -51,6 +51,15 @@ namespace ArtemisBankingPro.Persistence.Contexts
             modelBuilder.Entity<CreditCard>().HasIndex(cc => cc.CardNumber).IsUnique();
 
             modelBuilder.Entity<Commerce>().HasIndex(c => c.Email).IsUnique();
+            modelBuilder.Entity<Loan>()
+           .HasMany(l => l.Installments)
+           .WithOne(i => i.Loan)
+           .HasForeignKey(i => i.LoanId);
+
+            modelBuilder.Entity<CreditCard>()
+           .HasMany(c => c.Consumptions)
+           .WithOne(c => c.CreditCard)
+           .HasForeignKey(c => c.CreditCardId);
 
             var seedDate = new DateTime(2026, 8, 1, 0, 0, 0, DateTimeKind.Utc);
 
