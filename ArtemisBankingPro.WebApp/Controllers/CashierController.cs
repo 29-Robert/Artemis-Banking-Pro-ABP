@@ -1,4 +1,4 @@
-﻿using ArtemisBankingPro.Application.Interfaces.Services;
+using ArtemisBankingPro.Application.Interfaces.Services;
 using ArtemisBankingPro.WebApp.Models;
 using ArtemisBankingPro.WebApp.ViewModels;
 using Microsoft.AspNetCore.Authorization;
@@ -35,7 +35,8 @@ namespace ArtemisBankingPro.WebApp.Controllers
 
             try
             {
-                await _cashierService.ProcessDepositAsync(model.TargetAccountNumber, model.Amount, GetUserId());
+                var dto = new ArtemisBankingPro.Application.DTOs.Cashier.DepositRequestDto { DestinationAccountNumber = model.TargetAccountNumber, Amount = model.Amount };
+                await _cashierService.ProcessDepositAsync(dto, int.Parse(GetUserId()));
                 TempData["SuccessMessage"] = "Depósito realizado correctamente.";
                 return RedirectToAction("Index");
             }
@@ -59,7 +60,8 @@ namespace ArtemisBankingPro.WebApp.Controllers
 
             try
             {
-                await _cashierService.ProcessWithdrawalAsync(model.SourceAccountNumber, model.Amount, GetUserId());
+                var dto = new ArtemisBankingPro.Application.DTOs.Cashier.WithdrawRequestDto { SourceAccountNumber = model.SourceAccountNumber, Amount = model.Amount };
+                await _cashierService.ProcessWithdrawalAsync(dto, int.Parse(GetUserId()));
                 TempData["SuccessMessage"] = "Retiro realizado correctamente.";
                 return RedirectToAction("Index");
             }
@@ -83,7 +85,8 @@ namespace ArtemisBankingPro.WebApp.Controllers
 
             try
             {
-                await _cashierService.ProcessCreditCardPaymentAsync(model.SourceAccountNumber, model.CardNumber, model.Amount, GetUserId());
+                var dto = new ArtemisBankingPro.Application.DTOs.Cashier.PayCreditCardRequestDto { SourceAccountNumber = model.SourceAccountNumber, CardNumber = model.CardNumber, Amount = model.Amount };
+                await _cashierService.ProcessCreditCardPaymentAsync(dto, int.Parse(GetUserId()));
                 TempData["SuccessMessage"] = "Pago a tarjeta realizado correctamente.";
                 return RedirectToAction("Index");
             }
@@ -107,7 +110,8 @@ namespace ArtemisBankingPro.WebApp.Controllers
 
             try
             {
-                await _cashierService.ProcessLoanPaymentAsync(model.SourceAccountNumber, model.LoanNumber, model.Amount, GetUserId());
+                var dto = new ArtemisBankingPro.Application.DTOs.Cashier.PayLoanRequestDto { SourceAccountNumber = model.SourceAccountNumber, LoanNumber = model.LoanNumber, Amount = model.Amount };
+                await _cashierService.ProcessLoanPaymentAsync(dto, int.Parse(GetUserId()));
                 TempData["SuccessMessage"] = "Pago a préstamo realizado correctamente.";
                 return RedirectToAction("Index");
             }
@@ -131,7 +135,8 @@ namespace ArtemisBankingPro.WebApp.Controllers
 
             try
             {
-                await _cashierService.ProcessThirdPartyTransferAsync(model.SourceAccountNumber, model.TargetAccountNumber, model.Amount, GetUserId());
+                var dto = new ArtemisBankingPro.Application.DTOs.Cashier.ThirdPartyTransferRequestDto { SourceAccountNumber = model.SourceAccountNumber, DestinationAccountNumber = model.TargetAccountNumber, Amount = model.Amount };
+                await _cashierService.ProcessThirdPartyTransferAsync(dto, int.Parse(GetUserId()));
                 TempData["SuccessMessage"] = "Transferencia realizada correctamente.";
                 return RedirectToAction("Index");
             }

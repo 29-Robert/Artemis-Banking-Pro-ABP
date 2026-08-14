@@ -1,4 +1,4 @@
-﻿using ArtemisBankingPro.Application.DTOs.Loan;
+using ArtemisBankingPro.Application.DTOs.Loan;
 using ArtemisBankingPro.Application.Interfaces.Services;
 using ArtemisBankingPro.Domain.Entities;
 using ArtemisBankingPro.Domain.Interfaces.Repositories;
@@ -49,13 +49,13 @@ namespace ArtemisBankingPro.Application.Services
           
             var loan = new Loan
             {
-                ClientId = request.ClientId,
+                ClientId = int.Parse(request.ClientId),
                 LoanNumber = GenerateUniqueLoanNumber(),
                 CapitalAmount = request.CapitalAmount,
                 TermInMonths = request.TermInMonths,
                 AnnualInterestRate = request.AnnualInterestRate,
                 Status = "Activo",
-                AdminId = adminId,
+                AdminId = int.Parse(adminId),
                 CreatedAt = DateTime.UtcNow
             };
             var created = await _loanRepository.AddAsync(loan);
@@ -67,8 +67,6 @@ namespace ArtemisBankingPro.Application.Services
 
 
 
-            await _accountService.CreditToMainAsync(request.ClientId,request.CapitalAmount);
-            
             await _accountService.CreditToMainAccountAsync(request.ClientId, request.CapitalAmount);
             return _mapper.Map<LoanResponseDto>(created);
         }

@@ -1,10 +1,10 @@
-﻿using ArtemisBankingPro.Application.DTOs.CreditCard;
+using ArtemisBankingPro.Application.DTOs.CreditCard;
 using ArtemisBankingPro.Application.Interfaces.Services;
 using MediatR;
 
 namespace ArtemisBankingPro.Application.Features.CreditCard.Commands
 {
-    public class AssignCreditCardCommandHandler : IRequestHandler<AssignCreditCardCommand, CreditCardResponseDto>
+    public class AssignCreditCardCommandHandler : IRequestHandler<AssignCreditCardCommand, CreditCardCreatedResponseDto>
     {
         private readonly ICreditCardService _creditCardService;
 
@@ -13,7 +13,7 @@ namespace ArtemisBankingPro.Application.Features.CreditCard.Commands
             _creditCardService = creditCardService;
         }
 
-        public async Task<CreditCardResponseDto> Handle(AssignCreditCardCommand request, CancellationToken cancellationToken)
+        public async Task<CreditCardCreatedResponseDto> Handle(AssignCreditCardCommand request, CancellationToken cancellationToken)
         {
             var createRequest = new CreateCreditCardRequestDto
             {

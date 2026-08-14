@@ -1,4 +1,4 @@
-﻿using ArtemisBankingPro.Application.Common;
+using ArtemisBankingPro.Application.Common;
 using ArtemisBankingPro.Application.DTOs.CreditCard;
 
 namespace ArtemisBankingPro.Application.Interfaces.Services
@@ -7,6 +7,8 @@ namespace ArtemisBankingPro.Application.Interfaces.Services
     {
         Task<PagedResult<CreditCardResponseDto>> GetCreditCardsAsync(
             string? cedula, string? status, int pageNumber, int pageSize);
+        
+        Task<List<CreditCardResponseDto>> GetAllCreditCardsAsync();
 
         Task<CreditCardResponseDto> GetCreditCardByIdAsync(int id);
 

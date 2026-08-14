@@ -13,6 +13,7 @@ namespace ArtemisBankingPro.Application.Interfaces.Services
         
         // Métodos agregados para el cliente:
         Task<ClientHomeDto> GetClientHomeDataAsync(string clientId);
+        Task CreditToMainAccountAsync(string clientId, decimal amount);
         Task ProcessCreditCardPaymentOwnAccountAsync(string sourceAccountNumber, string cardNumber, decimal amount, string clientId);
         Task ProcessLoanPaymentOwnAccountAsync(string sourceAccountNumber, string loanNumber, decimal amount, string clientId);
         Task ProcessCashAdvanceAsync(string sourceAccountNumber, string cardNumber, decimal amount, string clientId);

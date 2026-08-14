@@ -1,4 +1,4 @@
-﻿using ArtemisBankingPro.Application.Interfaces.Repositories;
+using ArtemisBankingPro.Application.Interfaces.Repositories;
 using ArtemisBankingPro.Application.Services;
 using ArtemisBankingPro.Domain.Entities;
 using ArtemisBankingPro.Domain.Enums;
@@ -26,7 +26,8 @@ namespace ArtemisBankingPro.Tests
 
             var service = CreateService(accounts, transactions);
 
-            await service.ProcessDepositAsync("123456789", 500m, "2");
+            var depositDto = new ArtemisBankingPro.Application.DTOs.Cashier.DepositRequestDto { DestinationAccountNumber = "123456789", Amount = 500m };
+            await service.ProcessDepositAsync(depositDto, 2);
 
             Assert.Equal(1500m, account.Balance);
             transactions.Verify(x => x.AddAsync(It.Is<Transaction>(t =>
@@ -47,7 +48,10 @@ namespace ArtemisBankingPro.Tests
             var service = CreateService(accounts, transactions);
 
             await Assert.ThrowsAsync<Exception>(() =>
-                service.ProcessWithdrawalAsync("123456789", 500m, "2"));
+            {
+                var withdrawalDto = new ArtemisBankingPro.Application.DTOs.Cashier.WithdrawRequestDto { SourceAccountNumber = "123456789", Amount = 500m };
+                return service.ProcessWithdrawalAsync(withdrawalDto, 2);
+            });
         }
 
         [Fact]
@@ -66,7 +70,10 @@ namespace ArtemisBankingPro.Tests
             var service = CreateService(accounts, transactions, cards);
 
             await Assert.ThrowsAsync<Exception>(() =>
-                service.ProcessCreditCardPaymentAsync("123456789", "1234567812345678", 1500m, "2"));
+            {
+                var payDto = new ArtemisBankingPro.Application.DTOs.Cashier.PayCreditCardRequestDto { SourceAccountNumber = "123456789", CardNumber = "1234567812345678", Amount = 1500m };
+                return service.ProcessCreditCardPaymentAsync(payDto, 2);
+            });
         }
 
         private static CashierService CreateService(

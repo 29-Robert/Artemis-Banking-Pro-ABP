@@ -1,4 +1,4 @@
-﻿using ArtemisBankingPro.Application.DTOs.Cashier;
+using ArtemisBankingPro.Application.DTOs.Cashier;
 using ArtemisBankingPro.Application.Interfaces.Repositories;
 using ArtemisBankingPro.Application.Interfaces.Services;
 using ArtemisBankingPro.Domain.Entities;
@@ -38,7 +38,7 @@ namespace ArtemisBankingPro.Application.Services
         // ============================================================
         // DEPÓSITO
         // ============================================================
-        public async Task<TransferResponseDto>ProcessDepositAsync(DepositRequestDto request, int cashierId)
+        public async Task<TransactionResponseDto> ProcessDepositAsync(DepositRequestDto request, int cashierId)
         {
             var account = await _accountRepository.GetByAccountNumberAsync(request.DestinationAccountNumber);
             if (account == null)
@@ -70,7 +70,7 @@ namespace ArtemisBankingPro.Application.Services
         // ============================================================
         // RETIRO
         // ============================================================
-        public async Task<TransferResponseDto> ProcessWithdrawalAsync(WithdrawRequestDto request, int cashierId)
+        public async Task<TransactionResponseDto> ProcessWithdrawalAsync(WithdrawRequestDto request, int cashierId)
         {
             var account = await _accountRepository.GetByAccountNumberAsync(request.SourceAccountNumber);
             if (account == null)
@@ -159,7 +159,7 @@ namespace ArtemisBankingPro.Application.Services
         // ============================================================
         // PAGO A PRÉSTAMO (aplica cuotas en orden, persiste pagos parciales)
         // ============================================================
-        public async Task<TransactionDto> ProcessLoanPaymentAsync(PayLoanRequestDto request, int cashierId)
+        public async Task<TransactionResponseDto> ProcessLoanPaymentAsync(PayLoanRequestDto request, int cashierId)
         {
             var account = await _accountRepository.GetByAccountNumberAsync(request.SourceAccountNumber);
             if (account == null)
@@ -243,7 +243,7 @@ namespace ArtemisBankingPro.Application.Services
         // ============================================================
         // TRANSFERENCIA A TERCEROS
         // ============================================================
-        public async Task<TransactionDto> ProcessThirdPartyTransferAsync(ThirdPartyTransferRequestDto request, int cashierId)
+        public async Task<TransactionResponseDto> ProcessThirdPartyTransferAsync(ThirdPartyTransferRequestDto request, int cashierId)
         {
             if (request.SourceAccountNumber == request.DestinationAccountNumber)
                 throw new InvalidOperationException("La cuenta de origen y destino no pueden ser la misma.");
