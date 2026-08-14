@@ -1,4 +1,4 @@
-﻿/*using ArtemisBankingPro.Application.DTOs.Loan;
+﻿using ArtemisBankingPro.Application.DTOs.Loan;
 using ArtemisBankingPro.Application.Interfaces.Services;
 using ArtemisBankingPro.Domain.Entities;
 using ArtemisBankingPro.Domain.Interfaces.Repositories;
@@ -134,4 +134,3 @@ namespace ArtemisBankingPro.Application.Services
     }
 
 }
-*/

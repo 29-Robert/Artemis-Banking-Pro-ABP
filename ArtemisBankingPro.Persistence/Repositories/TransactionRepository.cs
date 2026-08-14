@@ -36,5 +36,16 @@ namespace ArtemisBankingPro.Persistence.Repositories
                 throw;
             }
         }
+
+            public async Task<IEnumerable<Transaction>> GetByPerformedUserAndDateAsync(int cashierId,DateTime date)
+            
+            {
+            return await _dbContext.Transactions
+                .Where(t =>
+                    t.PerformedByUserId == cashierId &&
+                    t.CreatedAt.Date == date.Date)
+                .ToListAsync();
+            }
     }
+    
 }

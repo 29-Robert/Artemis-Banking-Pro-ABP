@@ -221,7 +221,7 @@ namespace ArtemisBankingPro.Application.Services
             {
                 Id = l.Id,
                 LoanNumber = l.LoanNumber,
-                ClientId = l.ClientId,
+                ClientId = l.ClientId.ToString(),
                 ClientFullName = $"{user.FirstName} {user.LastName}",
                 CapitalAmount = l.CapitalAmount,
                 TermInMonths = l.TermInMonths,
