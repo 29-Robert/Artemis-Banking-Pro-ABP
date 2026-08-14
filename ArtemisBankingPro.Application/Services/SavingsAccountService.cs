@@ -131,21 +131,11 @@ namespace ArtemisBankingPro.Application.Services
                 throw new Exception("Las cuentas principales no pueden ser canceladas.");
             }
 
-            if (accountToCancel.IsBlocked)
-            {
-                throw new Exception("La cuenta seleccionada está bloqueada.");
-            }
-
             var principalAccount = await _accountRepository.GetPrincipalByClientAsync(accountToCancel.UserId);
 
             if (principalAccount == null || principalAccount.Status != AccountStatus.Activa)
             {
                 throw new Exception("No es posible cancelar la cuenta porque el cliente no tiene una cuenta principal activa para recibir los fondos.");
-            }
-
-            if (principalAccount.IsBlocked)
-            {
-                throw new Exception("La cuenta principal del cliente se encuentra bloqueada.");
             }
 
             if (accountToCancel.Balance > 0 )
@@ -231,7 +221,7 @@ namespace ArtemisBankingPro.Application.Services
             {
                 Id = l.Id,
                 LoanNumber = l.LoanNumber,
-                ClientId = l.ClientId,
+                ClientId = l.ClientId.ToString(),
                 ClientFullName = $"{user.FirstName} {user.LastName}",
                 CapitalAmount = l.CapitalAmount,
                 TermInMonths = l.TermInMonths,
@@ -273,11 +263,8 @@ namespace ArtemisBankingPro.Application.Services
             if (account.Status == AccountStatus.Cancelada)
                 throw new Exception("La cuenta seleccionada está cancelada.");
 
-            if (account.IsBlocked)
-                throw new Exception("La cuenta seleccionada está bloqueada.");
-
-            if (account.Balance - account.BlockedAmount < amount)
-                throw new Exception($"Fondos insuficientes. Balance disponible: RD$ {(account.Balance - account.BlockedAmount):N2} (debido a retenciones de RD$ {account.BlockedAmount:N2}).");
+            if (account.Balance < amount)
+                throw new Exception("Fondos insuficientes en la cuenta de ahorro.");
 
             var card = await _creditCardRepository.GetByCardNumberAsync(cardNumber);
             if (card == null)
@@ -331,11 +318,8 @@ namespace ArtemisBankingPro.Application.Services
             if (account.Status == AccountStatus.Cancelada)
                 throw new Exception("La cuenta seleccionada está cancelada.");
 
-            if (account.IsBlocked)
-                throw new Exception("La cuenta seleccionada está bloqueada.");
-
-            if (account.Balance - account.BlockedAmount < amount)
-                throw new Exception($"Fondos insuficientes. Balance disponible: RD$ {(account.Balance - account.BlockedAmount):N2} (debido a retenciones de RD$ {account.BlockedAmount:N2}).");
+            if (account.Balance < amount)
+                throw new Exception("Fondos insuficientes en la cuenta de ahorro.");
 
             var loan = await _loanRepository.GetByLoanNumberAsync(loanNumber);
             if (loan == null)
@@ -413,9 +397,6 @@ namespace ArtemisBankingPro.Application.Services
             if (account.Status == AccountStatus.Cancelada)
                 throw new Exception("La cuenta seleccionada está cancelada.");
 
-            if (account.IsBlocked)
-                throw new Exception("La cuenta seleccionada está bloqueada.");
-
             var card = await _creditCardRepository.GetByCardNumberAsync(cardNumber);
             if (card == null)
                 throw new Exception("La tarjeta de crédito no existe.");
@@ -460,63 +441,6 @@ namespace ArtemisBankingPro.Application.Services
                 await _emailService.SendNotificationEmailAsync("correo@ejemplo.com", "Avance de Efectivo Procesado", body);
             }
             catch { }
-        }
-
-        public async Task BlockAccountAsync(string accountNumber)
-        {
-            var account = await _accountRepository.GetByAccountNumberAsync(accountNumber);
-            if (account == null) throw new Exception("La cuenta no existe.");
-            account.IsBlocked = true;
-            await _accountRepository.UpdateAsync(account);
-            await _accountRepository.SaveChangesAsync();
-        }
-
-        public async Task UnblockAccountAsync(string accountNumber)
-        {
-            var account = await _accountRepository.GetByAccountNumberAsync(accountNumber);
-            if (account == null) throw new Exception("La cuenta no existe.");
-            account.IsBlocked = false;
-            await _accountRepository.UpdateAsync(account);
-            await _accountRepository.SaveChangesAsync();
-        }
-
-        public async Task SetBlockedAmountAsync(string accountNumber, decimal amount)
-        {
-            if (amount < 0) throw new Exception("El monto a retener no puede ser negativo.");
-            var account = await _accountRepository.GetByAccountNumberAsync(accountNumber);
-            if (account == null) throw new Exception("La cuenta no existe.");
-            account.BlockedAmount = amount;
-            await _accountRepository.UpdateAsync(account);
-            await _accountRepository.SaveChangesAsync();
-        }
-
-        public async Task CreditToMainAsync(string clientId, decimal amount)
-        {
-            if (amount < 0)
-                throw new Exception("El monto a acreditar debe ser mayor que cero.");
-            
-
-            int userId = int.Parse(clientId);
-            var principalAccount = await _accountRepository.GetPrincipalByClientAsync(userId);
-
-            if (principalAccount == null || principalAccount.Status != AccountStatus.Activa)
-                throw new Exception("El cliente no tiene una cuenta principal activa.");
-
-            principalAccount.Balance += amount;
-            await _accountRepository.UpdateAsync(principalAccount);
-
-            var transaction = new Transaction
-            {
-                AccountNumber = principalAccount.AccountNumber,
-                Type = TransactionType.Credito,
-                Amount = amount,
-                Status = TransactionStatus.Aprobada,
-                Description = "Desembolso de fondos de préstamo aprobado",
-                CreatedAt = DateTime.UtcNow
-            };
-
-            await _transactionRepository.AddAsync(transaction);
-            await _accountRepository.SaveChangesAsync();
         }
     }
 }

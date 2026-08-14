@@ -1,26 +1,26 @@
-using ArtemisBankingPro.Application.Common;
+﻿using ArtemisBankingPro.Application.Common;
 using ArtemisBankingPro.Application.DTOs.CreditCard;
 using ArtemisBankingPro.Application.Interfaces.Services;
-using ArtemisBankingPro.Application.Interfaces.Repositories;
 using ArtemisBankingPro.Domain.Entities;
 using ArtemisBankingPro.Domain.Interfaces.Repositories;
-using AutoMapper;
 using System.Security.Cryptography;
 using System.Text;
-
+using System.Threading.Tasks;
+using System.Collections.Generic;
+using AutoMapper;
 
 namespace ArtemisBankingPro.Application.Services
 {
     public class CreditCardService : ICreditCardService
     {
         private readonly ICreditCardRepository _creditCardRepository;
-        private readonly IUserRepository _userRepository;
+        private readonly IGenericRepository<User> _userRepository;
         private readonly IEmailService _emailService;
         private readonly IMapper _mapper;
 
         public CreditCardService(
             ICreditCardRepository creditCardRepository,
-            IUserRepository userRepository,
+            IGenericRepository<User> userRepository,
             IEmailService emailService,
             IMapper mapper)
         {
@@ -30,13 +30,19 @@ namespace ArtemisBankingPro.Application.Services
             _mapper = mapper;
         }
 
-        public async Task<CreditCardResponseDto> AssignCreditCardAsync(CreateCreditCardRequestDto request, string adminId)
+       
+        //ASIGNAR TARJETA
+        
+        public async Task<CreditCardCreatedResponseDto> AssignCreditCardAsync(CreateCreditCardRequestDto request, int adminId)
         {
-            var client = await _userRepository.GetByIdAsync(int.Parse(request.ClientId));
+            var clientId = int.Parse(request.ClientId); 
 
-            if (client == null) throw new Exception("El cliente seleccionado no existe.");
-            if (!client.IsActive) throw new Exception("Solo se puede asignar tarjeta a clientes activos.");
-            if (request.CreditLimit <= 0) throw new Exception("El límite de crédito debe ser mayor a cero.");
+            var client = await _userRepository.GetByIdAsync(clientId);
+            if (client == null) throw new KeyNotFoundException("El cliente seleccionado no existe.");
+            if (!client.IsActive) throw new InvalidOperationException("Solo se puede asignar tarjeta a clientes activos.");
+            if (request.CreditLimit <= 0) throw new ArgumentException("El límite de crédito debe ser mayor a cero.");
+
+           
 
             var cvc = RandomNumberGenerator.GetInt32(100, 1000).ToString();
             var cardNumber = await GenerateUniqueCreditCardNumberAsync();
@@ -44,7 +50,7 @@ namespace ArtemisBankingPro.Application.Services
 
             var creditCard = new CreditCard
             {
-                ClientId = request.ClientId,
+                ClientId = clientId,
                 CardNumber = cardNumber,
                 CreditLimit = request.CreditLimit,
                 CurrentDebt = 0m,
@@ -63,61 +69,96 @@ namespace ArtemisBankingPro.Application.Services
                 client.Email,
                 "Tarjeta de crédito asignada",
                 $"Se le asignó una tarjeta de crédito terminada en {cardNumber[^4..]} con límite RD${request.CreditLimit:N2}.");
+            // El correo NO incluye el CVC.
 
-            return _mapper.Map<CreditCardResponseDto>(creditCard);
+            var response = _mapper.Map<CreditCardCreatedResponseDto>(creditCard);
+            response.Cvc = cvc; // única vez que el CVC en texto plano sale de este método
+            return response;
         }
 
+        // ============================================================
+        // MODIFICAR LÍMITE
+        // ============================================================
         public async Task UpdateCreditLimitAsync(int cardId, decimal newLimit)
         {
-            var card = await _creditCardRepository.GetByIdAsync(cardId);
-            if (card == null) throw new Exception("La tarjeta seleccionada no existe.");
-            if (card.Status == "Cancelada") throw new Exception("No se puede modificar una tarjeta cancelada.");
-            if (newLimit < card.CurrentDebt) throw new Exception("El límite no puede ser inferior al monto adeudado.");
+            var card = await _creditCardRepository.GetByIdWithDetailsAsync(cardId);
+            if (card == null) throw new KeyNotFoundException("La tarjeta seleccionada no existe.");
+            if (card.Status == "Cancelada") throw new InvalidOperationException("No se puede modificar una tarjeta cancelada.");
+            if (newLimit <= 0) throw new ArgumentException("El límite debe ser mayor que cero.");
+            if (newLimit < card.CurrentDebt) throw new InvalidOperationException("El límite no puede ser inferior al monto adeudado.");
 
             card.CreditLimit = newLimit;
-
             await _creditCardRepository.UpdateAsync(card);
             await _creditCardRepository.SaveChangesAsync();
+
+            await _emailService.SendNotificationEmailAsync(
+                card.Client.Email,
+                "Límite de tarjeta modificado",
+                $"El límite de tu tarjeta terminada en {card.CardNumber[^4..]} ahora es RD${newLimit:N2}.");
         }
 
+        // ============================================================
+        // CANCELAR TARJETA
+        // ============================================================
         public async Task CancelCreditCardAsync(int cardId)
         {
             var card = await _creditCardRepository.GetByIdAsync(cardId);
-            if (card == null) throw new Exception("La tarjeta seleccionada no existe.");
-            if (card.Status == "Cancelada") throw new Exception("La tarjeta ya está cancelada.");
-            if (card.CurrentDebt > 0) throw new Exception("No se puede cancelar una tarjeta con deuda pendiente.");
+            if (card == null) throw new KeyNotFoundException("La tarjeta seleccionada no existe.");
+            if (card.Status == "Cancelada") throw new InvalidOperationException("La tarjeta ya está cancelada.");
+            if (card.CurrentDebt > 0) throw new InvalidOperationException("No se puede cancelar una tarjeta con deuda pendiente.");
 
             card.Status = "Cancelada";
-
             await _creditCardRepository.UpdateAsync(card);
             await _creditCardRepository.SaveChangesAsync();
         }
 
+        // ============================================================
+        // LISTADO PAGINADO
+        // ============================================================
+        public async Task<PagedResult<CreditCardResponseDto>> GetCreditCardsAsync(
+            string? cedula, string? status, int pageNumber, int pageSize)
+        {
+            var (items, totalCount) = await _creditCardRepository.SearchAsync(cedula, status, pageNumber, pageSize);
+
+            return new PagedResult<CreditCardResponseDto>
+            {
+                Items = _mapper.Map<List<CreditCardResponseDto>>(items),
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                TotalCount = totalCount
+            };
+        }
+
+        // ============================================================
+        // DETALLE POR ID
+        // ============================================================
+        public async Task<CreditCardResponseDto> GetCreditCardByIdAsync(int id)
+        {
+            var card = await _creditCardRepository.GetByIdWithDetailsAsync(id);
+            if (card == null) throw new KeyNotFoundException("La tarjeta seleccionada no existe.");
+
+            return _mapper.Map<CreditCardResponseDto>(card);
+        }
+
+        // ============================================================
+        // Helpers privados
+        // ============================================================
         private async Task<string> GenerateUniqueCreditCardNumberAsync()
         {
             for (var attempt = 0; attempt < 20; attempt++)
             {
                 var number = GenerateCreditCardNumber();
                 var existing = await _creditCardRepository.GetByCardNumberAsync(number);
-
-                if (existing == null)
-                {
-                    return number;
-                }
+                if (existing == null) return number;
             }
-
-            throw new Exception("No fue posible generar un número de tarjeta único.");
+            throw new InvalidOperationException("No fue posible generar un número de tarjeta único.");
         }
 
         private static string GenerateCreditCardNumber()
         {
             var builder = new StringBuilder(16);
-
             for (var i = 0; i < 16; i++)
-            {
                 builder.Append(RandomNumberGenerator.GetInt32(0, 10));
-            }
-
             return builder.ToString();
         }
 
@@ -128,56 +169,6 @@ namespace ArtemisBankingPro.Application.Services
             return Convert.ToHexString(bytes).ToLower();
         }
 
-        public async Task<CreditCardResponseDto> GetCreditCardByIdAsync(int id)
-        {
-            var card = await _creditCardRepository.GetByIdAsync(id);
-            if (card == null) throw new Exception("La tarjeta seleccionada no existe.");
-            return _mapper.Map<CreditCardResponseDto>(card);
-        }
-
-        public async Task<PagedResult<CreditCardResponseDto>> GetCreditCardsAsync(string? cedula, string? status, int pageNumber, int pageSize)
-        {
-            var cards = await _creditCardRepository.GetAllAsync();
-
-            // Filtrar por cedula
-            if (!string.IsNullOrEmpty(cedula))
-            {
-                var user = await _userRepository.GetByCedulaAsync(cedula);
-                if (user == null)
-                {
-                    return new PagedResult<CreditCardResponseDto>
-                    {
-                        Items = new List<CreditCardResponseDto>(),
-                        TotalCount = 0,
-                        PageNumber = pageNumber,
-                        PageSize = pageSize
-                    };
-                }
-                string userIdStr = user.Id.ToString();
-                cards = cards.Where(c => c.ClientId == userIdStr).ToList();
-            }
-
-            // Filtrar por status
-            if (!string.IsNullOrEmpty(status))
-            {
-                cards = cards.Where(c => c.Status.Equals(status, StringComparison.OrdinalIgnoreCase)).ToList();
-            }
-
-            int totalRecords = cards.Count;
-            var pagedCards = cards
-                .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize)
-                .ToList();
-
-            var dtos = _mapper.Map<List<CreditCardResponseDto>>(pagedCards);
-
-            return new PagedResult<CreditCardResponseDto>
-            {
-                Items = dtos,
-                TotalCount = totalRecords,
-                PageNumber = pageNumber,
-                PageSize = pageSize
-            };
-        }
+       
     }
 }

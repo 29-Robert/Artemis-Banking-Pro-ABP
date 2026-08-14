@@ -33,13 +33,11 @@ namespace ArtemisBankingPro.Application.Services
             var srcAcc = await _accountRepository.GetByAccountNumberAsync(dto.SourceAccountNumber);
             if (srcAcc == null) throw new Exception("La cuenta de origen no existe.");
             if (srcAcc.Status == AccountStatus.Cancelada) throw new Exception("Operación denegada. La cuenta de origen se encuentra cancelada.");
-            if (srcAcc.IsBlocked) throw new Exception("La cuenta de origen se encuentra bloqueada.");
-            if (srcAcc.Balance - srcAcc.BlockedAmount < dto.Amount) throw new Exception($"Fondos insuficientes en la cuenta de origen. Balance disponible: RD$ {(srcAcc.Balance - srcAcc.BlockedAmount):N2} (debido a retenciones de RD$ {srcAcc.BlockedAmount:N2}).");
+            if (srcAcc.Balance < dto.Amount) throw new Exception("Fondos insuficientes en la cuenta de origen.");
 
             var tgtAcc = await _accountRepository.GetByAccountNumberAsync(dto.DestinationAccountNumber);
             if (tgtAcc == null) throw new Exception("La cuenta de destino no existe.");
             if (tgtAcc.Status == AccountStatus.Cancelada) throw new Exception("Operación denegada. La cuenta de destino se encuentra cancelada.");
-            if (tgtAcc.IsBlocked) throw new Exception("La cuenta de destino se encuentra bloqueada.");
 
             srcAcc.Balance -= dto.Amount;
             tgtAcc.Balance += dto.Amount;
@@ -84,26 +82,26 @@ namespace ArtemisBankingPro.Application.Services
             catch { }
         }
 
-        public async Task<TrasferResponseDto> OwnAccountTransferAsync(OwnAccountTransferDto dto, string clientId)
+        public async Task<AccountResponseDto> OwnAccountTransferAsync(OwnAccountTransferDto dto, string clientId)
         {
             int idCliente = int.Parse(clientId);
 
             if (dto.SourceAccountNumber == dto.DestinationAccountNumber)
             {
                 await LogRejectedTransactionAsync(dto.SourceAccountNumber, "La cuenta de origen y la cuenta de destino no pueden ser la misma.");
-                return new TrasferResponseDto { IsSuccess = false, Message = "La cuenta de origen y la cuenta de destino no pueden ser la misma." };
+                return new AccountResponseDto { IsSuccess = false, Message = "La cuenta de origen y la cuenta de destino no pueden ser la misma." };
             }
 
             if (dto.Amount <= 0)
             {
                 await LogRejectedTransactionAsync(dto.SourceAccountNumber, "El monto a transferir debe ser mayor que cero.");
-                return new TrasferResponseDto { IsSuccess = false, Message = "El monto a transferir debe ser mayor que cero." };
+                return new AccountResponseDto { IsSuccess = false, Message = "El monto a transferir debe ser mayor que cero." };
             }
 
             var activeAccountsCount = await _accountRepository.CountActiveAccountsByClientIdAsync(idCliente);
             if (activeAccountsCount < 2)
             {
-                return new TrasferResponseDto { IsSuccess = false, Message = "Debe tener al menos dos cuentas de ahorro activas para realizar una transferencia entre cuentas." };
+                return new AccountResponseDto { IsSuccess = false, Message = "Debe tener al menos dos cuentas de ahorro activas para realizar una transferencia entre cuentas." };
             }
 
             var sourceAccount = await _accountRepository.GetByAccountNumberAsync(dto.SourceAccountNumber);
@@ -111,25 +109,18 @@ namespace ArtemisBankingPro.Application.Services
 
             if (sourceAccount == null || sourceAccount.UserId != idCliente || destAccount == null || destAccount.UserId != idCliente)
             {
-                return new TrasferResponseDto { IsSuccess = false, Message = "Las cuentas seleccionadas no son válidas o no le pertenecen." };
+                return new AccountResponseDto { IsSuccess = false, Message = "Las cuentas seleccionadas no son válidas o no le pertenecen." };
             }
 
             if (sourceAccount.Status == AccountStatus.Cancelada || destAccount.Status == AccountStatus.Cancelada)
             {
-                return new TrasferResponseDto { IsSuccess = false, Message = "Operación denegada. Una o ambas cuentas se encuentran canceladas." };
+                return new AccountResponseDto { IsSuccess = false, Message = "Operación denegada. Una o ambas cuentas se encuentran canceladas." };
             }
 
-            if (sourceAccount.IsBlocked || destAccount.IsBlocked)
+            if (sourceAccount.Balance < dto.Amount)
             {
-                await LogRejectedTransactionAsync(dto.SourceAccountNumber, "Operación denegada. Una o ambas cuentas se encuentran bloqueadas.");
-                return new TrasferResponseDto { IsSuccess = false, Message = "Operación denegada. Una o ambas cuentas se encuentran bloqueadas." };
-            }
-
-            if (sourceAccount.Balance - sourceAccount.BlockedAmount < dto.Amount)
-            {
-                string reason = $"No dispone del monto requerido en la cuenta seleccionada (Balance disponible: RD$ {sourceAccount.Balance - sourceAccount.BlockedAmount:N2} debido a retenciones de RD$ {sourceAccount.BlockedAmount:N2}).";
-                await LogRejectedTransactionAsync(dto.SourceAccountNumber, reason);
-                return new TrasferResponseDto { IsSuccess = false, Message = reason };
+                await LogRejectedTransactionAsync(dto.SourceAccountNumber, "No dispone del monto requerido en la cuenta seleccionada.");
+                return new AccountResponseDto { IsSuccess = false, Message = "No dispone del monto requerido en la cuenta seleccionada." };
             }
 
             // =======================================================
@@ -184,11 +175,11 @@ namespace ArtemisBankingPro.Application.Services
 
                 await _emailService.SendNotificationEmailAsync(emailDestino, "Transferencia entre cuentas realizada", body);
 
-                return new TrasferResponseDto { IsSuccess = true, Message = "Transferencia realizada con éxito." };
+                return new AccountResponseDto { IsSuccess = true, Message = "Transferencia realizada con éxito." };
             }
             catch
             {
-                return new TrasferResponseDto { IsSuccess = true, Message = "La transferencia fue realizada correctamente, pero no fue posible enviar el correo de notificación." };
+                return new AccountResponseDto { IsSuccess = true, Message = "La transferencia fue realizada correctamente, pero no fue posible enviar el correo de notificación." };
             }
         }
 
