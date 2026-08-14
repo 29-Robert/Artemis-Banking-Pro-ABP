@@ -1,6 +1,7 @@
-﻿using ArtemisBankingPro.Application.Common;
+using ArtemisBankingPro.Application.Common;
 using ArtemisBankingPro.Application.DTOs.CreditCard;
 using ArtemisBankingPro.Application.Interfaces.Services;
+using ArtemisBankingPro.Application.Interfaces.Repositories;
 using ArtemisBankingPro.Domain.Entities;
 using ArtemisBankingPro.Domain.Interfaces.Repositories;
 using System.Security.Cryptography;
@@ -14,13 +15,13 @@ namespace ArtemisBankingPro.Application.Services
     public class CreditCardService : ICreditCardService
     {
         private readonly ICreditCardRepository _creditCardRepository;
-        private readonly IGenericRepository<User> _userRepository;
+        private readonly IUserRepository _userRepository;
         private readonly IEmailService _emailService;
         private readonly IMapper _mapper;
 
         public CreditCardService(
             ICreditCardRepository creditCardRepository,
-            IGenericRepository<User> userRepository,
+            IUserRepository userRepository,
             IEmailService emailService,
             IMapper mapper)
         {
@@ -167,6 +168,13 @@ namespace ArtemisBankingPro.Application.Services
             using var sha256 = SHA256.Create();
             var bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(input));
             return Convert.ToHexString(bytes).ToLower();
+        }
+
+        public async Task<CreditCardResponseDto> GetCreditCardByIdAsync(int id)
+        {
+            var card = await _creditCardRepository.GetByIdAsync(id);
+            if (card == null) throw new Exception("La tarjeta seleccionada no existe.");
+            return _mapper.Map<CreditCardResponseDto>(card);
         }
 
        

@@ -2,7 +2,6 @@
 using ArtemisBankingPro.Application.Interfaces.Repositories;
 using ArtemisBankingPro.Application.Interfaces.Services;
 using ArtemisBankingPro.Domain.Entities;
-using ArtemisBankingPro.Domain.Enums;
 using ArtemisBankingPro.Domain.Interfaces.Repositories;
 using System;
 using System.Collections.Generic;
@@ -10,6 +9,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using ArtemisBankingPro.Application.DTOs.Account;
 using ArtemisBankingPro.Application.DTOs.Transactions;
+
 
 namespace ArtemisBankingPro.Application.Services
 {
