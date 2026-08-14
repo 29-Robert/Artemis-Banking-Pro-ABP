@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace ArtemisBankingPro.Application.DTOs.Cashier
 {
-    public class ThirdTransferRequestDto
+    public class ThirdPartyTransferRequestDto
     {
         public string SourceAccountNumber { get; set; }
         public string DestinationAccountNumber { get; set; }

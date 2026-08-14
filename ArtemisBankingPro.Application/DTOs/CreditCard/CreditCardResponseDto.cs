@@ -19,6 +19,7 @@ namespace ArtemisBankingPro.Application.DTOs.CreditCard
         public string ExpirationDate { get; set; } 
         public string Status { get; set; }
         public DateTime CreatedAt { get; set; }
+        public string Cvc { get; set; }
 
 
         // Consumos (Solo se llena en la consulta por {id})

@@ -31,7 +31,9 @@ namespace ArtemisBankingPro.Persistence.Repositories
 
         public async Task<SavingsAccount> GetByAccountNumberAsync(string accountNumber)
         {
-            return await _dbContext.SavingsAccounts.FirstOrDefaultAsync(s => s.AccountNumber == accountNumber);
+            return await _dbContext.SavingsAccounts
+       .Include(s => s.User)
+       .FirstOrDefaultAsync(s => s.AccountNumber == accountNumber);
         }
 
         public async Task<object> GetPagedAsync(int page, int pageSize, AccountStatus? status, AccountType? type, string cedula)
