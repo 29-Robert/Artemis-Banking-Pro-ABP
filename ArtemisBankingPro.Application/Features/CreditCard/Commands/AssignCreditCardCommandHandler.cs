@@ -21,7 +21,7 @@ namespace ArtemisBankingPro.Application.Features.CreditCard.Commands
                 CreditLimit = request.CreditLimit
             };
 
-            return await _creditCardService.AssignCreditCardAsync(createRequest, request.AdminId.ToString());
+            return await _creditCardService.AssignCreditCardAsync(createRequest, request.AdminId);
         }
     }
 }

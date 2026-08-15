@@ -18,7 +18,10 @@ namespace ArtemisBankingPro.Application.Features.Loans.Querys
         }
         public async Task<List<LoanResponseDto>> Handle(GetAllLoansQuery request, CancellationToken cancellationToken)
         {
-            return await _loanService.GetAllLoansAsync();
+            
+            var pagedResult = await _loanService.GetLoansAsync(null, null, 1, int.MaxValue);
+
+            return pagedResult.Items.ToList();
         }
     }
 }

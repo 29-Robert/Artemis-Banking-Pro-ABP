@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
-
 namespace ArtemisBankingPro.WebApi.Controllers
 {
     [ApiController]
@@ -13,39 +12,59 @@ namespace ArtemisBankingPro.WebApi.Controllers
     public class LoanController : ControllerBase
     {
         private readonly ILoanService _loanService;
+
         public LoanController(ILoanService loanService)
         {
             _loanService = loanService;
         }
-        // GET api/loan
+
+        // GET api/
         [HttpGet]
-        public async Task<IActionResult> GetAll()
+        public async Task<IActionResult> Get(
+            [FromQuery] string? cedula,
+            [FromQuery] string? status,
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 20)
         {
-            var result = await _loanService.GetAllLoansAsync();
+            var result = await _loanService.GetLoansAsync(cedula, status, pageNumber, pageSize);
             return Ok(result);
         }
+
+        // GET api/loan
+        [HttpGet("eligible-clients")]
+        public async Task<IActionResult> GetEligibleClients(
+            [FromQuery] string? cedula,
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 20)
+        {
+            var result = await _loanService.GetEligibleClientsAsync(cedula, pageNumber, pageSize);
+            return Ok(result);
+        }
+
         // GET api/loan/{id}
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById(int id)
         {
+            
             var result = await _loanService.GetLoanByIdAsync(id);
-            if (result == null) return NotFound(new { Message = $"No se encontró un préstamo con Id {id}." });
             return Ok(result);
         }
+
         // POST api/loan
         [HttpPost]
         public async Task<IActionResult> AssignLoan([FromBody] CreateLoanRequestDto request)
         {
-            var adminId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+            var adminId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
             var result = await _loanService.AssignLoanAsync(request, adminId);
             return Created($"api/loan/{result.Id}", result);
         }
+
         // PATCH api/loan/{id}/rate
         [HttpPatch("{id:int}/rate")]
         public async Task<IActionResult> UpdateRate(int id, [FromBody] UpdateLoanRateRequestDto request)
         {
-            await _loanService.UpdateLoanRateAsync(id, request.AnnualInterestRate);
-            return NoContent();
+            var result = await _loanService.UpdateInterestRateAsync(id, request.AnnualInterestRate);
+            return Ok(result);
         }
     }
 }

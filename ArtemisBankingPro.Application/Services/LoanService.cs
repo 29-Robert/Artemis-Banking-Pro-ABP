@@ -186,7 +186,7 @@ namespace ArtemisBankingPro.Application.Services
                 TermInMonths = request.TermInMonths,
                 AnnualInterestRate = request.AnnualInterestRate,
                 Status = "Activo",
-                AdminId = int.Parse(adminId),
+                AdminId = (adminId),
                 CreatedAt = DateTime.UtcNow
             };
 
