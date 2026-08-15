@@ -1,9 +1,11 @@
-﻿using ArtemisBankingPro.Application.DTOs.Transactions;
+﻿using ArtemisBankingPro.Application.DTOs.Account;
+using ArtemisBankingPro.Application.DTOs.Transactions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+
 
 namespace ArtemisBankingPro.Application.Interfaces.Services
 {

@@ -1,3 +1,4 @@
+using ArtemisBankingPro.Application.DTOs.Account;
 using ArtemisBankingPro.Application.DTOs.Transactions;
 using ArtemisBankingPro.Application.Interfaces.Repositories;
 using ArtemisBankingPro.Application.Interfaces.Services;
@@ -51,7 +52,8 @@ namespace ArtemisBankingPro.Application.Services
                 Type = TransactionType.Debito,
                 Amount = dto.Amount,
                 Status = TransactionStatus.Aprobada,
-                Description = $"Transferencia Express hacia cuenta {dto.DestinationAccountNumber}",
+                Description = $"Transferencia Express",
+                RelatedEntity = dto.DestinationAccountNumber,
                 CreatedAt = DateTime.UtcNow
             };
             await _transactionRepository.AddAsync(debitTx);
@@ -62,7 +64,8 @@ namespace ArtemisBankingPro.Application.Services
                 Type = TransactionType.Credito,
                 Amount = dto.Amount,
                 Status = TransactionStatus.Aprobada,
-                Description = $"Transferencia Express recibida desde cuenta {dto.SourceAccountNumber}",
+                Description = $"Transferencia Express",
+                RelatedEntity = dto.SourceAccountNumber,
                 CreatedAt = DateTime.UtcNow
             };
             await _transactionRepository.AddAsync(creditTx);
@@ -77,10 +80,16 @@ namespace ArtemisBankingPro.Application.Services
                               $"Cuenta de destino: {dto.DestinationAccountNumber}\n" +
                               $"Monto transferido: RD$ {dto.Amount:N2}\n" +
                               $"Fecha: {DateTime.Now:dd/MM/yyyy HH:mm:ss}\n";
-                await _emailService.SendNotificationEmailAsync("correo@ejemplo.com", "Transferencia Express Realizada", body);
+                
+                string emailOrigen = srcAcc.User?.Email ?? "soporte@artemisbanking.com";
+                await _emailService.SendNotificationEmailAsync(emailOrigen, "Transferencia Express Realizada", body);
+           
             }
+           
             catch { }
         }
+            
+        
 
         public async Task<AccountResponseDto> OwnAccountTransferAsync(OwnAccountTransferDto dto, string clientId)
         {
@@ -138,7 +147,8 @@ namespace ArtemisBankingPro.Application.Services
                 Type = TransactionType.Debito,      
                 Amount = dto.Amount,
                 Status = TransactionStatus.Aprobada, 
-                Description = $"Transferencia hacia la cuenta {destAccount.AccountNumber}",
+                Description = $"Transferencia Express",
+                RelatedEntity = destAccount.AccountNumber,
                 CreatedAt = DateTime.UtcNow
             };
             await _transactionRepository.AddAsync(debitTransaction);
@@ -149,7 +159,8 @@ namespace ArtemisBankingPro.Application.Services
                 Type = TransactionType.Credito,      
                 Amount = dto.Amount,
                 Status = TransactionStatus.Aprobada, 
-                Description = $"Transferencia recibida desde la cuenta {sourceAccount.AccountNumber}",
+                Description = $"Transferencia Express",
+                RelatedEntity = sourceAccount.AccountNumber,
                 CreatedAt = DateTime.UtcNow
             };
             await _transactionRepository.AddAsync(creditTransaction);
@@ -171,9 +182,12 @@ namespace ArtemisBankingPro.Application.Services
                               $"Fecha y hora: {DateTime.Now:dd/MM/yyyy HH:mm:ss}\n" +
                               $"Si usted no reconoce esta operación, comuníquese con la entidad bancaria.";
 
-                string emailDestino = "correo@ejemplo.com"; 
+                string emailDestino = sourceAccount.User?.Email ?? destAccount.User?.Email;
 
-                await _emailService.SendNotificationEmailAsync(emailDestino, "Transferencia entre cuentas realizada", body);
+                if (!string.IsNullOrEmpty(emailDestino))
+                {
+                    await _emailService.SendNotificationEmailAsync(emailDestino, "Transferencia entre cuentas realizada", body);
+                }
 
                 return new AccountResponseDto { IsSuccess = true, Message = "Transferencia realizada con éxito." };
             }
@@ -198,6 +212,7 @@ namespace ArtemisBankingPro.Application.Services
                     CreatedAt = DateTime.UtcNow
                 };
                 await _transactionRepository.AddAsync(rejectedTransaction);
+                await _transactionRepository.SaveChangesAsync();
             }
         }
     }

@@ -10,8 +10,10 @@ namespace ArtemisBankingPro.Domain.Entities
     {
         public class Loan : BaseEntity
         {
-            public int ClientId { get; set; }
-            public User? Client { get; set; }
+             public int UserId;
+             public User? User;
+             public int ClientId { get; set; }
+             public User? Client { get; set; }
 
             public string LoanNumber { get; set; }
             public decimal CapitalAmount { get; set; }

@@ -91,14 +91,25 @@ namespace ArtemisBankingPro.Persistence.Repositories
                 .FirstOrDefaultAsync(c => c.Id == id);
         }
 
-        public Task<CreditCard> GetByCardNumberWithClientAsync(string cardNumber)
+        public async Task<decimal> GetTotalActiveDebtByClientAsync(int clientId)
         {
-            throw new NotImplementedException();
+            return await _dbContext.Set<CreditCard>()
+                .Where(c => c.ClientId == clientId && c.Status == "Activa")
+                .SumAsync(c => c.CurrentDebt);
         }
 
-        public Task<IReadOnlyList<CreditCard>> GetCardsByClientAsync(string clientId)
+        public async Task<decimal> GetTotalActiveDebtSystemWideAsync()
         {
-            throw new NotImplementedException();
+            return await _dbContext.Set<CreditCard>()
+                .Where(c => c.Status == "Activa")
+                .SumAsync(c => c.CurrentDebt);
+        }
+
+        public async Task<CreditCard> GetByCardNumberWithClientAsync(string cardNumber)
+        {
+            return await _dbContext.CreditCards
+                .Include(c => c.Client)
+                .FirstOrDefaultAsync(c => c.CardNumber == cardNumber);
         }
     }
 }
