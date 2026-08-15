@@ -1,24 +1,14 @@
-﻿using ArtemisBankingPro.Application.DTOs.Loan;
-using ArtemisBankingPro.Domain.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using ArtemisBankingPro.Application.Common;
+using ArtemisBankingPro.Application.DTOs.Loan;
 
-
-namespace ArtemisBankingPro.Application.Interfaces.Services {
-
-    public interface ILoanService
+namespace ArtemisBankingPro.Application.Interfaces.Services
+{
+    public interface ILoanService                                                                                                                           
     {
-        Task<List<LoanResponseDto>> GetAllLoansAsync();
+        Task<PagedResult<LoanResponseDto>> GetLoansAsync(string? cedula, string? status, int pageNumber, int pageSize);
         Task<LoanResponseDto> GetLoanByIdAsync(int id);
-        Task<LoanResponseDto> AssignLoanAsync(CreateLoanRequestDto request, string adminId);
-        Task UpdateLoanRateAsync(int loanId, decimal newRate);
-        Task<List<LoanInstallment>> GenerateAmortizationTableAsync(decimal capital, decimal annualRate, int months);
+        Task<EligibleClientsResponseDto> GetEligibleClientsAsync(string? cedula, int pageNumber, int pageSize);
+        Task<LoanResponseDto> AssignLoanAsync(CreateLoanRequestDto request, int adminId);
+        Task<LoanResponseDto> UpdateInterestRateAsync(int loanId, decimal newAnnualRate);
     }
 }
-    
-
-
-

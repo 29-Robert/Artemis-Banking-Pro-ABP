@@ -13,22 +13,37 @@ namespace ArtemisBankingPro.Application.Mappings
 
         public MappingProfile()
         {
+
+            // LOAN
             CreateMap<Loan, LoanResponseDto>()
-               .ForMember(d => d.Amortization,
-                          o => o.MapFrom(s => s.Installments))
-               .ForMember(d => d.PaidInstallments,
-                          o => o.MapFrom(s => s.Installments != null
-                              ? s.Installments.Count(i => i.PaymentStatus == "Pagada") : 0))
-               .ForMember(d => d.PendingAmount,
-                          o => o.MapFrom(s => s.Installments != null
-                              ? s.Installments.Sum(i => i.PendingInstallmentAmount) : 0))
-               .ForMember(d => d.TotalAmountToPay,
-                          o => o.MapFrom(s => s.Installments != null
-                              ? s.Installments.Sum(i => i.InstallmentAmount) : 0))
-               .ForMember(d => d.ClientPaymentStatus,
-                          o => o.MapFrom(s => s.Installments != null &&
-                              s.Installments.Any(i => i.IsLate) ? "En mora" : "Al día"));
+                .ForMember(d => d.ClientId,
+                           o => o.MapFrom(s => s.ClientId.ToString()))
+                .ForMember(d => d.ClientFullName,
+                           o => o.MapFrom(s => s.Client != null ? $"{s.Client.FirstName} {s.Client.LastName}" : string.Empty))
+                .ForMember(d => d.MonthlyInstallment,
+                           o => o.MapFrom(s => s.Installments != null && s.Installments.Any()
+                               ? s.Installments.OrderBy(i => i.InstallmentNumber).First().InstallmentAmount
+                               : 0))
+                .ForMember(d => d.PaidInstallments,
+                           o => o.MapFrom(s => s.Installments != null
+                               ? s.Installments.Count(i => i.PaymentStatus == "Pagada") : 0))
+                .ForMember(d => d.PendingAmount,
+                           o => o.MapFrom(s => s.Installments != null
+                               ? s.Installments.Sum(i => i.PendingInstallmentAmount) : 0))
+                .ForMember(d => d.TotalAmountToPay,
+                           o => o.MapFrom(s => s.Installments != null
+                               ? s.Installments.Sum(i => i.InstallmentAmount) : 0))
+                .ForMember(d => d.ClientPaymentStatus,
+                           o => o.MapFrom(s => s.Installments != null &&
+                               s.Installments.Any(i => i.IsLate && i.PaymentStatus != "Pagada") ? "En mora" : "Al día"))
+                .ForMember(d => d.Amortization,
+                           o => o.MapFrom(s => s.Installments != null
+                               ? s.Installments.OrderBy(i => i.InstallmentNumber) : null))
+                
+                .ForMember(d => d.EmailNotificationFailed, o => o.Ignore());
+
             CreateMap<LoanInstallment, LoanInstallmentDto>();
+           
 
 
             // CREDIT CARD
@@ -42,10 +57,15 @@ namespace ArtemisBankingPro.Application.Mappings
                 .ForMember(d => d.ExpirationDate,
                            o => o.MapFrom(s => $"{s.ExpirationMonth}/{s.ExpirationYear.Substring(2)}"))
                 .ForMember(d => d.Consumptions,
-                           o => o.MapFrom(s => s.Consumptions));
-            CreateMap<CreditCardConsumption, CreditCardConsumptionDto>()
-                .ForMember(d => d.Date,
-                           o => o.MapFrom(s => s.TransactionDate));
+                           o => o.MapFrom(s => s.Consumptions))
+                .ForMember(d => d.ClientFullName,
+                           o => o.MapFrom(s => s.Client != null ? $"{s.Client.FirstName} {s.Client.LastName}" : string.Empty))
+                .ForMember(d => d.ClientId,
+                           o => o.MapFrom(s => s.ClientId.ToString()));
+
+            CreateMap<CreditCard, CreditCardCreatedResponseDto>()
+                .IncludeBase<CreditCard, CreditCardResponseDto>()
+                .ForMember(d => d.Cvc, o => o.Ignore());
         }
     }
 }

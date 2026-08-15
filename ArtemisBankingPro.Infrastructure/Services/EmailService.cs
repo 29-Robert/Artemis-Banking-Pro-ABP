@@ -56,5 +56,7 @@ namespace ArtemisBankingPro.Infrastructure.Services
             mailMessage.To.Add(to);
             await client.SendMailAsync(mailMessage);
         }
+
+        
     }
 }

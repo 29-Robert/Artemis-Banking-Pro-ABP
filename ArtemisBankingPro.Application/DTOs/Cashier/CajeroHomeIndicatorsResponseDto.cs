@@ -10,5 +10,7 @@ namespace ArtemisBankingPro.Application.DTOs.Cashier
     {
         public int DepositsToday { get; set; }
         public int WithdrawalsToday { get; set; }
+        public int TotalTransactionsToday { get; set; }
+        public int PaymentsToday { get; set; }
     }
 }

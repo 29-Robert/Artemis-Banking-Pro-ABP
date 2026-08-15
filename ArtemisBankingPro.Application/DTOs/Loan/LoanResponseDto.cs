@@ -17,6 +17,7 @@ namespace ArtemisBankingPro.Application.DTOs.Loan
         public decimal AnnualInterestRate { get; set; }
         public decimal MonthlyInstallment { get; set; }
         public int PaidInstallments { get; set; }
+        public bool EmailNotificationFailed { get; set; }
         public decimal PendingAmount { get; set; }
         public decimal TotalAmountToPay { get; set; }
         public string Status { get; set; }

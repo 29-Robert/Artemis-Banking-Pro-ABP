@@ -5,6 +5,10 @@ namespace ArtemisBankingPro.Domain.Entities
 {
     public class CreditCard : BaseEntity
     {
+        public decimal AvailableCredit;
+        public int UserId;
+        public User? User;
+
         public int ClientId { get; set; }
         public User? Client { get; set; }
 

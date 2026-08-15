@@ -17,7 +17,7 @@ namespace ArtemisBankingPro.Application.Features.Loans.Commands
         }
         public async Task<Unit> Handle(UpdateLoanRateCommand request, CancellationToken cancellationToken)
         {
-            await _loanService.UpdateLoanRateAsync(request.LoanId, request.NewAnnualInterestRate);
+            await _loanService.UpdateInterestRateAsync(request.LoanId, request.NewAnnualInterestRate);
             return Unit.Value;
         }
     }
