@@ -22,7 +22,6 @@ namespace ArtemisBankingPro.Application.Features.Loans.Commands
 
         public async Task<LoanResponseDto> Handle(AssignLoanCommand request, CancellationToken cancellationToken)
         {
-            // Mapeamos el comando al DTO y llamamos al Servicio de Negocio
             var createDto = new CreateLoanRequestDto
             {
                 ClientId = request.ClientId,
@@ -32,7 +31,7 @@ namespace ArtemisBankingPro.Application.Features.Loans.Commands
                 ConfirmHighRisk = request.ConfirmHighRisk
             };
 
-            return await _loanService.AssignLoanAsync(createDto, request.AdminId);
+            return await _loanService.AssignLoanAsync(createDto,int.Parse(request.AdminId));
         }
     }
 }

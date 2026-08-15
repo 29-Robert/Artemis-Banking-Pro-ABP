@@ -3,7 +3,7 @@ using ArtemisBankingPro.Application.DTOs.Loan;
 
 namespace ArtemisBankingPro.Application.Interfaces.Services
 {
-    public interface ILoanService
+    public interface ILoanService                                                                                                                           
     {
         Task<PagedResult<LoanResponseDto>> GetLoansAsync(string? cedula, string? status, int pageNumber, int pageSize);
         Task<LoanResponseDto> GetLoanByIdAsync(int id);
