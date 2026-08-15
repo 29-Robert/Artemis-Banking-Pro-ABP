@@ -4,6 +4,7 @@ using ArtemisBankingPro.WebApp.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using ArtemisBankingPro.Application.DTOs.Cashier; 
 
 namespace ArtemisBankingPro.WebApp.Controllers
 {
@@ -17,9 +18,12 @@ namespace ArtemisBankingPro.WebApp.Controllers
             _cashierService = cashierService;
         }
 
-        public IActionResult Index()
+      
+        public async Task<IActionResult> Index()
         {
-            return View();
+            int cashierId = GetCashierId();
+            var indicators = await _cashierService.GetHomeIndicatorsAsync(cashierId);
+            return View(indicators);
         }
 
         [HttpGet]
@@ -27,7 +31,6 @@ namespace ArtemisBankingPro.WebApp.Controllers
         {
             return View(new DepositViewModel());
         }
-
         [HttpPost]
         public async Task<IActionResult> Deposit(DepositViewModel model)
         {
@@ -35,21 +38,34 @@ namespace ArtemisBankingPro.WebApp.Controllers
 
             try
             {
-                await _cashierService.ProcessDepositAsync(model.TargetAccountNumber, model.Amount, GetUserId());
-                TempData["SuccessMessage"] = "Depósito realizado correctamente.";
+               
+                var dto = new DepositRequestDto
+                {
+                    DestinationAccountNumber = model.TargetAccountNumber,
+                    Amount = model.Amount
+                };
+
+               
+                var response = await _cashierService.ProcessDepositAsync(dto, GetCashierId());
+
+                if (!response.Approved)
+                {
+                    ModelState.AddModelError(string.Empty, response.RejectionReason);
+                    return View(model);
+                }
+
+                if (!string.IsNullOrEmpty(response.WarningMessage))
+                    TempData["WarningMessage"] = response.WarningMessage;
+                else
+                    TempData["SuccessMessage"] = "Depósito realizado correctamente.";
+
                 return RedirectToAction("Index");
             }
             catch (Exception ex)
             {
-                ModelState.AddModelError(string.Empty, ex.Message);
+                ModelState.AddModelError(string.Empty, "Ocurrió un error inesperado: " + ex.Message);
                 return View(model);
             }
-        }
-
-        [HttpGet]
-        public IActionResult Withdrawal()
-        {
-            return View(new WithdrawalViewModel());
         }
 
         [HttpPost]
@@ -59,21 +75,32 @@ namespace ArtemisBankingPro.WebApp.Controllers
 
             try
             {
-                await _cashierService.ProcessWithdrawalAsync(model.SourceAccountNumber, model.Amount, GetUserId());
-                TempData["SuccessMessage"] = "Retiro realizado correctamente.";
+                var dto = new WithdrawRequestDto
+                {
+                    SourceAccountNumber = model.SourceAccountNumber,
+                    Amount = model.Amount
+                };
+
+                var response = await _cashierService.ProcessWithdrawalAsync(dto, GetCashierId());
+
+                if (!response.Approved)
+                {
+                    ModelState.AddModelError(string.Empty, response.RejectionReason);
+                    return View(model);
+                }
+
+                if (!string.IsNullOrEmpty(response.WarningMessage))
+                    TempData["WarningMessage"] = response.WarningMessage;
+                else
+                    TempData["SuccessMessage"] = "Retiro realizado correctamente.";
+
                 return RedirectToAction("Index");
             }
             catch (Exception ex)
             {
-                ModelState.AddModelError(string.Empty, ex.Message);
+                ModelState.AddModelError(string.Empty, "Ocurrió un error inesperado: " + ex.Message);
                 return View(model);
             }
-        }
-
-        [HttpGet]
-        public IActionResult CreditCardPayment()
-        {
-            return View(new CreditCardPaymentViewModel());
         }
 
         [HttpPost]
@@ -83,21 +110,33 @@ namespace ArtemisBankingPro.WebApp.Controllers
 
             try
             {
-                await _cashierService.ProcessCreditCardPaymentAsync(model.SourceAccountNumber, model.CardNumber, model.Amount, GetUserId());
-                TempData["SuccessMessage"] = "Pago a tarjeta realizado correctamente.";
+                var dto = new PayCreditCardRequestDto
+                {
+                    SourceAccountNumber = model.SourceAccountNumber,
+                    CardNumber = model.CardNumber,
+                    Amount = model.Amount
+                };
+
+                var response = await _cashierService.ProcessCreditCardPaymentAsync(dto, GetCashierId());
+
+                if (!response.Approved)
+                {
+                    ModelState.AddModelError(string.Empty, response.RejectionReason);
+                    return View(model);
+                }
+
+                if (!string.IsNullOrEmpty(response.WarningMessage))
+                    TempData["WarningMessage"] = response.WarningMessage;
+                else
+                    TempData["SuccessMessage"] = "Pago a tarjeta realizado correctamente.";
+
                 return RedirectToAction("Index");
             }
             catch (Exception ex)
             {
-                ModelState.AddModelError(string.Empty, ex.Message);
+                ModelState.AddModelError(string.Empty, "Ocurrió un error inesperado: " + ex.Message);
                 return View(model);
             }
-        }
-
-        [HttpGet]
-        public IActionResult LoanPayment()
-        {
-            return View(new LoanPaymentViewModel());
         }
 
         [HttpPost]
@@ -107,21 +146,33 @@ namespace ArtemisBankingPro.WebApp.Controllers
 
             try
             {
-                await _cashierService.ProcessLoanPaymentAsync(model.SourceAccountNumber, model.LoanNumber, model.Amount, GetUserId());
-                TempData["SuccessMessage"] = "Pago a préstamo realizado correctamente.";
+                var dto = new PayLoanRequestDto
+                {
+                    SourceAccountNumber = model.SourceAccountNumber,
+                    LoanNumber = model.LoanNumber,
+                    Amount = model.Amount
+                };
+
+                var response = await _cashierService.ProcessLoanPaymentAsync(dto, GetCashierId());
+
+                if (!response.Approved)
+                {
+                    ModelState.AddModelError(string.Empty, response.RejectionReason);
+                    return View(model);
+                }
+
+                if (!string.IsNullOrEmpty(response.WarningMessage))
+                    TempData["WarningMessage"] = response.WarningMessage;
+                else
+                    TempData["SuccessMessage"] = "Pago a préstamo realizado correctamente.";
+
                 return RedirectToAction("Index");
             }
             catch (Exception ex)
             {
-                ModelState.AddModelError(string.Empty, ex.Message);
+                ModelState.AddModelError(string.Empty, "Ocurrió un error inesperado: " + ex.Message);
                 return View(model);
             }
-        }
-
-        [HttpGet]
-        public IActionResult ThirdPartyTransfer()
-        {
-            return View(new ThirdTransferViewModel());
         }
 
         [HttpPost]
@@ -131,20 +182,39 @@ namespace ArtemisBankingPro.WebApp.Controllers
 
             try
             {
-                await _cashierService.ProcessThirdPartyTransferAsync(model.SourceAccountNumber, model.TargetAccountNumber, model.Amount, GetUserId());
-                TempData["SuccessMessage"] = "Transferencia realizada correctamente.";
+                var dto = new ThirdPartyTransferRequestDto
+                {
+                    SourceAccountNumber = model.SourceAccountNumber,
+                    DestinationAccountNumber = model.TargetAccountNumber,
+                    Amount = model.Amount
+                };
+
+                var response = await _cashierService.ProcessThirdPartyTransferAsync(dto, GetCashierId());
+
+                if (!response.Approved)
+                {
+                    ModelState.AddModelError(string.Empty, response.RejectionReason);
+                    return View(model);
+                }
+
+                if (!string.IsNullOrEmpty(response.WarningMessage))
+                    TempData["WarningMessage"] = response.WarningMessage;
+                else
+                    TempData["SuccessMessage"] = "Transferencia realizada correctamente.";
+
                 return RedirectToAction("Index");
             }
             catch (Exception ex)
             {
-                ModelState.AddModelError(string.Empty, ex.Message);
+                ModelState.AddModelError(string.Empty, "Ocurrió un error inesperado: " + ex.Message);
                 return View(model);
             }
         }
 
-        private string GetUserId()
+        private int GetCashierId()
         {
-            return User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+            var claimValue = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            return int.TryParse(claimValue, out int cashierId) ? cashierId : 0;
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿/*using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -12,7 +12,7 @@ namespace ArtemisBankingPro.Tests
         [Fact]
         public async Task GenerateAmortizationTableAsync_CreatesExpectedInstallments()
         {
-            var service = new LoanService(null!, null!, null!);
+            var service = new LoanService(null!, null!, null!, null!, null!, null!, null!, null!);
 
             var result = await service.GenerateAmortizationTableAsync(12000m, 12m, 12);
 
@@ -25,7 +25,7 @@ namespace ArtemisBankingPro.Tests
         [Fact]
         public async Task GenerateAmortizationTableAsync_WithZeroInterest_DividesCapitalEqually()
         {
-            var service = new LoanService(null!, null!, null!);
+            var service = new LoanService(null!, null!, null!, null!, null!, null!, null!, null!);
 
             var result = await service.GenerateAmortizationTableAsync(12000m, 0m, 12);
 
@@ -33,4 +33,3 @@ namespace ArtemisBankingPro.Tests
         }
     }
 }
-*/

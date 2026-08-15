@@ -70,16 +70,15 @@ namespace ArtemisBankingPro.Application.Services
                 client.Email,
                 "Tarjeta de crédito asignada",
                 $"Se le asignó una tarjeta de crédito terminada en {cardNumber[^4..]} con límite RD${request.CreditLimit:N2}.");
-            // El correo NO incluye el CVC.
+          
 
             var response = _mapper.Map<CreditCardCreatedResponseDto>(creditCard);
-            response.Cvc = cvc; // única vez que el CVC en texto plano sale de este método
+            response.Cvc = cvc; 
             return response;
         }
 
-        // ============================================================
         // MODIFICAR LÍMITE
-        // ============================================================
+        
         public async Task UpdateCreditLimitAsync(int cardId, decimal newLimit)
         {
             var card = await _creditCardRepository.GetByIdWithDetailsAsync(cardId);
@@ -98,9 +97,9 @@ namespace ArtemisBankingPro.Application.Services
                 $"El límite de tu tarjeta terminada en {card.CardNumber[^4..]} ahora es RD${newLimit:N2}.");
         }
 
-        // ============================================================
+        
         // CANCELAR TARJETA
-        // ============================================================
+        
         public async Task CancelCreditCardAsync(int cardId)
         {
             var card = await _creditCardRepository.GetByIdAsync(cardId);
@@ -113,9 +112,8 @@ namespace ArtemisBankingPro.Application.Services
             await _creditCardRepository.SaveChangesAsync();
         }
 
-        // ============================================================
         // LISTADO PAGINADO
-        // ============================================================
+       
         public async Task<PagedResult<CreditCardResponseDto>> GetCreditCardsAsync(
             string? cedula, string? status, int pageNumber, int pageSize)
         {
@@ -130,9 +128,9 @@ namespace ArtemisBankingPro.Application.Services
             };
         }
 
-        // ============================================================
+        
         // DETALLE POR ID
-        // ============================================================
+        
         public async Task<CreditCardResponseDto> GetCreditCardByIdAsync(int id)
         {
             var card = await _creditCardRepository.GetByIdWithDetailsAsync(id);
@@ -141,9 +139,9 @@ namespace ArtemisBankingPro.Application.Services
             return _mapper.Map<CreditCardResponseDto>(card);
         }
 
-        // ============================================================
+        
         // Helpers privados
-        // ============================================================
+        
         private async Task<string> GenerateUniqueCreditCardNumberAsync()
         {
             for (var attempt = 0; attempt < 20; attempt++)
@@ -168,13 +166,6 @@ namespace ArtemisBankingPro.Application.Services
             using var sha256 = SHA256.Create();
             var bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(input));
             return Convert.ToHexString(bytes).ToLower();
-        }
-
-        public async Task<CreditCardResponseDto> GetCreditCardByIdAsync(int id)
-        {
-            var card = await _creditCardRepository.GetByIdAsync(id);
-            if (card == null) throw new Exception("La tarjeta seleccionada no existe.");
-            return _mapper.Map<CreditCardResponseDto>(card);
         }
 
        
