@@ -37,7 +37,7 @@ namespace ArtemisBankingPro.Tests
         }
 
         [Fact]
-        public async Task ProcessWithdrawalAsync_WhenInsufficientFunds_Throws()
+        public async Task ProcessWithdrawalAsync_WhenInsufficientFunds_ReturnsRejected()
         {
             var account = new SavingsAccount { AccountNumber = "123456789", Balance = 100m, Status = AccountStatus.Activa };
             var accounts = new Mock<ISavingsAccountRepository>();
@@ -47,15 +47,15 @@ namespace ArtemisBankingPro.Tests
 
             var service = CreateService(accounts, transactions);
 
-            await Assert.ThrowsAsync<Exception>(() =>
-            {
-                var withdrawalDto = new ArtemisBankingPro.Application.DTOs.Cashier.WithdrawRequestDto { SourceAccountNumber = "123456789", Amount = 500m };
-                return service.ProcessWithdrawalAsync(withdrawalDto, 2);
-            });
+            var withdrawalDto = new ArtemisBankingPro.Application.DTOs.Cashier.WithdrawRequestDto { SourceAccountNumber = "123456789", Amount = 500m };
+            var result = await service.ProcessWithdrawalAsync(withdrawalDto, 2);
+
+            Assert.False(result.Approved);
+            Assert.Equal("Fondos insuficientes en la cuenta de ahorros.", result.RejectionReason);
         }
 
         [Fact]
-        public async Task ProcessCreditCardPaymentAsync_WhenOverpayment_Throws()
+        public async Task ProcessCreditCardPaymentAsync_WhenOverpayment_CapsToCurrentDebt()
         {
             var account = new SavingsAccount { AccountNumber = "123456789", Balance = 5000m, Status = AccountStatus.Activa };
             var card = new CreditCard { CardNumber = "1234567812345678", CurrentDebt = 1000m, Status = "Activa" };
@@ -69,11 +69,13 @@ namespace ArtemisBankingPro.Tests
 
             var service = CreateService(accounts, transactions, cards);
 
-            await Assert.ThrowsAsync<Exception>(() =>
-            {
-                var payDto = new ArtemisBankingPro.Application.DTOs.Cashier.PayCreditCardRequestDto { SourceAccountNumber = "123456789", CardNumber = "1234567812345678", Amount = 1500m };
-                return service.ProcessCreditCardPaymentAsync(payDto, 2);
-            });
+            var payDto = new ArtemisBankingPro.Application.DTOs.Cashier.PayCreditCardRequestDto { SourceAccountNumber = "123456789", CardNumber = "1234567812345678", Amount = 1500m };
+            var result = await service.ProcessCreditCardPaymentAsync(payDto, 2);
+
+            Assert.True(result.Approved);
+            Assert.Equal(1000m, result.AppliedAmount);
+            Assert.Equal(4000m, account.Balance);
+            Assert.Equal(0m, card.CurrentDebt);
         }
 
         private static CashierService CreateService(
