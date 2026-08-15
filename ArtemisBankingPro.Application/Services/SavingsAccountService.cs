@@ -252,6 +252,31 @@ namespace ArtemisBankingPro.Application.Services
             };
         }
 
+        public async Task CreditToMainAccountAsync(string clientId, decimal amount)
+        {
+            int cId = int.Parse(clientId);
+            var mainAccount = await _accountRepository.GetPrincipalByClientAsync(cId);
+            if (mainAccount == null)
+            {
+                throw new Exception("El cliente no tiene una cuenta principal activa.");
+            }
+            mainAccount.Balance += amount;
+            await _accountRepository.UpdateAsync(mainAccount);
+
+            var transaction = new Transaction
+            {
+                AccountNumber = mainAccount.AccountNumber,
+                Type = TransactionType.Credito,
+                Amount = amount,
+                Status = TransactionStatus.Aprobada,
+                Description = "Acreditación de préstamo aprobado",
+                PerformedByUserId = cId,
+                CreatedAt = DateTime.UtcNow
+            };
+            await _transactionRepository.AddAsync(transaction);
+            await _accountRepository.SaveChangesAsync();
+        }
+
         public async Task ProcessCreditCardPaymentOwnAccountAsync(string sourceAccountNumber, string cardNumber, decimal amount, string clientId)
         {
             if (amount <= 0) throw new Exception("El monto a pagar debe ser mayor que cero.");

@@ -15,7 +15,7 @@ namespace ArtemisBankingPro.Persistence.Repositories
                 .FirstOrDefaultAsync(u => u.Cedula == cedula);
         }
 
-        public async Task<User> GetByIdAsync(int id)
+        public override async Task<User> GetByIdAsync(int id)
         {
             return await _dbContext.Users
                 .Include(u => u.Role)

@@ -130,7 +130,12 @@ namespace ArtemisBankingPro.Application.Services
 
         
         // DETALLE POR ID
-        
+        // ============================================================
+        public async Task<List<CreditCardResponseDto>> GetAllCreditCardsAsync()
+        {
+            var cards = await _creditCardRepository.GetAllAsync();
+            return _mapper.Map<List<CreditCardResponseDto>>(cards.ToList());
+        }
         public async Task<CreditCardResponseDto> GetCreditCardByIdAsync(int id)
         {
             var card = await _creditCardRepository.GetByIdWithDetailsAsync(id);

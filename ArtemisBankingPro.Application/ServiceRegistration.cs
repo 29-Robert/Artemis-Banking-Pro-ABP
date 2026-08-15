@@ -1,5 +1,7 @@
 ﻿using System.Reflection;
 using ArtemisBankingPro.Application.Behaviors;
+using ArtemisBankingPro.Application.Interfaces.Services; 
+using ArtemisBankingPro.Application.Services;           
 using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,6 +19,13 @@ namespace ArtemisBankingPro.Application
             services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly()));
 
             services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
+
+            services.AddTransient<ISavingsAccountService, SavingsAccountService>();
+            services.AddTransient<ITransactionService, TransactionService>();
+            services.AddTransient<ICreditCardService, CreditCardService>();
+
+            services.AddTransient<ILoanService, LoanService>();
+
         }
     }
 }

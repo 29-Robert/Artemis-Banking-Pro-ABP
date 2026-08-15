@@ -1,4 +1,4 @@
-﻿using ArtemisBankingPro.Application.Common;
+using ArtemisBankingPro.Application.Common;
 using ArtemisBankingPro.Application.DTOs.Loan;
 using ArtemisBankingPro.Application.Interfaces.Repositories;
 using ArtemisBankingPro.Application.Interfaces.Services;
@@ -186,7 +186,7 @@ namespace ArtemisBankingPro.Application.Services
                 TermInMonths = request.TermInMonths,
                 AnnualInterestRate = request.AnnualInterestRate,
                 Status = "Activo",
-                AdminId = adminId,
+                AdminId = int.Parse(adminId),
                 CreatedAt = DateTime.UtcNow
             };
 
