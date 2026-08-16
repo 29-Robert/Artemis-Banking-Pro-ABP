@@ -6,7 +6,7 @@ using ArtemisBankingPro.Domain.Interfaces.Repositories;
 using ArtemisBankingPro.Infrastructure;
 using ArtemisBankingPro.Persistence.Contexts;
 using ArtemisBankingPro.Persistence.Repositories;
-using Microsoft.AspNetCore.Authentication.Cookies; 
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 
@@ -21,9 +21,10 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddApplicationLayer();
 builder.Services.AddInfrastructureLayer(builder.Configuration);
 
+// ==========================================
+// INYECCIÓN DE REPOSITORIOS
+// ==========================================
 builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
-builder.Services.AddScoped(typeof(IGenericService<>), typeof(GenericService<>));
-
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<ISavingsAccountRepository, SavingsAccountRepository>();
 builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
@@ -31,35 +32,26 @@ builder.Services.AddScoped<ILoanRepository, LoanRepository>();
 builder.Services.AddScoped<ICreditCardRepository, CreditCardRepository>();
 builder.Services.AddScoped<ILoanInstallmentRepository, LoanInstallmentRepository>();
 builder.Services.AddScoped<ICreditCardConsumptionRepository, CreditCardConsumptionRepository>();
+builder.Services.AddScoped<IBeneficiaryRepository, BeneficiaryRepository>();
+
+// ==========================================
+// INYECCIÓN DE SERVICIOS
+// ==========================================
+builder.Services.AddScoped(typeof(IGenericService<>), typeof(GenericService<>));
 builder.Services.AddScoped<ISavingsAccountService, SavingsAccountService>();
 builder.Services.AddScoped<ITransactionService, TransactionService>();
 builder.Services.AddScoped<ICashierService, CashierService>();
-builder.Services.AddScoped<IBeneficiaryRepository, BeneficiaryRepository>();
 builder.Services.AddScoped<IBeneficiaryService, BeneficiaryService>();
 
+// ==========================================
+// CONFIGURACIÓN DE AUTENTICACIÓN (Una sola vez)
+// ==========================================
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
-        options.LoginPath = "/Account/Login"; 
-        options.AccessDeniedPath = "/Account/AccessDenied"; 
-        options.ExpireTimeSpan = TimeSpan.FromHours(1); 
-    });
-
-builder.Services.AddScoped<IUserRepository, UserRepository>();
-builder.Services.AddScoped<ISavingsAccountRepository, SavingsAccountRepository>();
-builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
-builder.Services.AddScoped<ILoanRepository, LoanRepository>();
-builder.Services.AddScoped<ICreditCardRepository, CreditCardRepository>();
-builder.Services.AddScoped<ILoanInstallmentRepository, LoanInstallmentRepository>();
-builder.Services.AddScoped<ICreditCardConsumptionRepository, CreditCardConsumptionRepository>();
-builder.Services.AddScoped<ISavingsAccountService, SavingsAccountService>();
-
-builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-    .AddCookie(options =>
-    {
-        options.LoginPath = "/Account/Login"; 
-        options.AccessDeniedPath = "/Account/AccessDenied"; 
-        options.ExpireTimeSpan = TimeSpan.FromHours(1); 
+        options.LoginPath = "/Account/Login";
+        options.AccessDeniedPath = "/Account/AccessDenied";
+        options.ExpireTimeSpan = TimeSpan.FromHours(1);
     });
 
 builder.Services.AddControllersWithViews();
@@ -80,6 +72,7 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 
+// MIDDLEWARES DE SEGURIDAD
 app.UseAuthentication();
 app.UseAuthorization();
 

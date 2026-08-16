@@ -123,6 +123,21 @@ namespace ArtemisBankingPro.Tests
             // Arrange
             var db = GetInMemoryDbContext();
 
+            var client = new User
+            {
+                Id = 2,
+                FirstName = "Juan",
+                LastName = "Perez",
+                Cedula = "402-1234567-8",
+                Email = "juan@mail.com",
+                Username = "juan2",
+                PasswordHash = "hash",
+                PhoneNumber = "8095551234",
+                RoleId = 3,
+                IsActive = true
+            };
+            db.Users.Add(client);
+
             var principalAccount = new SavingsAccount
             {
                 UserId = 2,
@@ -172,6 +187,21 @@ namespace ArtemisBankingPro.Tests
             // Arrange
             var db = GetInMemoryDbContext();
 
+            var client = new User
+            {
+                Id = 3,
+                FirstName = "Juan",
+                LastName = "Perez",
+                Cedula = "402-1234567-8",
+                Email = "juan@mail.com",
+                Username = "juan3",
+                PasswordHash = "hash",
+                PhoneNumber = "8095551234",
+                RoleId = 3,
+                IsActive = true
+            };
+            db.Users.Add(client);
+
             var account = new SavingsAccount
             {
                 UserId = 3,
@@ -212,6 +242,21 @@ namespace ArtemisBankingPro.Tests
         {
             // Arrange
             var db = GetInMemoryDbContext();
+
+            var client = new User
+            {
+                Id = 4,
+                FirstName = "Juan",
+                LastName = "Perez",
+                Cedula = "402-1234567-8",
+                Email = "juan@mail.com",
+                Username = "juan4",
+                PasswordHash = "hash",
+                PhoneNumber = "8095551234",
+                RoleId = 3,
+                IsActive = true
+            };
+            db.Users.Add(client);
 
             var account = new SavingsAccount
             {

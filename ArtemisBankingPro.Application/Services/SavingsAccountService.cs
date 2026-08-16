@@ -215,7 +215,7 @@ namespace ArtemisBankingPro.Application.Services
                     Status = a.Status
                 }).ToList();
 
-            var loans = await _loanRepository.GetLoansByClientAsync(user.Cedula);
+            var loans = await _loanRepository.GetLoansByClientAsync(user.Id);
             var activeLoans = loans.Where(l => l.Status == "Activo" || l.Status == "Aprobado").ToList();
             var loanDtos = activeLoans.Select(l => new LoanResponseDto
             {
@@ -231,7 +231,7 @@ namespace ArtemisBankingPro.Application.Services
                 ClientPaymentStatus = l.Installments != null && l.Installments.Any(i => i.PaymentStatus == "Pendiente" && i.DueDate < DateTime.UtcNow) ? "Atrasado" : "Al día"
             }).ToList();
 
-            var cards = await _creditCardRepository.GetCardsByClientAsync(user.Cedula);
+            var cards = await _creditCardRepository.GetCardsByClientAsync(user.Id);
             var activeCards = cards.Where(c => c.Status == "Activa").Select(c => new CreditCardResponseDto
             {
                 Id = c.Id,
@@ -288,7 +288,10 @@ namespace ArtemisBankingPro.Application.Services
             if (account.Status == AccountStatus.Cancelada)
                 throw new Exception("La cuenta seleccionada está cancelada.");
 
-            if (account.Balance < amount)
+            if (account.IsBlocked)
+                throw new Exception("La cuenta de ahorros seleccionada se encuentra bloqueada.");
+
+            if (account.Balance - account.BlockedAmount < amount)
                 throw new Exception("Fondos insuficientes en la cuenta de ahorro.");
 
             var card = await _creditCardRepository.GetByCardNumberAsync(cardNumber);
@@ -343,7 +346,10 @@ namespace ArtemisBankingPro.Application.Services
             if (account.Status == AccountStatus.Cancelada)
                 throw new Exception("La cuenta seleccionada está cancelada.");
 
-            if (account.Balance < amount)
+            if (account.IsBlocked)
+                throw new Exception("La cuenta de ahorros seleccionada se encuentra bloqueada.");
+
+            if (account.Balance - account.BlockedAmount < amount)
                 throw new Exception("Fondos insuficientes en la cuenta de ahorro.");
 
             var loan = await _loanRepository.GetByLoanNumberAsync(loanNumber);
