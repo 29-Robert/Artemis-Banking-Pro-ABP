@@ -192,11 +192,9 @@ namespace ArtemisBankingPro.Application.Services
 
         public async Task<TransactionResponseDto> ProcessCreditCardPaymentAsync(PayCreditCardRequestDto request, int cashierId)
         {
-            
             if (request.Amount <= 0)
                 throw new ArgumentException("El monto a pagar debe ser mayor que cero.");
 
-           
             var account = await _accountRepository.GetByAccountNumberAsync(request.SourceAccountNumber);
             if (account == null || account.Status != AccountStatus.Activa)
             {
@@ -205,68 +203,59 @@ namespace ArtemisBankingPro.Application.Services
                     "El número de cuenta ingresado no corresponde a una cuenta válida.", cashierId);
             }
 
-            
             var card = await _creditCardRepository.GetByCardNumberAsync(request.CardNumber);
-            if (card == null || card.Status != "Activa") 
+            if (card == null || card.Status != "Activa")
             {
                 return await RegisterRejectedAsync(account.AccountNumber, request.Amount,
                     "El número de tarjeta ingresado no corresponde a una tarjeta válida.", cashierId);
             }
 
-          
             if (card.CurrentDebt <= 0)
             {
                 return await RegisterRejectedAsync(account.AccountNumber, request.Amount,
                     "La tarjeta seleccionada no tiene deuda pendiente.", cashierId);
             }
 
-            
             var appliedAmount = Math.Min(request.Amount, card.CurrentDebt);
 
-            
             if (account.Balance < appliedAmount)
             {
                 return await RegisterRejectedAsync(account.AccountNumber, request.Amount,
                     "El monto ingresado excede el saldo disponible de la cuenta.", cashierId);
             }
 
-            
             account.Balance -= appliedAmount;
             card.CurrentDebt -= appliedAmount;
-            card.AvailableCredit += appliedAmount;
+            // AvailableCredit se recalcula solo (CreditLimit - CurrentDebt), no se asigna.
 
             await _accountRepository.UpdateAsync(account);
             await _creditCardRepository.UpdateAsync(card);
 
-           
             string cardLast4 = card.CardNumber[^4..];
             string accountLast4 = account.AccountNumber[^4..];
 
-            
             var transaction = new Transaction
             {
                 AccountNumber = account.AccountNumber,
                 Type = TransactionType.Debito,
-                Amount = appliedAmount, 
+                Amount = appliedAmount,
                 Status = TransactionStatus.Aprobada,
-                Description = cardLast4, 
+                Description = $"PAGO A TARJETA {cardLast4}",
                 PerformedByUserId = cashierId,
                 CreatedAt = DateTime.UtcNow
             };
             await _transactionRepository.AddAsync(transaction);
             await _accountRepository.SaveChangesAsync();
 
-           
             try
             {
                 var fechaHoraLocal = transaction.CreatedAt.ToLocalTime();
 
-               
-                if (card.User != null && !string.IsNullOrEmpty(card.User.Email))
+                if (card.Client != null && !string.IsNullOrEmpty(card.Client.Email))
                 {
                     string subjectCard = $"Pago realizado a la tarjeta {cardLast4}";
                     string bodyCard = $@"
-                <p>Hola {card.User.FirstName},</p>
+                <p>Hola {card.Client.FirstName},</p>
                 <p>Se ha realizado un pago a su tarjeta de crédito terminada en {cardLast4}.</p>
                 <ul>
                     <li><strong>Monto pagado:</strong> {appliedAmount:C}</li>
@@ -275,11 +264,10 @@ namespace ArtemisBankingPro.Application.Services
                 </ul>
                 <p>Si usted no reconoce esta operación, comuníquese con la entidad bancaria.</p>";
 
-                    await _emailService.SendNotificationEmailAsync(card.User.Email, subjectCard, bodyCard);
+                    await _emailService.SendNotificationEmailAsync(card.Client.Email, subjectCard, bodyCard);
                 }
 
-                
-                if (account.UserId != card.UserId && account.User != null && !string.IsNullOrEmpty(account.User.Email))
+                if (account.UserId != card.ClientId && account.User != null && !string.IsNullOrEmpty(account.User.Email))
                 {
                     string subjectAccount = $"Débito por pago a tarjeta {cardLast4}";
                     string bodyAccount = $@"
@@ -297,7 +285,6 @@ namespace ArtemisBankingPro.Application.Services
             }
             catch (Exception)
             {
-               
             }
 
             return BuildApproved(transaction, appliedAmount);
@@ -388,7 +375,7 @@ namespace ArtemisBankingPro.Application.Services
                 Type = TransactionType.Debito,
                 Amount = appliedAmount,
                 Status = TransactionStatus.Aprobada,
-                Description = request.LoanNumber, 
+                Description = $"PAGO A PRESTAMO {request.LoanNumber}", 
                 PerformedByUserId = cashierId,
                 CreatedAt = DateTime.UtcNow
             };
@@ -402,11 +389,11 @@ namespace ArtemisBankingPro.Application.Services
                 string accountLast4 = account.AccountNumber[^4..];
 
                
-                if (loan.User != null && !string.IsNullOrEmpty(loan.User.Email))
+                if (loan.Client != null && !string.IsNullOrEmpty(loan.Client.Email))
                 {
                     string subjectLoan = $"Pago realizado al préstamo {request.LoanNumber}";
                     string bodyLoan = $@"
-                <p>Hola {loan.User.FirstName},</p>
+                <p>Hola {loan.Client.FirstName},</p>
                 <p>Se ha realizado un pago a su préstamo {request.LoanNumber}.</p>
                 <ul>
                     <li><strong>Monto pagado:</strong> {appliedAmount:C}</li>
@@ -415,11 +402,11 @@ namespace ArtemisBankingPro.Application.Services
                 </ul>
                 <p>Si usted no reconoce esta operación, comuníquese con la entidad bancaria.</p>";
 
-                    await _emailService.SendNotificationEmailAsync(loan.User.Email, subjectLoan, bodyLoan);
+                    await _emailService.SendNotificationEmailAsync(loan.Client.Email, subjectLoan, bodyLoan);
                 }
 
              
-                if (account.UserId != loan.UserId && account.User != null && !string.IsNullOrEmpty(account.User.Email))
+                if (account.UserId != loan.ClientId && account.User != null && !string.IsNullOrEmpty(account.User.Email))
                 {
                     string subjectAccount = $"Débito por pago a préstamo {request.LoanNumber}";
                     string bodyAccount = $@"
@@ -497,7 +484,7 @@ namespace ArtemisBankingPro.Application.Services
         Type = TransactionType.Debito,
         Amount = request.Amount,
         Status = TransactionStatus.Aprobada,
-        Description = tgtAcc.AccountNumber, 
+        Description = $"TRANSFERENCIA A TERCEROS {tgtAcc.AccountNumber}", 
         PerformedByUserId = cashierId,
         CreatedAt = DateTime.UtcNow
     };
@@ -508,7 +495,7 @@ namespace ArtemisBankingPro.Application.Services
         Type = TransactionType.Credito,
         Amount = request.Amount,
         Status = TransactionStatus.Aprobada,
-        Description = srcAcc.AccountNumber, 
+        Description = $"TRANSFERENCIA RECIBIDA {srcAcc.AccountNumber}", 
         PerformedByUserId = cashierId,
         CreatedAt = DateTime.UtcNow
     };
@@ -573,35 +560,29 @@ namespace ArtemisBankingPro.Application.Services
         {
             var today = DateTime.UtcNow.Date;
 
-            
             var todaysTransactions = await _transactionRepository.GetByPerformedUserAndDateAsync(cashierId, today);
 
-            
             var approvedTransactions = todaysTransactions
                 .Where(t => t.Status == TransactionStatus.Aprobada)
                 .ToList();
 
-           
             int deposits = approvedTransactions.Count(t =>
                 t.Type == TransactionType.Credito &&
-                t.Description.Equals("DEPÓSITO", StringComparison.OrdinalIgnoreCase));
+                t.Description.StartsWith("DEPÓSITO", StringComparison.OrdinalIgnoreCase));
 
             int withdrawals = approvedTransactions.Count(t =>
                 t.Type == TransactionType.Debito &&
-                t.Description.Equals("RETIRO", StringComparison.OrdinalIgnoreCase));
+                t.Description.StartsWith("RETIRO", StringComparison.OrdinalIgnoreCase));
 
-            
             int payments = approvedTransactions.Count(t =>
                 t.Type == TransactionType.Debito &&
-                (t.Description.Equals("PAGO A TARJETA", StringComparison.OrdinalIgnoreCase) ||
-                 t.Description.Equals("PAGO A PRÉSTAMO", StringComparison.OrdinalIgnoreCase)));
+                (t.Description.StartsWith("PAGO A TARJETA", StringComparison.OrdinalIgnoreCase) ||
+                 t.Description.StartsWith("PAGO A PRESTAMO", StringComparison.OrdinalIgnoreCase)));
 
-            
             int totalTransfers = approvedTransactions.Count(t =>
                 t.Type == TransactionType.Debito &&
-                t.Description.Equals("TRANSFERENCIA A TERCEROS", StringComparison.OrdinalIgnoreCase));
+                t.Description.StartsWith("TRANSFERENCIA A TERCEROS", StringComparison.OrdinalIgnoreCase));
 
-           
             int totalTransactions = deposits + withdrawals + payments + totalTransfers;
 
             return new CajeroHomeIndicatorsResponseDto

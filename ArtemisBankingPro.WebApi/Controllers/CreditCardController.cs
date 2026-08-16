@@ -23,9 +23,21 @@ namespace ArtemisBankingPro.WebApi.Controllers
 
         // GET api/credit-card
         [HttpGet]
-        public async Task<IActionResult> GetAll()
+        public async Task<IActionResult> GetAll(
+        [FromQuery] string? cedula,
+        [FromQuery] string? status,
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 20)
         {
-            var result = await _mediator.Send(new GetAllCreditCardsQuery());
+            var query = new GetAllCreditCardsQuery
+            {
+                Cedula = cedula,
+                Status = status,
+                PageNumber = pageNumber,
+                PageSize = pageSize
+            };
+
+            var result = await _mediator.Send(query);
             return Ok(result);
         }
 
