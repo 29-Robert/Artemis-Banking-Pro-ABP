@@ -67,6 +67,26 @@ namespace ArtemisBankingPro.Persistence.Contexts
                     .HasForeignKey(ccc => ccc.CommerceId)   
                     .OnDelete(DeleteBehavior.Restrict);
 
+            foreach (var property in modelBuilder.Model.GetEntityTypes()
+                .SelectMany(t => t.GetProperties())
+                .Where(p => p.ClrType == typeof(decimal)))
+            {
+                property.SetColumnType("decimal(18,2)");
+            }
+
+            modelBuilder.Entity<SavingsAccount>()
+                .HasMany(s => s.Transactions)
+                .WithOne(t => t.SavingsAccount)
+                .HasForeignKey(t => t.AccountNumber)
+                .HasPrincipalKey(s => s.AccountNumber)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<User>()
+                .HasMany(u => u.SavingsAccounts)
+                .WithOne(s => s.User)
+                .HasForeignKey(s => s.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             var seedDate = new DateTime(2026, 8, 1, 0, 0, 0, DateTimeKind.Utc);
 
             modelBuilder.Entity<Role>().HasData(

@@ -261,7 +261,7 @@ namespace ArtemisBankingPro.Tests
             var today = DateTime.UtcNow.Date;
             var todaysTransactions = new List<Transaction>
     {
-        new() { Type = TransactionType.Credito, Description = "DEPÓSITO", Status = TransactionStatus.Aprobada },
+        new() { Type = TransactionType.Credito, Description = "DEPÃ“SITO", Status = TransactionStatus.Aprobada },
         new() { Type = TransactionType.Debito, Description = "RETIRO", Status = TransactionStatus.Aprobada },
         new() { Type = TransactionType.Debito, Description = "PAGO A TARJETA 5678", Status = TransactionStatus.Aprobada },
         new() { Type = TransactionType.Debito, Description = "TRANSFERENCIA A TERCEROS 222222222", Status = TransactionStatus.Aprobada }
@@ -277,7 +277,7 @@ namespace ArtemisBankingPro.Tests
 
             Assert.Equal(1, result.DepositsToday);
             Assert.Equal(1, result.WithdrawalsToday);
-            Assert.Equal(1, result.PaymentsToday); // ahora sí cuenta gracias al fix
+            Assert.Equal(1, result.PaymentsToday); // ahora sÃ­ cuenta gracias al fix
             Assert.Equal(4, result.TotalTransactionsToday);
         }
 
@@ -288,7 +288,7 @@ namespace ArtemisBankingPro.Tests
             {
                 AccountNumber = "123456789",
                 Status = AccountStatus.Activa,
-                User = new User { FirstName = "María", LastName = "Gómez" }
+                User = new User { FirstName = "MarÃ­a", LastName = "GÃ³mez" }
             };
             var accounts = new Mock<ISavingsAccountRepository>();
             accounts.Setup(x => x.GetByAccountNumberAsync("123456789")).ReturnsAsync(account);
@@ -297,7 +297,7 @@ namespace ArtemisBankingPro.Tests
 
             var result = await service.GetAccountPreviewAsync("123456789");
 
-            Assert.Equal("María Gómez", result.AccountHolderFullName);
+            Assert.Equal("MarÃ­a GÃ³mez", result.AccountHolderFullName);
             Assert.Equal("Activa", result.Status);
         }
 
@@ -309,7 +309,7 @@ namespace ArtemisBankingPro.Tests
                 CardNumber = "1234567812345678",
                 CurrentDebt = 500m,
                 Status = "Activa",
-                Client = new User { FirstName = "Juan", LastName = "Pérez" }
+                Client = new User { FirstName = "Juan", LastName = "PÃ©rez" }
             };
             var cards = new Mock<ICreditCardRepository>();
             cards.Setup(x => x.GetByCardNumberWithClientAsync("1234567812345678")).ReturnsAsync(card);
@@ -319,7 +319,7 @@ namespace ArtemisBankingPro.Tests
             var result = await service.GetCreditCardPreviewAsync("1234567812345678");
 
             Assert.Equal("**** **** **** 5678", result.MaskedCardNumber);
-            Assert.Equal("Juan Pérez", result.ClientFullName);
+            Assert.Equal("Juan PÃ©rez", result.ClientFullName);
         }
 
         [Fact]
@@ -329,7 +329,7 @@ namespace ArtemisBankingPro.Tests
             {
                 LoanNumber = "987654321",
                 Status = "Activo",
-                Client = new User { FirstName = "María", LastName = "Gómez" },
+                Client = new User { FirstName = "MarÃ­a", LastName = "GÃ³mez" },
                 Installments = new List<LoanInstallment>
         {
             new() { PendingInstallmentAmount = 300m },
@@ -360,7 +360,8 @@ namespace ArtemisBankingPro.Tests
                 cards?.Object ?? Mock.Of<ICreditCardRepository>(),
                 accounts.Object,
                 transactions.Object,
-                emailService?.Object ?? Mock.Of<IEmailService>());
+                emailService?.Object ?? Mock.Of<IEmailService>(),
+                Mock.Of<IUnitOfWork>());
         }
     }
 }

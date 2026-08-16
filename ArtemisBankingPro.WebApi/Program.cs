@@ -52,6 +52,7 @@ builder.Services.AddScoped<ICashierService, CashierService>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserService, ArtemisBankingPro.WebApi.Services.CurrentUserService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 
