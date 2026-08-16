@@ -1,7 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-
-
 namespace ArtemisBankingPro.WebApp.Models
 {
     public class DepositViewModel
