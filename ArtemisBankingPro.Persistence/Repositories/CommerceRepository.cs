@@ -1,63 +1,32 @@
 ﻿using ArtemisBankingPro.Application.Interfaces.Repositories;
 using ArtemisBankingPro.Domain.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using ArtemisBankingPro.Persistence.Contexts;
+using Microsoft.EntityFrameworkCore;
 using System.Threading.Tasks;
 
 namespace ArtemisBankingPro.Persistence.Repositories
 {
-    public class CommerceRepository : ICommerceRepository
+    public class CommerceRepository(ApplicationDbContext dbContext) : GenericRepository<Commerce>(dbContext), ICommerceRepository
     {
-        public Task<Commerce> AddAsync(Commerce entity)
+        public async Task<Commerce> GetByEmailAsync(string email)
         {
-            throw new NotImplementedException();
+            return await _dbContext.Commerces
+                .Include(c => c.User)
+                .FirstOrDefaultAsync(c => c.Email == email);
         }
 
-        public Task DeleteAsync(Commerce entity)
+        public async Task<Commerce> GetByIdWithUserAsync(int id)
         {
-            throw new NotImplementedException();
+            return await _dbContext.Commerces
+                .Include(c => c.User)
+                .FirstOrDefaultAsync(c => c.Id == id);
         }
 
-        public Task<IReadOnlyList<Commerce>> GetAllAsync()
+        public async Task<Commerce> GetByRncAsync(string rnc)
         {
-            throw new NotImplementedException();
-        }
-
-        public Task<Commerce> GetByEmailAsync(string email)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<Commerce> GetByIdAsync(int id)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<Commerce> GetByIdWithUserAsync(int id)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<Commerce> GetByRncAsync(string rnc)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<(IReadOnlyList<Commerce> Data, int TotalRecords)> GetPagedAsync(int page, int pageSize, string filter = null)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task SaveChangesAsync()
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task UpdateAsync(Commerce entity)
-        {
-            throw new NotImplementedException();
+            return await _dbContext.Commerces
+                .Include(c => c.User)
+                .FirstOrDefaultAsync(c => c.RNC == rnc);
         }
     }
 }

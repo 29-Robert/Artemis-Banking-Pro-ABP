@@ -78,10 +78,10 @@ namespace ArtemisBankingPro.WebApp.Controllers
 
             foreach (var client in activeClients)
             {
-                var loans = await loanRepository.GetLoansByClientAsync(client.Cedula);
+                var loans = await loanRepository.GetLoansByClientAsync(client.Id);
                 var activeLoansDebt = loans.Where(l => l.Status == "Activo" || l.Status == "Aprobado").Sum(l => l.CapitalAmount);
 
-                var cards = await creditCardRepository.GetCardsByClientAsync(client.Cedula);
+                var cards = await creditCardRepository.GetCardsByClientAsync(client.Id);
                 var activeCardsDebt = cards.Where(c => c.Status == "Activa").Sum(c => c.CurrentDebt);
 
                 decimal totalDebt = activeLoansDebt + activeCardsDebt;

@@ -4,6 +4,7 @@ using ArtemisBankingPro.Persistence.Contexts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ArtemisBankingPro.Persistence.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260815012852_AddCommerceContactFields")]
+    partial class AddCommerceContactFields
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -199,9 +202,6 @@ namespace ArtemisBankingPro.Persistence.Migrations
                     b.Property<decimal>("Amount")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<int?>("CommerceId")
-                        .HasColumnType("int");
-
                     b.Property<string>("CommerceName")
                         .HasColumnType("nvarchar(max)");
 
@@ -210,9 +210,6 @@ namespace ArtemisBankingPro.Persistence.Migrations
 
                     b.Property<int>("CreditCardId")
                         .HasColumnType("int");
-
-                    b.Property<string>("Description")
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Status")
                         .HasColumnType("nvarchar(max)");
@@ -224,8 +221,6 @@ namespace ArtemisBankingPro.Persistence.Migrations
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("CommerceId");
 
                     b.HasIndex("CreditCardId");
 
@@ -390,14 +385,8 @@ namespace ArtemisBankingPro.Persistence.Migrations
                     b.Property<decimal>("Balance")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<decimal>("BlockedAmount")
-                        .HasColumnType("decimal(18,2)");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsBlocked")
-                        .HasColumnType("bit");
 
                     b.Property<bool>("IsPrincipal")
                         .HasColumnType("bit");
@@ -572,18 +561,11 @@ namespace ArtemisBankingPro.Persistence.Migrations
 
             modelBuilder.Entity("ArtemisBankingPro.Domain.Entities.CreditCardConsumption", b =>
                 {
-                    b.HasOne("ArtemisBankingPro.Domain.Entities.Commerce", "Commerce")
-                        .WithMany("Consumptions")
-                        .HasForeignKey("CommerceId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.HasOne("ArtemisBankingPro.Domain.Entities.CreditCard", "CreditCard")
                         .WithMany("Consumptions")
                         .HasForeignKey("CreditCardId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Commerce");
 
                     b.Navigation("CreditCard");
                 });
@@ -657,8 +639,6 @@ namespace ArtemisBankingPro.Persistence.Migrations
 
             modelBuilder.Entity("ArtemisBankingPro.Domain.Entities.Commerce", b =>
                 {
-                    b.Navigation("Consumptions");
-
                     b.Navigation("User");
                 });
 

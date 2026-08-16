@@ -66,10 +66,15 @@ namespace ArtemisBankingPro.Tests
             Assert.False(response.Approved);
             Assert.NotNull(response.RejectionReason);
             Assert.Equal(100m, account.Balance); 
+            var withdrawalDto = new ArtemisBankingPro.Application.DTOs.Cashier.WithdrawRequestDto { SourceAccountNumber = "123456789", Amount = 500m };
+            var result = await service.ProcessWithdrawalAsync(withdrawalDto, 2);
+
+            Assert.False(result.Approved);
+            Assert.Equal("El monto ingresado excede el saldo disponible de la cuenta.", result.RejectionReason);
         }
 
         [Fact]
-        public async Task ProcessCreditCardPaymentAsync_WhenOverpayment_ReturnsRejected()
+        public async Task ProcessCreditCardPaymentAsync_WhenOverpayment_CapsToCurrentDebt()
         {
             // Arrange
             var account = new SavingsAccount { AccountNumber = "123456789", Balance = 5000m, Status = AccountStatus.Activa };
@@ -80,7 +85,7 @@ namespace ArtemisBankingPro.Tests
             var cards = new Mock<ICreditCardRepository>();
 
             accounts.Setup(x => x.GetByAccountNumberAsync("123456789")).ReturnsAsync(account);
-            cards.Setup(x => x.GetByCardNumberWithClientAsync("1234567812345678")).ReturnsAsync(card);
+            cards.Setup(x => x.GetByCardNumberAsync("1234567812345678")).ReturnsAsync(card);
 
             var service = CreateService(accounts, transactions, cards);
 
@@ -91,13 +96,14 @@ namespace ArtemisBankingPro.Tests
                 Amount = 1500m
             };
 
-   
-            var response = await service.ProcessCreditCardPaymentAsync(dto, 2);
+            // Act
+            var result = await service.ProcessCreditCardPaymentAsync(dto, 2);
 
-     
-            Assert.False(response.Approved);
-            Assert.NotNull(response.RejectionReason);
-            Assert.Equal(5000m, account.Balance);
+            // Assert
+            Assert.True(result.Approved);
+            Assert.Equal(1000m, result.AppliedAmount);
+            Assert.Equal(4000m, account.Balance);
+            Assert.Equal(0m, card.CurrentDebt);
         }
 
         // Helper

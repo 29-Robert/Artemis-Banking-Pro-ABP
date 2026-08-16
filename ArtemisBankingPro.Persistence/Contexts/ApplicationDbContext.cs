@@ -52,14 +52,20 @@ namespace ArtemisBankingPro.Persistence.Contexts
 
             modelBuilder.Entity<Commerce>().HasIndex(c => c.Email).IsUnique();
             modelBuilder.Entity<Loan>()
-           .HasMany(l => l.Installments)
-           .WithOne(i => i.Loan)
-           .HasForeignKey(i => i.LoanId);
+               .HasMany(l => l.Installments)
+               .WithOne(i => i.Loan)
+               .HasForeignKey(i => i.LoanId);
 
             modelBuilder.Entity<CreditCard>()
-           .HasMany(c => c.Consumptions)
-           .WithOne(c => c.CreditCard)
-           .HasForeignKey(c => c.CreditCardId);
+               .HasMany(c => c.Consumptions)
+               .WithOne(c => c.CreditCard)
+               .HasForeignKey(c => c.CreditCardId);
+
+            modelBuilder.Entity<Commerce>()
+                    .HasMany(c => c.Consumptions)        
+                    .WithOne(ccc => ccc.Commerce)       
+                    .HasForeignKey(ccc => ccc.CommerceId)   
+                    .OnDelete(DeleteBehavior.Restrict);
 
             var seedDate = new DateTime(2026, 8, 1, 0, 0, 0, DateTimeKind.Utc);
 

@@ -1,4 +1,4 @@
-﻿using ArtemisBankingPro.Domain.Common;
+using ArtemisBankingPro.Domain.Common;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,5 +15,8 @@ namespace ArtemisBankingPro.Domain.Entities
         public decimal Amount { get; set; }
         public string CommerceName { get; set; } 
         public string Status { get; set; } 
+        public int? CommerceId { get; set; }
+        public Commerce? Commerce { get; set; }
+        public string? Description { get; set; }
     }
 }

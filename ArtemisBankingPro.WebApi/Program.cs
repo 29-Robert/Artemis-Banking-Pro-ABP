@@ -49,6 +49,9 @@ builder.Services.AddScoped<ICreditCardService, CreditCardService>();
 builder.Services.AddScoped<ICommerceRepository, CommerceRepository>();
 builder.Services.AddScoped<ICommerceService, CommerceService>();
 builder.Services.AddScoped<ICashierService, CashierService>();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentUserService, ArtemisBankingPro.WebApi.Services.CurrentUserService>();
+builder.Services.AddScoped<IPaymentService, PaymentService>();
 
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 

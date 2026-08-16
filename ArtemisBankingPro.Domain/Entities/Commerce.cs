@@ -13,5 +13,6 @@ namespace ArtemisBankingPro.Domain.Entities
         public string PrincipalAccountNumber { get; set; } = string.Empty;
 
         public User? User { get; set; }
+        public ICollection<CreditCardConsumption> Consumptions { get; set; } = new List<CreditCardConsumption>();
     }
 }

@@ -164,12 +164,12 @@ namespace ArtemisBankingPro.Application.Services
 
             if (!request.ConfirmHighRisk)
             {
-                if (currentDebt > averageDebt)
+                if (averageDebt > 0 && currentDebt > averageDebt)
                     throw new HighRiskClientException(
                         "Este cliente se considera de alto riesgo, ya que su deuda actual supera el promedio del sistema.",
                         "CurrentHighRisk", currentDebt, projectedDebt, averageDebt);
 
-                if (projectedDebt > averageDebt)
+                if (averageDebt > 0 && projectedDebt > averageDebt)
                     throw new HighRiskClientException(
                         "Asignar este préstamo convertirá al cliente en un cliente de alto riesgo, ya que su deuda superará el umbral promedio del sistema.",
                         "ProjectedHighRisk", currentDebt, projectedDebt, averageDebt);
