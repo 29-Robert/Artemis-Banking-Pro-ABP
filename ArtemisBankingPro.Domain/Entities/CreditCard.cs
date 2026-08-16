@@ -1,13 +1,13 @@
 ﻿using ArtemisBankingPro.Domain.Common;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ArtemisBankingPro.Domain.Entities
 {
     public class CreditCard : BaseEntity
     {
-        public decimal AvailableCredit;
-        public int UserId;
-        public User? User;
+        [NotMapped]
+        public decimal AvailableCredit => CreditLimit - CurrentDebt;
 
         public int ClientId { get; set; }
         public User? Client { get; set; }
@@ -18,7 +18,7 @@ namespace ArtemisBankingPro.Domain.Entities
         public string ExpirationMonth { get; set; }
         public string ExpirationYear { get; set; }
         public string CvcHash { get; set; }
-        public string Status { get; set; } 
+        public string Status { get; set; }
 
         public int AdminId { get; set; }
         public User? Admin { get; set; }
