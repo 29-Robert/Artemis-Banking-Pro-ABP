@@ -119,7 +119,8 @@ namespace ArtemisBankingPro.Tests
                 cards?.Object ?? Mock.Of<ICreditCardRepository>(),
                 accounts.Object,
                 transactions.Object,
-                Mock.Of<IEmailService>());
+                Mock.Of<IEmailService>(),
+                Mock.Of<IUnitOfWork>());
         }
     }
 }

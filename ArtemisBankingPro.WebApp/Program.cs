@@ -42,6 +42,7 @@ builder.Services.AddScoped<ISavingsAccountService, SavingsAccountService>();
 builder.Services.AddScoped<ITransactionService, TransactionService>();
 builder.Services.AddScoped<ICashierService, CashierService>();
 builder.Services.AddScoped<IBeneficiaryService, BeneficiaryService>();
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 // ==========================================
 // CONFIGURACIÓN DE AUTENTICACIÓN (Una sola vez)
