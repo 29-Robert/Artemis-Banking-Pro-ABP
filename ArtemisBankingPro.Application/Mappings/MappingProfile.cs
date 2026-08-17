@@ -1,7 +1,9 @@
-﻿using ArtemisBankingPro.Application.DTOs.CreditCard;
+using ArtemisBankingPro.Application.DTOs.CreditCard;
 using ArtemisBankingPro.Application.DTOs.Loan;
+using ArtemisBankingPro.Application.DTOs.Commerces;
 using ArtemisBankingPro.Domain.Entities;
 using AutoMapper;
+using System.Linq;
 
 namespace ArtemisBankingPro.Application.Mappings
 {
@@ -66,6 +68,33 @@ namespace ArtemisBankingPro.Application.Mappings
             CreateMap<CreditCard, CreditCardCreatedResponseDto>()
                 .IncludeBase<CreditCard, CreditCardResponseDto>()
                 .ForMember(d => d.Cvc, o => o.Ignore());
+
+            // COMMERCE
+            CreateMap<Commerce, CommerceListItemDto>();
+            CreateMap<Commerce, CommerceDetailDto>();
+            CreateMap<CreateCommerceDto, Commerce>()
+                .ForMember(d => d.BusinessName, o => o.MapFrom(s => s.BusinessName))
+                .ForMember(d => d.RNC, o => o.MapFrom(s => s.RNC))
+                .ForMember(d => d.Email, o => o.MapFrom(s => s.Email))
+                .ForMember(d => d.Phone, o => o.MapFrom(s => s.Phone))
+                .ForMember(d => d.Address, o => o.MapFrom(s => s.Address))
+                .ForMember(d => d.IsActive, o => o.MapFrom(s => true))
+                .ForMember(d => d.PrincipalAccountNumber, o => o.Ignore())
+                .ForMember(d => d.User, o => o.Ignore())
+                .ForMember(d => d.Consumptions, o => o.Ignore())
+                .ForMember(d => d.Id, o => o.Ignore());
+
+            CreateMap<UpdateCommerceDto, Commerce>()
+                .ForMember(d => d.BusinessName, o => o.MapFrom(s => s.BusinessName))
+                .ForMember(d => d.Email, o => o.MapFrom(s => s.Email))
+                .ForMember(d => d.Phone, o => o.MapFrom(s => s.Phone))
+                .ForMember(d => d.RNC, o => o.Ignore())
+                .ForMember(d => d.Address, o => o.Ignore())
+                .ForMember(d => d.IsActive, o => o.Ignore())
+                .ForMember(d => d.PrincipalAccountNumber, o => o.Ignore())
+                .ForMember(d => d.User, o => o.Ignore())
+                .ForMember(d => d.Consumptions, o => o.Ignore())
+                .ForMember(d => d.Id, o => o.Ignore());
         }
     }
 }

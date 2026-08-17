@@ -1,28 +1,24 @@
-using ArtemisBankingPro.Application.Interfaces.Services;
-using ArtemisBankingPro.WebApp.Models;
+using ArtemisBankingPro.Application.Features.Accounts.Commands;
+using ArtemisBankingPro.Application.Features.Accounts.Queries;
 using ArtemisBankingPro.WebApp.ViewModels;
+using ArtemisBankingPro.WebApp.Models;
+using AutoMapper;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Security.Claims;
-using ArtemisBankingPro.Application.DTOs.Cashier; 
+using System.Threading.Tasks;
 
 namespace ArtemisBankingPro.WebApp.Controllers
 {
     [Authorize(Roles = "Cajero")]
-    public class CashierController : Controller
+    public class CashierController(IMediator mediator, IMapper mapper) : Controller
     {
-        private readonly ICashierService _cashierService;
-
-        public CashierController(ICashierService cashierService)
-        {
-            _cashierService = cashierService;
-        }
-
-      
         public async Task<IActionResult> Index()
         {
             int cashierId = GetCashierId();
-            var indicators = await _cashierService.GetHomeIndicatorsAsync(cashierId);
+            var indicators = await mediator.Send(new GetHomeIndicatorsQuery { CashierId = cashierId });
             return View(indicators);
         }
 
@@ -31,6 +27,7 @@ namespace ArtemisBankingPro.WebApp.Controllers
         {
             return View(new DepositViewModel());
         }
+
         [HttpPost]
         public async Task<IActionResult> Deposit(DepositViewModel model)
         {
@@ -38,15 +35,10 @@ namespace ArtemisBankingPro.WebApp.Controllers
 
             try
             {
-               
-                var dto = new DepositRequestDto
-                {
-                    DestinationAccountNumber = model.TargetAccountNumber,
-                    Amount = model.Amount
-                };
+                var command = mapper.Map<DepositCommand>(model);
+                command.CashierId = GetCashierId();
 
-               
-                var response = await _cashierService.ProcessDepositAsync(dto, GetCashierId());
+                var response = await mediator.Send(command);
 
                 if (!response.Approved)
                 {
@@ -75,13 +67,10 @@ namespace ArtemisBankingPro.WebApp.Controllers
 
             try
             {
-                var dto = new WithdrawRequestDto
-                {
-                    SourceAccountNumber = model.SourceAccountNumber,
-                    Amount = model.Amount
-                };
+                var command = mapper.Map<WithdrawCommand>(model);
+                command.CashierId = GetCashierId();
 
-                var response = await _cashierService.ProcessWithdrawalAsync(dto, GetCashierId());
+                var response = await mediator.Send(command);
 
                 if (!response.Approved)
                 {
@@ -110,14 +99,10 @@ namespace ArtemisBankingPro.WebApp.Controllers
 
             try
             {
-                var dto = new PayCreditCardRequestDto
-                {
-                    SourceAccountNumber = model.SourceAccountNumber,
-                    CardNumber = model.CardNumber,
-                    Amount = model.Amount
-                };
+                var command = mapper.Map<PayCreditCardCommand>(model);
+                command.CashierId = GetCashierId();
 
-                var response = await _cashierService.ProcessCreditCardPaymentAsync(dto, GetCashierId());
+                var response = await mediator.Send(command);
 
                 if (!response.Approved)
                 {
@@ -146,14 +131,10 @@ namespace ArtemisBankingPro.WebApp.Controllers
 
             try
             {
-                var dto = new PayLoanRequestDto
-                {
-                    SourceAccountNumber = model.SourceAccountNumber,
-                    LoanNumber = model.LoanNumber,
-                    Amount = model.Amount
-                };
+                var command = mapper.Map<PayLoanCommand>(model);
+                command.CashierId = GetCashierId();
 
-                var response = await _cashierService.ProcessLoanPaymentAsync(dto, GetCashierId());
+                var response = await mediator.Send(command);
 
                 if (!response.Approved)
                 {
@@ -182,14 +163,10 @@ namespace ArtemisBankingPro.WebApp.Controllers
 
             try
             {
-                var dto = new ThirdPartyTransferRequestDto
-                {
-                    SourceAccountNumber = model.SourceAccountNumber,
-                    DestinationAccountNumber = model.TargetAccountNumber,
-                    Amount = model.Amount
-                };
+                var command = mapper.Map<TransferCommand>(model);
+                command.CashierId = GetCashierId();
 
-                var response = await _cashierService.ProcessThirdPartyTransferAsync(dto, GetCashierId());
+                var response = await mediator.Send(command);
 
                 if (!response.Approved)
                 {

@@ -1,7 +1,6 @@
-using ArtemisBankingPro.Application.DTOs.Account;
-using ArtemisBankingPro.Application.Interfaces.Repositories;
-using ArtemisBankingPro.Application.Interfaces.Services;
-using ArtemisBankingPro.Domain.Enums;
+using ArtemisBankingPro.Application.Features.Accounts.Commands;
+using ArtemisBankingPro.Application.Features.Accounts.Queries;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -12,21 +11,27 @@ namespace ArtemisBankingPro.WebApi.Controllers
     [ApiController]
     [Route("api/savings-account")]
     [Authorize(Roles = "Administrador")]
-    public class SavingsAccountController(
-        ISavingsAccountService accountService,
-        ISavingsAccountRepository accountRepository) : ControllerBase
+    public class SavingsAccountController(IMediator mediator) : ControllerBase
     {
         [HttpGet]
         public async Task<IActionResult> GetPaged(
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 20,
-            [FromQuery] AccountStatus? status = null,
-            [FromQuery] AccountType? type = null,
+            [FromQuery] ArtemisBankingPro.Domain.Enums.AccountStatus? status = null,
+            [FromQuery] ArtemisBankingPro.Domain.Enums.AccountType? type = null,
             [FromQuery] string cedula = "")
         {
             try
             {
-                var result = await accountRepository.GetPagedAsync(page, pageSize, status, type, cedula);
+                var query = new GetAccountsQuery
+                {
+                    Page = page,
+                    PageSize = pageSize,
+                    Status = status,
+                    Type = type,
+                    Cedula = cedula
+                };
+                var result = await mediator.Send(query);
                 return Ok(result);
             }
             catch (Exception ex)
@@ -36,16 +41,11 @@ namespace ArtemisBankingPro.WebApi.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateSecondary([FromBody] CreateSecondaryAccountDto dto)
+        public async Task<IActionResult> CreateSecondary([FromBody] CreateSecondaryAccountCommand command)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
             try
             {
-                var result = await accountService.CreateSecondaryAccountAsync(dto);
+                var result = await mediator.Send(command);
                 return Ok(result);
             }
             catch (Exception ex)
@@ -62,7 +62,13 @@ namespace ArtemisBankingPro.WebApi.Controllers
         {
             try
             {
-                var history = await accountService.GetTransactionHistoryAsync(accountNumber, page, pageSize);
+                var query = new GetStatementQuery
+                {
+                    AccountNumber = accountNumber,
+                    Page = page,
+                    PageSize = pageSize
+                };
+                var history = await mediator.Send(query);
                 return Ok(history);
             }
             catch (Exception ex)
@@ -76,7 +82,8 @@ namespace ArtemisBankingPro.WebApi.Controllers
         {
             try
             {
-                await accountService.CancelSecondaryAccountAsync(accountNumber);
+                var command = new CancelSecondaryAccountCommand { AccountNumber = accountNumber };
+                await mediator.Send(command);
                 return Ok(new { Message = $"La cuenta secundaria {accountNumber} ha sido cancelada exitosamente y los fondos han sido transferidos al balance principal." });
             }
             catch (Exception ex)

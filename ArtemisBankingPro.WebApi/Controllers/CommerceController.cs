@@ -1,11 +1,10 @@
 using ArtemisBankingPro.Application.DTOs.Commerces;
-using ArtemisBankingPro.Application.Interfaces.Services;
-using FluentValidation;
+using ArtemisBankingPro.Application.Features.Commerces.Commands;
+using ArtemisBankingPro.Application.Features.Commerces.Queries;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace ArtemisBankingPro.WebApi.Controllers
@@ -13,12 +12,13 @@ namespace ArtemisBankingPro.WebApi.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Authorize(Roles = "Administrador")]
-    public class CommerceController(ICommerceService commerceService) : Controller
+    public class CommerceController(IMediator mediator) : Controller
     {
         [HttpGet]
         public async Task<IActionResult> GetPaged([FromQuery] int page = 1, [FromQuery] int limit = 10)
         {
-            var result = await commerceService.GetPagedCommercesAsync(page, limit);
+            var query = new GetPagedCommercesQuery { Page = page, Limit = limit };
+            var result = await mediator.Send(query);
             return Ok(result);
         }
 
@@ -30,8 +30,8 @@ namespace ArtemisBankingPro.WebApi.Controllers
                 return BadRequest(new { Message = "El formato del ID es inválido. Debe ser un entero positivo." });
             }
 
-            var commerce = await commerceService.GetCommerceByIdAsync(intId);
-            if(commerce == null)
+            var commerce = await mediator.Send(new GetCommerceByIdQuery { Id = intId });
+            if (commerce == null)
             {
                 return NotFound(new { Message = $"No se encontró el comercio con el ID {id}." });
             }
@@ -39,20 +39,12 @@ namespace ArtemisBankingPro.WebApi.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] CreateCommerceDto dto)
+        public async Task<IActionResult> Create([FromBody] CreateCommerceCommand command)
         {
             try
             {
-                var result = await commerceService.CreateCommerceAsync(dto);
+                var result = await mediator.Send(command);
                 return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
-            }
-            catch (ValidationException ex)
-            {
-                return BadRequest(new { Errors = ex.Errors.Select(e => e.ErrorMessage) });
-            }
-            catch (InvalidOperationException ex)
-            {
-                return Conflict(new { Error = ex.Message });
             }
             catch (Exception ex)
             {
@@ -61,7 +53,7 @@ namespace ArtemisBankingPro.WebApi.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(string id, [FromBody] UpdateCommerceDto dto)
+        public async Task<IActionResult> Update(string id, [FromBody] UpdateCommerceCommand command)
         {
             if (!int.TryParse(id, out var intId) || intId <= 0)
             {
@@ -70,20 +62,9 @@ namespace ArtemisBankingPro.WebApi.Controllers
 
             try
             {
-                await commerceService.UpdateCommerceAsync(intId, dto);
+                command.Id = intId;
+                await mediator.Send(command);
                 return NoContent();
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(new { Error = ex.Message });
-            }
-            catch (ValidationException ex)
-            {
-                return BadRequest(new { Errors = ex.Errors.Select(e => e.ErrorMessage) });
-            }
-            catch (InvalidOperationException ex)
-            {
-                return Conflict(new { Error = ex.Message });
             }
             catch (Exception ex)
             {
@@ -101,12 +82,9 @@ namespace ArtemisBankingPro.WebApi.Controllers
 
             try
             {
-                await commerceService.ChangeStatusAsync(intId, dto.IsActive);
+                var command = new ChangeCommerceStatusCommand { Id = intId, IsActive = dto.IsActive };
+                await mediator.Send(command);
                 return NoContent();
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(new { Error = ex.Message });
             }
             catch (Exception ex)
             {

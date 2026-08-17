@@ -49,6 +49,8 @@ builder.Services.AddScoped<ICreditCardService, CreditCardService>();
 builder.Services.AddScoped<ICommerceRepository, CommerceRepository>();
 builder.Services.AddScoped<ICommerceService, CommerceService>();
 builder.Services.AddScoped<ICashierService, CashierService>();
+builder.Services.AddScoped<IBeneficiaryRepository, BeneficiaryRepository>();
+builder.Services.AddScoped<IBeneficiaryService, BeneficiaryService>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserService, ArtemisBankingPro.WebApi.Services.CurrentUserService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
