@@ -1,13 +1,13 @@
 using ArtemisBankingPro.Application.DTOs.HermesPay;
+using ArtemisBankingPro.Application.Features.Commerces.Queries;
+using ArtemisBankingPro.Application.Features.HermesPay.Commands;
+using ArtemisBankingPro.Application.Features.HermesPay.Queries;
 using ArtemisBankingPro.Application.Interfaces.Services;
-using ArtemisBankingPro.Domain.Enums;
-using FluentValidation;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace ArtemisBankingPro.WebApi.Controllers
@@ -16,9 +16,8 @@ namespace ArtemisBankingPro.WebApi.Controllers
     [Route("pay")]
     [Authorize(Roles = "Administrador,Comercio")]
     public class PaymentController(
-        IPaymentService paymentService,
-        ICurrentUserService currentUserService,
-        ICommerceService commerceService) : ControllerBase
+        IMediator mediator,
+        ICurrentUserService currentUserService) : ControllerBase
     {
         [HttpPost("process-payment/{commerceId}")]
         public async Task<IActionResult> ProcessPayment(string commerceId, [FromBody] ProcessPaymentRequestDto request)
@@ -42,7 +41,7 @@ namespace ArtemisBankingPro.WebApi.Controllers
                     return BadRequest(new { Message = "El formato del ID es inválido. Debe ser un entero positivo." });
                 }
 
-                var commerce = await commerceService.GetCommerceByIdAsync(parsedCommerceId);
+                var commerce = await mediator.Send(new GetCommerceByIdQuery { Id = parsedCommerceId });
                 if (commerce == null)
                 {
                     return NotFound(new { Message = $"El comercio con ID {commerceId} no existe." });
@@ -53,26 +52,26 @@ namespace ArtemisBankingPro.WebApi.Controllers
 
             try
             {
-                var result = await paymentService.ProcessPaymentAsync(resolvedCommerceId, request, currentUserService.UserId);
+                var command = new ProcessPaymentCommand
+                {
+                    CommerceId = resolvedCommerceId,
+                    CardNumber = request.CardNumber,
+                    ExpirationMonth = request.ExpirationMonth,
+                    ExpirationYear = request.ExpirationYear,
+                    Cvc = request.Cvc,
+                    Amount = request.Amount,
+                    Description = request.Description,
+                    UserId = currentUserService.UserId
+                };
 
-                if (result.Status == TransactionStatus.Rechazada)
+                var result = await mediator.Send(command);
+
+                if (result.Status == ArtemisBankingPro.Domain.Enums.TransactionStatus.Rechazada)
                 {
                     return UnprocessableEntity(result);
                 }
 
                 return Ok(result);
-            }
-            catch (ValidationException ex)
-            {
-                return BadRequest(new { Errors = ex.Errors.Select(e => e.ErrorMessage) });
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(new { Error = ex.Message });
-            }
-            catch (InvalidOperationException ex)
-            {
-                return UnprocessableEntity(new { Error = ex.Message });
             }
             catch (Exception ex)
             {
@@ -102,7 +101,7 @@ namespace ArtemisBankingPro.WebApi.Controllers
                     return BadRequest(new { Message = "El formato del ID es inválido. Debe ser un entero positivo." });
                 }
 
-                var commerce = await commerceService.GetCommerceByIdAsync(parsedCommerceId);
+                var commerce = await mediator.Send(new GetCommerceByIdQuery { Id = parsedCommerceId });
                 if (commerce == null)
                 {
                     return NotFound(new { Message = $"El comercio con ID {commerceId} no existe." });
@@ -113,7 +112,13 @@ namespace ArtemisBankingPro.WebApi.Controllers
 
             try
             {
-                var result = await paymentService.GetTransactionsAsync(resolvedCommerceId, page, limit);
+                var query = new GetTransactionsQuery
+                {
+                    CommerceId = resolvedCommerceId,
+                    Page = page,
+                    Limit = limit
+                };
+                var result = await mediator.Send(query);
                 return Ok(result);
             }
             catch (Exception ex)

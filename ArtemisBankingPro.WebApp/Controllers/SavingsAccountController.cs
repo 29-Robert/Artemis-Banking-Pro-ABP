@@ -1,9 +1,11 @@
-using ArtemisBankingPro.Application.DTOs.Account;
-using ArtemisBankingPro.Application.Interfaces.Repositories;
-using ArtemisBankingPro.Application.Interfaces.Services;
+using ArtemisBankingPro.Application.Features.Accounts.Commands;
+using ArtemisBankingPro.Application.Features.Accounts.Queries;
+using ArtemisBankingPro.Application.Features.Users.Queries;
 using ArtemisBankingPro.Domain.Entities;
 using ArtemisBankingPro.Domain.Enums;
-using ArtemisBankingPro.Domain.Interfaces.Repositories;
+using ArtemisBankingPro.WebApp.ViewModels;
+using AutoMapper;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -14,13 +16,7 @@ using System.Threading.Tasks;
 namespace ArtemisBankingPro.WebApp.Controllers
 {
     [Authorize(Roles = "Administrador")]
-    public class SavingsAccountController(
-        ISavingsAccountService accountService,
-        ISavingsAccountRepository accountRepository,
-        IUserRepository userRepository,
-        IGenericRepository<User> userGenericRepository,
-        ILoanRepository loanRepository,
-        ICreditCardRepository creditCardRepository) : Controller
+    public class SavingsAccountController(IMediator mediator, IMapper mapper) : Controller
     {
         [HttpGet]
         public async Task<IActionResult> Index(int page = 1, AccountStatus? status = AccountStatus.Activa, AccountType? type = null, string cedula = "")
@@ -29,7 +25,7 @@ namespace ArtemisBankingPro.WebApp.Controllers
 
             if (!string.IsNullOrWhiteSpace(cedula))
             {
-                var client = await userRepository.GetByCedulaAsync(cedula);
+                var client = await mediator.Send(new GetUserByCedulaQuery { Cedula = cedula });
                 if (client == null)
                 {
                     ViewBag.Message = "No existe un cliente registrado con esta cédula.";
@@ -44,7 +40,14 @@ namespace ArtemisBankingPro.WebApp.Controllers
                 }
             }
 
-            var resultObj = await accountRepository.GetPagedAsync(page, pageSize, status, type, cedula);
+            var resultObj = await mediator.Send(new GetAccountsQuery
+            {
+                Page = page,
+                PageSize = pageSize,
+                Status = status,
+                Type = type,
+                Cedula = cedula
+            });
             var data = (dynamic)resultObj;
 
             if (!string.IsNullOrWhiteSpace(cedula) && data.TotalCount == 0)
@@ -66,35 +69,7 @@ namespace ArtemisBankingPro.WebApp.Controllers
         [HttpGet]
         public async Task<IActionResult> SelectClient(string searchCedula = "")
         {
-            var allUsers = await userGenericRepository.GetAllAsync();
-            var activeClients = allUsers.Where(u => u.RoleId == 3 && u.IsActive).ToList();
-
-            if (!string.IsNullOrWhiteSpace(searchCedula))
-            {
-                activeClients = activeClients.Where(u => u.Cedula.Contains(searchCedula)).ToList();
-            }
-
-            var clientList = new List<dynamic>();
-
-            foreach (var client in activeClients)
-            {
-                var loans = await loanRepository.GetLoansByClientAsync(client.Id);
-                var activeLoansDebt = loans.Where(l => l.Status == "Activo" || l.Status == "Aprobado").Sum(l => l.CapitalAmount);
-
-                var cards = await creditCardRepository.GetCardsByClientAsync(client.Id);
-                var activeCardsDebt = cards.Where(c => c.Status == "Activa").Sum(c => c.CurrentDebt);
-
-                decimal totalDebt = activeLoansDebt + activeCardsDebt;
-
-                clientList.Add(new {
-                    Id = client.Id,
-                    Cedula = client.Cedula,
-                    FullName = $"{client.FirstName} {client.LastName}",
-                    Email = client.Email,
-                    TotalDebt = totalDebt
-                });
-            }
-
+            var clientList = await mediator.Send(new GetActiveClientsWithDebtQuery { SearchCedula = searchCedula });
             ViewBag.SearchCedula = searchCedula;
             return View(clientList);
         }
@@ -108,7 +83,7 @@ namespace ArtemisBankingPro.WebApp.Controllers
                 return RedirectToAction("SelectClient");
             }
 
-            var client = await userGenericRepository.GetByIdAsync(selectedClientId.Value);
+            var client = await mediator.Send(new GetUserByIdQuery { Id = selectedClientId.Value });
             if (client == null)
             {
                 TempData["ErrorMessage"] = "El cliente seleccionado no existe.";
@@ -121,7 +96,7 @@ namespace ArtemisBankingPro.WebApp.Controllers
                 return RedirectToAction("SelectClient");
             }
 
-            var principalAccount = await accountRepository.GetPrincipalByClientAsync(client.Id);
+            var principalAccount = await mediator.Send(new GetPrincipalAccountByClientIdQuery { ClientId = client.Id });
             if (principalAccount == null || principalAccount.Status != AccountStatus.Activa)
             {
                 TempData["ErrorMessage"] = "El cliente debe tener una cuenta de ahorro principal activa antes de asignarle una cuenta secundaria.";
@@ -134,11 +109,11 @@ namespace ArtemisBankingPro.WebApp.Controllers
         [HttpGet]
         public async Task<IActionResult> ConfigureSecondary(int clientId)
         {
-            var client = await userGenericRepository.GetByIdAsync(clientId);
+            var client = await mediator.Send(new GetUserByIdQuery { Id = clientId });
             if (client == null) return RedirectToAction("SelectClient");
 
             ViewBag.Client = client;
-            var model = new CreateSecondaryAccountDto
+            var model = new CreateSecondaryAccountViewModel
             {
                 ClientCedula = client.Cedula,
                 InitialBalance = 0.00m
@@ -147,42 +122,42 @@ namespace ArtemisBankingPro.WebApp.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> ConfigureSecondary(CreateSecondaryAccountDto dto, int clientId)
+        public async Task<IActionResult> ConfigureSecondary(CreateSecondaryAccountViewModel model, int clientId)
         {
-            var client = await userGenericRepository.GetByIdAsync(clientId);
+            var client = await mediator.Send(new GetUserByIdQuery { Id = clientId });
             ViewBag.Client = client;
 
             if (client == null) return RedirectToAction("SelectClient");
 
-            if (!ModelState.IsValid) return View(dto);
-
-            if (dto.InitialBalance < 0)
-            {
-                ModelState.AddModelError("InitialBalance", "El balance inicial no puede ser negativo.");
-                return View(dto);
-            }
+            if (!ModelState.IsValid) return View(model);
 
             try
             {
-                await accountService.CreateSecondaryAccountAsync(dto);
+                var command = mapper.Map<CreateSecondaryAccountCommand>(model);
+                await mediator.Send(command);
                 TempData["SuccessMessage"] = "Cuenta secundaria creada exitosamente.";
                 return RedirectToAction("Index");
             }
             catch (Exception ex)
             {
                 ModelState.AddModelError(string.Empty, ex.Message);
-                return View(dto);
+                return View(model);
             }
         }
 
         [HttpGet]
         public async Task<IActionResult> Details(string accountNumber, int page = 1)
         {
-            var account = await accountRepository.GetByAccountNumberAsync(accountNumber);
+            var account = await mediator.Send(new GetAccountByAccountNumberQuery { AccountNumber = accountNumber });
             if (account == null) return NotFound();
 
             int pageSize = 20;
-            var history = await accountService.GetTransactionHistoryAsync(accountNumber, page, pageSize);
+            var history = await mediator.Send(new GetStatementQuery
+            {
+                AccountNumber = accountNumber,
+                Page = page,
+                PageSize = pageSize
+            });
 
             ViewBag.Account = account;
             ViewBag.CurrentPage = page;
@@ -194,7 +169,7 @@ namespace ArtemisBankingPro.WebApp.Controllers
         [HttpGet]
         public async Task<IActionResult> CancelConfirm(string accountNumber)
         {
-            var account = await accountRepository.GetByAccountNumberAsync(accountNumber);
+            var account = await mediator.Send(new GetAccountByAccountNumberQuery { AccountNumber = accountNumber });
             if (account == null) return NotFound();
 
             return View(account);
@@ -205,7 +180,8 @@ namespace ArtemisBankingPro.WebApp.Controllers
         {
             try
             {
-                await accountService.CancelSecondaryAccountAsync(accountNumber);
+                var command = new CancelSecondaryAccountCommand { AccountNumber = accountNumber };
+                await mediator.Send(command);
                 TempData["SuccessMessage"] = $"La cuenta secundaria {accountNumber} ha sido cancelada exitosamente y los fondos han sido transferidos.";
             }
             catch (Exception ex)

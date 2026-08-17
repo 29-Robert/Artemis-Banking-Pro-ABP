@@ -19,6 +19,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddApplicationLayer();
+builder.Services.AddAutoMapper(config => config.AddMaps(typeof(ArtemisBankingPro.WebApp.Mappings.WebAppMappingProfile).Assembly));
 builder.Services.AddInfrastructureLayer(builder.Configuration);
 
 // ==========================================
