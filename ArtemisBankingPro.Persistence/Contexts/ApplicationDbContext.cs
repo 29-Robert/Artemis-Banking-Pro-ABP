@@ -62,9 +62,9 @@ namespace ArtemisBankingPro.Persistence.Contexts
                .HasForeignKey(c => c.CreditCardId);
 
             modelBuilder.Entity<Commerce>()
-                    .HasMany(c => c.Consumptions)        
-                    .WithOne(ccc => ccc.Commerce)       
-                    .HasForeignKey(ccc => ccc.CommerceId)   
+                    .HasMany(c => c.Consumptions)
+                    .WithOne(ccc => ccc.Commerce)
+                    .HasForeignKey(ccc => ccc.CommerceId)
                     .OnDelete(DeleteBehavior.Restrict);
 
             foreach (var property in modelBuilder.Model.GetEntityTypes()
@@ -94,6 +94,74 @@ namespace ArtemisBankingPro.Persistence.Contexts
                 new Role { Id = 2, Name = "Cajero", CreatedAt = seedDate },
                 new Role { Id = 3, Name = "Cliente", CreatedAt = seedDate },
                 new Role { Id = 4, Name = "Comercio", CreatedAt = seedDate }
+            );
+
+            var passHash = BCrypt.Net.BCrypt.HashPassword("123P@$$word!");
+
+            modelBuilder.Entity<User>().HasData(
+                new User
+                {
+                    Id = 1,
+                    FirstName = "Admin",
+                    LastName = "Defecto",
+                    Cedula = "00000000001",
+                    Email = "admin@artemis.com",
+                    Username = "admin",
+                    PasswordHash = passHash,
+                    RoleId = 1,
+                    IsActive = true,
+                    CreatedAt = seedDate
+                },
+                new User
+                {
+                    Id = 2,
+                    FirstName = "Cajero",
+                    LastName = "Defecto",
+                    Cedula = "00000000002",
+                    Email = "cajero@artemis.com",
+                    Username = "cajero",
+                    PasswordHash = passHash,
+                    RoleId = 2,
+                    IsActive = true,
+                    CreatedAt = seedDate
+                },
+                new User
+                {
+                    Id = 3,
+                    FirstName = "Cliente",
+                    LastName = "Defecto",
+                    Cedula = "00000000003",
+                    Email = "cliente@artemis.com",
+                    Username = "cliente",
+                    PasswordHash = passHash,
+                    RoleId = 3,
+                    IsActive = true,
+                    CreatedAt = seedDate
+                },
+                new User
+                {
+                    Id = 4,
+                    FirstName = "Comercio",
+                    LastName = "Defecto",
+                    Cedula = "00000000004",
+                    Email = "comercio@artemis.com",
+                    Username = "comercio",
+                    PasswordHash = passHash,
+                    RoleId = 4,
+                    IsActive = true,
+                    CreatedAt = seedDate
+                }
+            );
+            modelBuilder.Entity<SavingsAccount>().HasData(
+                new SavingsAccount
+                {
+                    Id = 1,
+                    UserId = 3, // ID del Cliente por defecto
+                    AccountNumber = "100200300",
+                    Balance = 5000.00m,
+                    IsPrincipal = true,
+                    CreatedAt = seedDate
+                }
             );
         }
     }

@@ -1,5 +1,4 @@
 using ArtemisBankingPro.Application.Features.Users.Commands.ActivateUser;
-using ArtemisBankingPro.Application.Features.Users.Commands.CreateUser;
 using ArtemisBankingPro.Application.Features.Users.Commands.ForgotPassword;
 using ArtemisBankingPro.Application.Features.Users.Commands.ResetPassword;
 using ArtemisBankingPro.Domain.Entities;
@@ -20,6 +19,11 @@ namespace ArtemisBankingPro.WebApp.Controllers
         {
             if (User.Identity != null && User.Identity.IsAuthenticated)
             {
+                var role = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
+                if (role == "Administrador") return RedirectToAction("Index", "Admin");
+                if (role == "Cajero") return RedirectToAction("Index", "Cashier");
+                if (role == "Cliente") return RedirectToAction("Index", "Client");
+
                 return RedirectToAction("Index", "Home");
             }
             return View();
@@ -38,23 +42,28 @@ namespace ArtemisBankingPro.WebApp.Controllers
 
             if (user == null || !BCrypt.Net.BCrypt.Verify(model.Password, user.PasswordHash))
             {
-                ModelState.AddModelError(string.Empty, "Credenciales inválidas.");
+                ModelState.AddModelError(string.Empty, "Los datos de acceso son inválidos.");
                 return View(model);
             }
 
             if (!user.IsActive)
             {
-                ModelState.AddModelError(string.Empty, "Su cuenta se encuentra inactiva. Debe activarla antes de iniciar sesión.");
+                ModelState.AddModelError(string.Empty, "Su cuenta se encuentra inactiva. Debe activar su cuenta mediante el enlace enviado a su correo electrónico registrado para poder acceder al sistema.");
+                return View(model);
+            }
+
+            if (user.RoleId == 4)
+            {
+                ModelState.AddModelError(string.Empty, "Este usuario no tiene permisos para acceder a la aplicación web.");
                 return View(model);
             }
 
             var claims = new List<Claim>
             {
-                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim(ClaimTypes.Name, user.Username),
-                new Claim(ClaimTypes.Email, user.Email),
-
-                new Claim(ClaimTypes.Role, ObtenerNombreDeRol(user.RoleId))
+                new(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new(ClaimTypes.Name, user.Username),
+                new(ClaimTypes.Email, user.Email),
+                new(ClaimTypes.Role, ObtenerNombreDeRol(user.RoleId))
             };
 
             var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
@@ -62,45 +71,13 @@ namespace ArtemisBankingPro.WebApp.Controllers
 
             await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
 
-            return RedirectToAction("Index", "Home");
-        }
-
-        [HttpGet]
-        public IActionResult Register()
-        {
-            return View();
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> Register(RegisterViewModel model)
-        {
-            if (!ModelState.IsValid) return View(model);
-
-            try
+            return user.RoleId switch
             {
-                var command = new CreateUserCommand
-                {
-                    FirstName = model.FirstName,
-                    LastName = model.LastName,
-                    Cedula = model.Cedula,
-                    Email = model.Email,
-                    Username = model.Username,
-                    Password = model.Password,
-                    RoleId = model.RoleId,
-                    CommerceId = null
-                };
-
-                await mediator.Send(command);
-
-                TempData["SuccessMessage"] = "Usuario registrado con éxito. Revise su correo para la activación.";
-
-                return RedirectToAction("Login");
-            }
-            catch (Exception ex)
-            {
-                ModelState.AddModelError(string.Empty, ex.Message);
-                return View(model);
-            }
+                1 => RedirectToAction("Index", "Admin"),
+                2 => RedirectToAction("Index", "Cashier"),
+                3 => RedirectToAction("Index", "Client"),
+                _ => RedirectToAction("Index", "Home")
+            };
         }
 
         [HttpGet]
@@ -108,7 +85,7 @@ namespace ArtemisBankingPro.WebApp.Controllers
         {
             if (string.IsNullOrEmpty(token))
             {
-                ViewBag.Error = "El enlace de activación es inválido o está incompleto.";
+                ViewBag.Error = "El enlace de activación no es válido.";
                 return View();
             }
 
@@ -117,7 +94,7 @@ namespace ArtemisBankingPro.WebApp.Controllers
                 var command = new ActivateUserCommand { Token = token };
                 await mediator.Send(command);
 
-                ViewBag.Message = "Su cuenta ha sido activada exitosamente. Ya puede iniciar sesión.";
+                ViewBag.Message = "Su cuenta ha sido activada correctamente. Ya puede iniciar sesión.";
                 return View();
             }
             catch (Exception ex)
@@ -138,10 +115,18 @@ namespace ArtemisBankingPro.WebApp.Controllers
         {
             if (!ModelState.IsValid) return View(model);
 
-            var command = new ForgotPasswordCommand { Email = model.Email };
-            await mediator.Send(command);
+            var command = new ForgotPasswordCommand { Username = model.Username };
 
-            ViewBag.Message = "Si el correo existe en nuestro sistema, recibirá un enlace para restablecer su contraseña.";
+            try
+            {
+                await mediator.Send(command);
+                ViewBag.Message = "Se ha enviado un enlace de restablecimiento de contraseña al correo electrónico registrado.";
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError(string.Empty, ex.Message);
+            }
+
             return View();
         }
 
@@ -150,7 +135,8 @@ namespace ArtemisBankingPro.WebApp.Controllers
         {
             if (string.IsNullOrEmpty(token))
             {
-                return RedirectToAction("Login");
+                ViewBag.Error = "El enlace de restablecimiento no es válido.";
+                return View();
             }
 
             var model = new ResetPasswordViewModel { Token = token };
@@ -172,7 +158,7 @@ namespace ArtemisBankingPro.WebApp.Controllers
 
                 await mediator.Send(command);
 
-                TempData["SuccessMessage"] = "Contraseña restablecida exitosamente. Ya puede iniciar sesión.";
+                TempData["SuccessMessage"] = "Su contraseña ha sido restablecida correctamente. Ya puede iniciar sesión.";
                 return RedirectToAction("Login");
             }
             catch (Exception ex)
@@ -192,6 +178,8 @@ namespace ArtemisBankingPro.WebApp.Controllers
         [HttpGet]
         public IActionResult AccessDenied()
         {
+            var role = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
+            ViewBag.Role = role;
             return View();
         }
 

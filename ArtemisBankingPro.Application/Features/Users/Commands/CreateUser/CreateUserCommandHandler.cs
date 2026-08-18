@@ -1,4 +1,4 @@
-﻿using ArtemisBankingPro.Application.Interfaces.Services;
+using ArtemisBankingPro.Application.Interfaces.Services;
 using ArtemisBankingPro.Domain.Entities;
 using ArtemisBankingPro.Domain.Enums;
 using ArtemisBankingPro.Domain.Interfaces.Repositories;
@@ -6,12 +6,17 @@ using AutoMapper;
 using MediatR;
 using System.Transactions;
 
+// SOLUCIÓN A LA AMBIGÜEDAD (Errores CS0104): Creamos alias para tus entidades.
+using DomainTransaction = ArtemisBankingPro.Domain.Entities.Transaction;
+using DomainTransactionStatus = ArtemisBankingPro.Domain.Enums.TransactionStatus;
+
 namespace ArtemisBankingPro.Application.Features.Users.Commands.CreateUser
 {
     public class CreateUserCommandHandler(
         IGenericRepository<User> userRepository,
         IGenericRepository<SavingsAccount> accountRepository,
         IGenericRepository<ConfirmationToken> tokenRepository,
+        IGenericRepository<DomainTransaction> transactionRepository, // Usamos el alias
         IEmailService emailService,
         IMapper mapper) : IRequestHandler<CreateUserCommand, int>
     {
@@ -24,52 +29,61 @@ namespace ArtemisBankingPro.Application.Features.Users.Commands.CreateUser
             }
 
             var user = mapper.Map<User>(request);
-
             user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
+            user.IsActive = false;
 
-            using (var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+            using var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+            var newUser = await userRepository.AddAsync(user);
+            await userRepository.SaveChangesAsync();
+
+            if (newUser.RoleId == 3 || newUser.RoleId == 4)
             {
-                var newUser = await userRepository.AddAsync(user);
-                await userRepository.SaveChangesAsync();
-
-                if (newUser.RoleId == 3 || newUser.RoleId == 4)
-                {
-                    var account = new SavingsAccount
-                    {
-                        UserId = newUser.Id,
-                        AccountNumber = new Random().Next(100000000, 999999999).ToString(),
-                        Balance = 0,
-                        IsPrincipal = true
-                    };
-                    await accountRepository.AddAsync(account);
-                    await accountRepository.SaveChangesAsync();
-                }
-
-                var activationToken = Guid.NewGuid().ToString();
-                var confirmationToken = new ConfirmationToken
+                var account = new SavingsAccount
                 {
                     UserId = newUser.Id,
-                    Token = activationToken,
-                    Type = TokenType.Activacion,
-                    ExpirationDate = DateTime.UtcNow.AddHours(24),
-                    IsUsed = false
+                    AccountNumber = new Random().Next(100000000, 999999999).ToString(),
+                    Balance = request.InitialAmount,
+                    IsPrincipal = true
                 };
+                var newAccount = await accountRepository.AddAsync(account);
+                await accountRepository.SaveChangesAsync();
 
-                await tokenRepository.AddAsync(confirmationToken);
-                await tokenRepository.SaveChangesAsync();
-
-                transaction.Complete();
-
-                try
+                if (request.InitialAmount > 0)
                 {
-                    await emailService.SendActivationEmailAsync(newUser.Email, activationToken);
+                    // Usamos el alias aquí también
+                    var initialTransaction = new DomainTransaction
+                    {
+                        AccountNumber = newAccount.AccountNumber,
+                        Type = TransactionType.Credito,
+                        Amount = request.InitialAmount,
+                        Description = "Monto inicial por apertura de cuenta principal",
+                        Status = DomainTransactionStatus.Aprobada,
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    await transactionRepository.AddAsync(initialTransaction);
+                    await transactionRepository.SaveChangesAsync();
                 }
-                catch
-                {
-                }
-
-                return newUser.Id;
             }
+
+            var activationToken = Guid.NewGuid().ToString();
+            var confirmationToken = new ConfirmationToken
+            {
+                UserId = newUser.Id,
+                Token = activationToken,
+                Type = TokenType.Activacion,
+                ExpirationDate = DateTime.UtcNow.AddHours(24),
+                IsUsed = false
+            };
+
+            await tokenRepository.AddAsync(confirmationToken);
+            await tokenRepository.SaveChangesAsync();
+
+            transaction.Complete();
+
+            try { await emailService.SendActivationEmailAsync(newUser.Email, activationToken); }
+            catch { }
+
+            return newUser.Id;
         }
     }
 }
