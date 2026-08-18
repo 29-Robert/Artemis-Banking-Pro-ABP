@@ -67,6 +67,11 @@ namespace ArtemisBankingPro.Persistence.Repositories
             {
                 query = query.Where(l => l.Status == status);
             }
+            else if (string.IsNullOrWhiteSpace(status) && string.IsNullOrWhiteSpace(cedula))
+            {
+                
+                query = query.Where(l => l.Status == "Activo");
+            }
 
             query = query.OrderByDescending(l => l.CreatedAt);
 
@@ -90,9 +95,10 @@ namespace ArtemisBankingPro.Persistence.Repositories
         {
             return await _dbContext.Set<Loan>()
                 .Where(l => l.ClientId == clientId && (l.Status == "Activo" || l.Status == "Aprobado"))
-                .SumAsync(l => l.CapitalAmount);
+                .SelectMany(l => l.Installments)
+                .Where(i => i.PaymentStatus == "Pendiente")
+                .SumAsync(i => i.PendingInstallmentAmount);
         }
-
         public async Task<decimal> GetTotalActiveDebtSystemWideAsync()
         {
             return await _dbContext.Set<Loan>()

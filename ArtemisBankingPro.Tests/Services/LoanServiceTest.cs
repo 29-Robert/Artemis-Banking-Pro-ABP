@@ -54,7 +54,7 @@ namespace ArtemisBankingPro.Tests
             loans.Setup(x => x.GetByIdWithDetailsAsync(1)).ReturnsAsync(createdLoan);
             mapper.Setup(x => x.Map<LoanResponseDto>(createdLoan)).Returns(new LoanResponseDto { Id = 1, LoanNumber = "987654321" });
 
-            var service = CreateService(users, loans, installments, cards, accounts, transactions, emailService, mapper);
+            var service = CreateService(users: users, loans: loans, installments: installments, cards: cards, accounts: accounts, transactions: transactions, emailService: emailService, mapper: mapper);
 
             var request = new CreateLoanRequestDto
             {
@@ -574,6 +574,7 @@ namespace ArtemisBankingPro.Tests
             Mock<ISavingsAccountRepository>? accounts = null,
             Mock<ITransactionRepository>? transactions = null,
             Mock<IEmailService>? emailService = null,
+            Mock<IUnitOfWork>? unitOfWork = null,
             Mock<IMapper>? mapper = null)
         {
             return new LoanService(

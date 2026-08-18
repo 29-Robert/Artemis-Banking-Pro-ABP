@@ -198,8 +198,9 @@ namespace ArtemisBankingPro.Application.Services
                 throw;
             }
 
-            var emailDest = user.Email ?? account.User?.Email;
-            if (!string.IsNullOrEmpty(emailDest))
+            var response = BuildApproved(transaction, request.Amount);
+
+            if (account.User != null && !string.IsNullOrEmpty(account.User.Email))
             {
                 try
                 {
@@ -217,10 +218,14 @@ namespace ArtemisBankingPro.Application.Services
 
                     await _emailService.SendNotificationEmailAsync(emailDest, subject, body);
                 }
-                catch { }
+                catch 
+                {
+                    response.WarningMessage =
+            "El retiro fue realizado correctamente, pero no fue posible enviar el correo de notificación.";
+                }
             }
 
-            return BuildApproved(transaction, request.Amount);
+            return response;
         }
 
         public async Task<TransactionResponseDto> ProcessCreditCardPaymentAsync(PayCreditCardRequestDto request, int cashierId)
@@ -305,7 +310,7 @@ namespace ArtemisBankingPro.Application.Services
                 _logger.LogError(ex, "Error al procesar pago de tarjeta de crédito desde cajero.");
                 throw;
             }
-
+            var response = BuildApproved(transaction, appliedAmount);
             try
             {
                 var fechaHoraLocal = transaction.CreatedAt.ToLocalTime();
@@ -344,10 +349,17 @@ namespace ArtemisBankingPro.Application.Services
                     await _emailService.SendNotificationEmailAsync(account.User.Email, subjectAccount, bodyAccount);
                 }
             }
-            catch { }
+            catch 
+            {
+                response.WarningMessage =
+          "El pago a la tarjeta fue realizado correctamente, pero no fue posible enviar el correo de notificación.";
+            }
 
-            return BuildApproved(transaction, appliedAmount);
+            return response;
         }
+
+            
+        
 
         public async Task<TransactionResponseDto> ProcessLoanPaymentAsync(PayLoanRequestDto request, int cashierId)
         {
@@ -421,6 +433,8 @@ namespace ArtemisBankingPro.Application.Services
             };
 
             await _unitOfWork.BeginTransactionAsync();
+           
+
             try
             {
                 foreach (var installment in pendingInstallments)
@@ -463,6 +477,8 @@ namespace ArtemisBankingPro.Application.Services
                 throw;
             }
 
+        
+            var response = BuildApproved(transaction, appliedAmount);
             try
             {
                 var fechaHoraLocal = transaction.CreatedAt.ToLocalTime();
@@ -500,9 +516,12 @@ namespace ArtemisBankingPro.Application.Services
                     await _emailService.SendNotificationEmailAsync(account.User.Email, subjectAccount, bodyAccount);
                 }
             }
-            catch { }
+            catch 
+            {
+              response.WarningMessage ="El pago al préstamo fue realizado correctamente, pero no fue posible enviar el correo de notificación.";
+            }
 
-            return BuildApproved(transaction, appliedAmount);
+            return response;
         }
 
         public async Task<TransactionResponseDto> ProcessThirdPartyTransferAsync(ThirdPartyTransferRequestDto request, int cashierId)
@@ -614,6 +633,8 @@ namespace ArtemisBankingPro.Application.Services
                 throw;
             }
 
+            var response = BuildApproved(debitTx, request.Amount);
+
             try
             {
                 var fechaHoraLocal = debitTx.CreatedAt.ToLocalTime();
@@ -656,9 +677,14 @@ namespace ArtemisBankingPro.Application.Services
                     await _emailService.SendNotificationEmailAsync(tgtEmail, subjectTgt, bodyTgt);
                 }
             }
-            catch { }
+            
 
-            return BuildApproved(debitTx, request.Amount);
+            catch 
+            {
+                response.WarningMessage = "La transferencia fue realizada correctamente, pero no fue posible enviar el correo de notificación.";
+            }
+
+            return response;
         }
 
         public async Task<CajeroHomeIndicatorsResponseDto> GetHomeIndicatorsAsync(int cashierId)

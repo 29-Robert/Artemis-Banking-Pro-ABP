@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ArtemisBankingPro.Application.Features.CreditCard.Querys
+namespace ArtemisBankingPro.Application.Features.CreditCard.Queries
 {
     public class GetCreditCardByIdQueryHandler : IRequestHandler<GetCreditCardByIdQuery, CreditCardResponseDto>
     {
