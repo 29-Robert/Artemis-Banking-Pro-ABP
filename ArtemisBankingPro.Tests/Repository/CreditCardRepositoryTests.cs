@@ -90,8 +90,7 @@ namespace ArtemisBankingPro.Tests.Repositories
 
             var total = await repository.GetTotalActiveDebtByClientAsync(1);
 
-            // Solo las 2 tarjetas activas del cliente 1: 500 + 300 = 800.
-            // No debe incluir la cancelada (aunque tuviera deuda) ni la del cliente 2.
+         
             Assert.Equal(800m, total);
         }
 
@@ -109,13 +108,17 @@ namespace ArtemisBankingPro.Tests.Repositories
 
             var total = await repository.GetTotalActiveDebtSystemWideAsync();
 
-            Assert.Equal(300m, total); // 100 + 200, ignora la cancelada aunque tenga más deuda
+            Assert.Equal(300m, total);
         }
 
         [Fact]
-        public async Task SearchAsync_PorDefecto_DeberiaMostrarSoloActivasOrdenadasPorFechaDesc()
+        public async Task SearchAsync_PorDefecto_()
         {
             await using var context = CreateContext();
+
+            
+            var client = new User { Id = 1, Cedula = "40200000001", FirstName = "John", LastName = "Doe" };
+            context.Users.Add(client);
 
             context.CreditCards.Add(new CreditCard { ClientId = 1, CardNumber = "3000000000000001", Status = "Activa", AdminId = 1, CreatedAt = DateTime.UtcNow.AddDays(-2) });
             context.CreditCards.Add(new CreditCard { ClientId = 1, CardNumber = "3000000000000002", Status = "Activa", AdminId = 1, CreatedAt = DateTime.UtcNow });
@@ -126,8 +129,8 @@ namespace ArtemisBankingPro.Tests.Repositories
 
             var (items, totalCount) = await repository.SearchAsync(cedula: null, status: null, pageNumber: 1, pageSize: 20);
 
-            Assert.Equal(2, totalCount); // la cancelada no debe aparecer por defecto
-            Assert.Equal("3000000000000002", items.First().CardNumber); // la más reciente primero
+            Assert.Equal(2, totalCount);
+            Assert.Equal("3000000000000002", items.First().CardNumber);
         }
 
         [Fact]
@@ -135,12 +138,16 @@ namespace ArtemisBankingPro.Tests.Repositories
         {
             await using var context = CreateContext();
 
+            var client = new User { Id = 1, Cedula = "40200000001", FirstName = "John", LastName = "Doe" };
+            context.Users.Add(client);
+
             context.CreditCards.Add(new CreditCard { ClientId = 1, CardNumber = "4000000000000001", Status = "Activa", AdminId = 1 });
             context.CreditCards.Add(new CreditCard { ClientId = 1, CardNumber = "4000000000000002", Status = "Cancelada", AdminId = 1 });
             await context.SaveChangesAsync();
 
             var repository = new CreditCardRepository(context);
 
+            
             var (items, totalCount) = await repository.SearchAsync(cedula: null, status: "Todas", pageNumber: 1, pageSize: 20);
 
             Assert.Equal(2, totalCount);
@@ -150,6 +157,9 @@ namespace ArtemisBankingPro.Tests.Repositories
         public async Task SearchAsync_ConPageSizeMenorQueElTotal_DeberiaPaginarCorrectamente()
         {
             await using var context = CreateContext();
+
+            var client = new User { Id = 1, Cedula = "40200000001", FirstName = "John", LastName = "Doe" };
+            context.Users.Add(client);
 
             for (var i = 1; i <= 25; i++)
             {
