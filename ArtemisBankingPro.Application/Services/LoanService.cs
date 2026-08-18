@@ -22,6 +22,7 @@ namespace ArtemisBankingPro.Application.Services
         private readonly ITransactionRepository _transactionRepository;
         private readonly IGenericRepository<User> _userRepository;
         private readonly IEmailService _emailService;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
 
         public LoanService(
@@ -32,6 +33,7 @@ namespace ArtemisBankingPro.Application.Services
             ITransactionRepository transactionRepository,
             IGenericRepository<User> userRepository,
             IEmailService emailService,
+            IUnitOfWork unitOfWork,
             IMapper mapper)
         {
             _loanRepository = loanRepository;
@@ -41,6 +43,7 @@ namespace ArtemisBankingPro.Application.Services
             _transactionRepository = transactionRepository;
             _userRepository = userRepository;
             _emailService = emailService;
+            _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
 
@@ -125,9 +128,9 @@ namespace ArtemisBankingPro.Application.Services
             };
         }
 
-        
+
         // ASIGNAR PRÉSTAMO
-        
+
         public async Task<LoanResponseDto> AssignLoanAsync(CreateLoanRequestDto request, int adminId)
         {
             if (string.IsNullOrWhiteSpace(request.ClientId))
@@ -186,66 +189,81 @@ namespace ArtemisBankingPro.Application.Services
                 TermInMonths = request.TermInMonths,
                 AnnualInterestRate = request.AnnualInterestRate,
                 Status = "Activo",
-                AdminId = (adminId),
+                AdminId = adminId,
                 CreatedAt = DateTime.UtcNow
             };
 
-            var createdLoan = await _loanRepository.AddAsync(loan);
-            await _loanRepository.SaveChangesAsync(); 
-
-            foreach (var installment in installments)
-                installment.LoanId = createdLoan.Id;
-
-            await _installmentRepository.AddRangeAsync(installments);
-            await _installmentRepository.SaveChangesAsync();
-
-            // Desembolso a la cuenta principal
-            principalAccount.Balance += request.CapitalAmount;
-            await _accountRepository.UpdateAsync(principalAccount);
-
-            await _transactionRepository.AddAsync(new Transaction
-            {
-                AccountNumber = principalAccount.AccountNumber,
-                Type = TransactionType.Credito,
-                Amount = request.CapitalAmount,
-                Status = TransactionStatus.Aprobada,
-                Description = $"Desembolso de préstamo {loanNumber}",
-                PerformedByUserId = adminId,
-                CreatedAt = DateTime.UtcNow
-            });
-            await _accountRepository.SaveChangesAsync();
-
-
-            var loanWithDetails = await _loanRepository.GetByIdWithDetailsAsync(createdLoan.Id);
-            var response = _mapper.Map<LoanResponseDto>(loanWithDetails);
-
+            // INICIO DE LA TRANSACCIÓN
+            await _unitOfWork.BeginTransactionAsync();
             try
             {
-                var monthlyPayment = installments.First().InstallmentAmount;
-                await _emailService.SendNotificationEmailAsync(
-                    client.Email,
-                    "Préstamo aprobado",
-                    $"Su préstamo ha sido aprobado correctamente.\n" +
-                    $"Número de préstamo: {loanNumber}\n" +
-                    $"Monto aprobado: RD${request.CapitalAmount:N2}\n" +
-                    $"Plazo: {request.TermInMonths} meses\n" +
-                    $"Tasa de interés anual: {request.AnnualInterestRate}%\n" +
-                    $"Cuota mensual: RD${monthlyPayment:N2}\n" +
-                    "El monto aprobado ha sido depositado en su cuenta de ahorro principal.");
+                var createdLoan = await _loanRepository.AddAsync(loan);
+                await _loanRepository.SaveChangesAsync(); 
+
+                foreach (var installment in installments)
+                    installment.LoanId = createdLoan.Id;
+
+                await _installmentRepository.AddRangeAsync(installments);
+                await _installmentRepository.SaveChangesAsync();
+
+                
+                principalAccount.Balance += request.CapitalAmount;
+                await _accountRepository.UpdateAsync(principalAccount);
+
+                await _transactionRepository.AddAsync(new Transaction
+                {
+                    AccountNumber = principalAccount.AccountNumber,
+                    Type = TransactionType.Credito,
+                    Amount = request.CapitalAmount,
+                    Status = TransactionStatus.Aprobada,
+                    Description = $"Desembolso de préstamo {loanNumber}",
+                    PerformedByUserId = adminId,
+                    CreatedAt = DateTime.UtcNow
+                });
+                await _accountRepository.SaveChangesAsync();
+
+              
+                await _unitOfWork.CommitAsync();
+
+                
+                var loanWithDetails = await _loanRepository.GetByIdWithDetailsAsync(createdLoan.Id);
+                var response = _mapper.Map<LoanResponseDto>(loanWithDetails);
+
+               
+                try
+                {
+                    var monthlyPayment = installments.First().InstallmentAmount;
+                    await _emailService.SendNotificationEmailAsync(
+                        client.Email,
+                        "Préstamo aprobado",
+                        $"Su préstamo ha sido aprobado correctamente.\n" +
+                        $"Número de préstamo: {loanNumber}\n" +
+                        $"Monto aprobado: RD${request.CapitalAmount:N2}\n" +
+                        $"Plazo: {request.TermInMonths} meses\n" +
+                        $"Tasa de interés anual: {request.AnnualInterestRate}%\n" +
+                        $"Cuota mensual: RD${monthlyPayment:N2}\n" +
+                        "El monto aprobado ha sido depositado en su cuenta de ahorro principal.");
+                }
+                catch
+                {
+                    response.EmailNotificationFailed = true;
+                }
+
+                return response;
             }
             catch
             {
-                response.EmailNotificationFailed = true;
-
+                
+                await _unitOfWork.RollbackAsync();
+                throw;
             }
-               return response;
-
         }
 
         // MODIFICAR TASA
 
         public async Task<LoanResponseDto> UpdateInterestRateAsync(int loanId, decimal newAnnualRate)
         {
+            // 1. Validaciones
             var loan = await _loanRepository.GetByIdWithDetailsAsync(loanId);
             if (loan == null) throw new KeyNotFoundException("El préstamo seleccionado no existe.");
             if (loan.Status != "Activo")
@@ -262,51 +280,69 @@ namespace ArtemisBankingPro.Application.Services
             if (futurePending.Count == 0)
                 throw new InvalidOperationException("No existen cuotas futuras pendientes para recalcular.");
 
+            
             loan.AnnualInterestRate = newAnnualRate;
 
             var remainingCapital = futurePending.Sum(i => i.CapitalAmount);
             var recalculated = GenerateAmortizationTable(remainingCapital, newAnnualRate, futurePending.Count);
 
-            for (var k = 0; k < futurePending.Count; k++)
-            {
-                var installment = futurePending[k];
-                var recalc = recalculated[k];
-
-                installment.InstallmentAmount = recalc.InstallmentAmount;
-                installment.InterestAmount = recalc.InterestAmount;
-                installment.CapitalAmount = recalc.CapitalAmount;
-                installment.PendingInstallmentAmount = recalc.InstallmentAmount;
-
-                await _installmentRepository.UpdateAsync(installment);
-            }
-
-            await _loanRepository.UpdateAsync(loan);
-            await _loanRepository.SaveChangesAsync();
-            await _installmentRepository.SaveChangesAsync();
-
-            var response = _mapper.Map<LoanResponseDto>(loan);
-
+       
+            await _unitOfWork.BeginTransactionAsync();
             try
             {
-                var nextInstallment = futurePending.First();
-                await _emailService.SendNotificationEmailAsync(
-                    loan.Client.Email,
-                    "Actualización de tasa de interés de préstamo",
-                    $"La tasa de interés de su préstamo {loan.LoanNumber} ha sido actualizada.\n" +
-                    $"Nueva tasa de interés anual: {newAnnualRate}%\n" +
-                    $"Nuevo valor de la próxima cuota: RD${nextInstallment.InstallmentAmount:N2}\n" +
-                    $"Fecha de vencimiento de la próxima cuota: {nextInstallment.DueDate:dd/MM/yyyy}\n" +
-                    "Esta modificación aplica únicamente a las cuotas futuras pendientes.");
+               
+                for (var k = 0; k < futurePending.Count; k++)
+                {
+                    var installment = futurePending[k];
+                    var recalc = recalculated[k];
+
+                    installment.InstallmentAmount = recalc.InstallmentAmount;
+                    installment.InterestAmount = recalc.InterestAmount;
+                    installment.CapitalAmount = recalc.CapitalAmount;
+                    installment.PendingInstallmentAmount = recalc.InstallmentAmount;
+
+                    await _installmentRepository.UpdateAsync(installment);
+                }
+
+              
+                await _loanRepository.UpdateAsync(loan);
+
+               
+                await _loanRepository.SaveChangesAsync();
+                await _installmentRepository.SaveChangesAsync();
+
+                
+                await _unitOfWork.CommitAsync();
+
+                
+                var response = _mapper.Map<LoanResponseDto>(loan);
+
+                try
+                {
+                    var nextInstallment = futurePending.First();
+                    await _emailService.SendNotificationEmailAsync(
+                        loan.Client.Email,
+                        "Actualización de tasa de interés de préstamo",
+                        $"La tasa de interés de su préstamo {loan.LoanNumber} ha sido actualizada.\n" +
+                        $"Nueva tasa de interés anual: {newAnnualRate}%\n" +
+                        $"Nuevo valor de la próxima cuota: RD${nextInstallment.InstallmentAmount:N2}\n" +
+                        $"Fecha de vencimiento de la próxima cuota: {nextInstallment.DueDate:dd/MM/yyyy}\n" +
+                        "Esta modificación aplica únicamente a las cuotas futuras pendientes.");
+                }
+                catch
+                {
+                    response.EmailNotificationFailed = true;
+                }
+
+                return response;
             }
             catch
             {
-                response.EmailNotificationFailed = true;
+               
+                await _unitOfWork.RollbackAsync();
+                throw;
             }
-
-            return response;
         }
-
-
 
         // Helpers privados
 

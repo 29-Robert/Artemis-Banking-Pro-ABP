@@ -3,6 +3,7 @@ using ArtemisBankingPro.Application.Interfaces.Repositories;
 using ArtemisBankingPro.Application.Interfaces.Services;
 using ArtemisBankingPro.Application.Services;
 using ArtemisBankingPro.Domain.Entities;
+using ArtemisBankingPro.Persistence.Contexts;
 using ArtemisBankingPro.Domain.Enums;
 using ArtemisBankingPro.Domain.Interfaces.Repositories;
 using Moq;
