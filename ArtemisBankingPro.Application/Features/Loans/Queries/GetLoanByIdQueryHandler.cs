@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ArtemisBankingPro.Application.Features.Loans.Querys
+namespace ArtemisBankingPro.Application.Features.Loans.Queries
 {
     public class GetLoanByIdQueryHandler : IRequestHandler<GetLoanByIdQuery, LoanResponseDto>
     {
