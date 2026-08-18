@@ -353,7 +353,8 @@ namespace ArtemisBankingPro.Tests
       Mock<ICreditCardRepository>? cards = null,
       Mock<ILoanRepository>? loans = null,
       Mock<ILoanInstallmentRepository>? installments = null,
-      Mock<IEmailService>? emailService = null)
+      Mock<IEmailService>? emailService = null,
+      Mock<IUnitOfWork>? unitOfWork = null)
         {
             return new CashierService(
                 loans?.Object ?? Mock.Of<ILoanRepository>(),
@@ -362,7 +363,7 @@ namespace ArtemisBankingPro.Tests
                 accounts.Object,
                 transactions.Object,
                 emailService?.Object ?? Mock.Of<IEmailService>(),
-                Mock.Of<IUnitOfWork>());
+                unitOfWork?.Object ?? Mock.Of<IUnitOfWork>());
         }
     }
 }
