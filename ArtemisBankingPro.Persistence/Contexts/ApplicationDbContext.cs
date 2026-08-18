@@ -156,7 +156,7 @@ namespace ArtemisBankingPro.Persistence.Contexts
                 new SavingsAccount
                 {
                     Id = 1,
-                    UserId = 3, // ID del Cliente por defecto
+                    UserId = 3,
                     AccountNumber = "100200300",
                     Balance = 5000.00m,
                     IsPrincipal = true,

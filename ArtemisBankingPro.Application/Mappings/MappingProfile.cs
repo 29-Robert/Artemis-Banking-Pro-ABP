@@ -9,10 +9,6 @@ namespace ArtemisBankingPro.Application.Mappings
 {
     public class MappingProfile : Profile
     {
-        // registrar sus mapeos aquí. Ejemplo:
-        // CreateMap<User, UserDto>().ReverseMap();
-
-
         public MappingProfile()
         {
 

@@ -65,7 +65,7 @@ namespace ArtemisBankingPro.WebApi.Controllers
         {
             try
             {
-                command.RoleId = 4; // Asegurarse de que sea rol Comercio
+                command.RoleId = 4;
                 command.CommerceId = commerceId;
 
                 var userId = await mediator.Send(command);

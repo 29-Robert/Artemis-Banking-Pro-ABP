@@ -21,10 +21,8 @@ namespace ArtemisBankingPro.Application.Features.Users.Queries.GetCommerceUsers
         {
             var users = await userRepository.GetAllAsync();
 
-            // Filtrar solo usuarios con rol Comercio (RoleId = 4)
             var query = users.Where(u => u.RoleId == 4).AsQueryable();
 
-            // Ordenar de más reciente a más antiguo
             query = query.OrderByDescending(u => u.CreatedAt);
 
             var totalRecords = query.Count();

@@ -6,7 +6,6 @@ using AutoMapper;
 using MediatR;
 using System.Transactions;
 
-// SOLUCIÓN A LA AMBIGÜEDAD (Errores CS0104): Creamos alias para tus entidades.
 using DomainTransaction = ArtemisBankingPro.Domain.Entities.Transaction;
 using DomainTransactionStatus = ArtemisBankingPro.Domain.Enums.TransactionStatus;
 
@@ -16,7 +15,7 @@ namespace ArtemisBankingPro.Application.Features.Users.Commands.CreateUser
         IGenericRepository<User> userRepository,
         IGenericRepository<SavingsAccount> accountRepository,
         IGenericRepository<ConfirmationToken> tokenRepository,
-        IGenericRepository<DomainTransaction> transactionRepository, // Usamos el alias
+        IGenericRepository<DomainTransaction> transactionRepository,
         IEmailService emailService,
         IMapper mapper) : IRequestHandler<CreateUserCommand, int>
     {
@@ -50,7 +49,6 @@ namespace ArtemisBankingPro.Application.Features.Users.Commands.CreateUser
 
                 if (request.InitialAmount > 0)
                 {
-                    // Usamos el alias aquí también
                     var initialTransaction = new DomainTransaction
                     {
                         AccountNumber = newAccount.AccountNumber,

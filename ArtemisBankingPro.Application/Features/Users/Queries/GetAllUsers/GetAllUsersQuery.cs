@@ -22,7 +22,6 @@ namespace ArtemisBankingPro.Application.Features.Users.Queries.GetAllUsers
         {
             var users = await userRepository.GetAllAsync();
 
-            // Filtrar usuarios con rol Comercio (RoleId = 4)
             var query = users.Where(u => u.RoleId != 4).AsQueryable();
 
             if (!string.IsNullOrEmpty(request.RoleFilter))
@@ -40,7 +39,6 @@ namespace ArtemisBankingPro.Application.Features.Users.Queries.GetAllUsers
                 }
             }
 
-            // Ordenar de más reciente a más antiguo
             query = query.OrderByDescending(u => u.CreatedAt);
 
             var totalRecords = query.Count();
