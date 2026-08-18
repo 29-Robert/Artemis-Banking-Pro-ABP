@@ -87,6 +87,9 @@ namespace ArtemisBankingPro.Tests.Repositories
         {
             await using var context = CreateContext();
 
+            var client = new User { Id = 1, Cedula = "40200000001", FirstName = "John", LastName = "Doe" };
+            context.Users.Add(client);
+
             context.Loans.Add(new Loan { ClientId = 1, LoanNumber = "100000005", Status = "Activo", AdminId = 1, CreatedAt = DateTime.UtcNow.AddDays(-2) });
             context.Loans.Add(new Loan { ClientId = 1, LoanNumber = "100000006", Status = "Activo", AdminId = 1, CreatedAt = DateTime.UtcNow });
             context.Loans.Add(new Loan { ClientId = 1, LoanNumber = "100000007", Status = "Completado", AdminId = 1, CreatedAt = DateTime.UtcNow });
@@ -96,14 +99,16 @@ namespace ArtemisBankingPro.Tests.Repositories
 
             var (items, totalCount) = await repository.SearchAsync(cedula: null, status: null, pageNumber: 1, pageSize: 20);
 
-            Assert.Equal(2, totalCount); 
-            Assert.Equal("100000006", items.First().LoanNumber); 
+            Assert.Equal(2, totalCount);
+            Assert.Equal("100000006", items.First().LoanNumber);
         }
 
         [Fact]
         public async Task SearchAsync_ConPageSizeMenorQueElTotal_DeberiaPaginarCorrectamente()
         {
             await using var context = CreateContext();
+            var client = new User { Id = 1, Cedula = "40200000001", FirstName = "John", LastName = "Doe" };
+            context.Users.Add(client);
 
             for (var i = 1; i <= 25; i++)
             {

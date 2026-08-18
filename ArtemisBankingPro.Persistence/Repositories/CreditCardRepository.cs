@@ -61,13 +61,13 @@ namespace ArtemisBankingPro.Persistence.Repositories
             {
                 query = query.Where(c => c.Status == status);
             }
-            else if (!hasCedula)
+            else if (!hasCedula && string.IsNullOrWhiteSpace(status)) 
             {
-              
+               
                 query = query.Where(c => c.Status == "Activa");
             }
 
-            
+
             query = hasCedula && !hasStatus
                 ? query.OrderBy(c => c.Status == "Activa" ? 0 : 1)
                        .ThenByDescending(c => c.CreatedAt)
