@@ -3,7 +3,7 @@ using ArtemisBankingPro.Application.DTOs.CreditCard;
 using ArtemisBankingPro.Application.Interfaces.Services;
 using MediatR;
 
-namespace ArtemisBankingPro.Application.Features.CreditCard.Querys
+namespace ArtemisBankingPro.Application.Features.CreditCard.Queries
 {
     public class GetAllCreditCardsQueryHandler : IRequestHandler<GetAllCreditCardsQuery, PagedResult<CreditCardResponseDto>>
     {

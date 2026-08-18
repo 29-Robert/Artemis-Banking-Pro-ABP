@@ -1,6 +1,6 @@
 ﻿using ArtemisBankingPro.Application.DTOs.CreditCard;
 using ArtemisBankingPro.Application.Features.CreditCard.Commands;
-using ArtemisBankingPro.Application.Features.CreditCard.Querys;
+using ArtemisBankingPro.Application.Features.CreditCard.Queries;
 using ArtemisBankingPro.Domain.Entities;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;

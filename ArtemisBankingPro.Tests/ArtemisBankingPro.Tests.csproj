@@ -32,4 +32,9 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Features\Loan\" />
+    <Folder Include="Features\Cajero\" />
+  </ItemGroup>
+
 </Project>
