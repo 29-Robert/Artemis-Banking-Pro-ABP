@@ -216,7 +216,7 @@ namespace ArtemisBankingPro.Application.Services
                         </ul>
                         <p>Si usted no reconoce esta operación, comuníquese con la entidad bancaria.</p>";
 
-                    await _emailService.SendNotificationEmailAsync(emailDest, subject, body);
+                    await _emailService.SendNotificationEmailAsync(account.User.Email, subject, body);
                 }
                 catch 
                 {

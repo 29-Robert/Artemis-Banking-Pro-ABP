@@ -1,4 +1,5 @@
 using ArtemisBankingPro.Application.DTOs.CreditCard;
+using ArtemisBankingPro.Application.Interfaces.Repositories;
 using ArtemisBankingPro.Application.Interfaces.Services;
 using ArtemisBankingPro.Application.Services;
 using ArtemisBankingPro.Domain.Entities;
@@ -19,6 +20,7 @@ namespace ArtemisBankingPro.Tests.Services
         private readonly Mock<IGenericRepository<User>> _mockUserRepository;
         private readonly Mock<IEmailService> _mockEmailService;
         private readonly Mock<IMapper> _mockMapper;
+        private readonly Mock<IUnitOfWork> _mockUnitOfWork;
         private readonly CreditCardService _creditCardService;
 
         public CreditCardServiceTests()
@@ -27,11 +29,13 @@ namespace ArtemisBankingPro.Tests.Services
             _mockUserRepository = new Mock<IGenericRepository<User>>();
             _mockEmailService = new Mock<IEmailService>();
             _mockMapper = new Mock<IMapper>();
+            _mockUnitOfWork = new Mock<IUnitOfWork>();
 
             _creditCardService = new CreditCardService(
                 _mockCreditCardRepository.Object,
                 _mockUserRepository.Object,
                 _mockEmailService.Object,
+                _mockUnitOfWork.Object,
                 _mockMapper.Object,
                 Mock.Of<ILogger<CreditCardService>>());
         }
@@ -99,7 +103,7 @@ namespace ArtemisBankingPro.Tests.Services
             Assert.NotNull(result);
             Assert.Equal(50000m, result.CreditLimit); // 'm' indica que es decimal
             _mockCreditCardRepository.Verify(r => r.AddAsync(It.IsAny<CreditCard>()), Times.Once);
-            _mockCreditCardRepository.Verify(r => r.SaveChangesAsync(), Times.Once);
+            _mockUnitOfWork.Verify(u => u.CommitAsync(), Times.Once);
             _mockEmailService.Verify(e => e.SendNotificationEmailAsync(client.Email, It.IsAny<string>(), It.IsAny<string>()), Times.Once);
         }
 
@@ -156,7 +160,7 @@ namespace ArtemisBankingPro.Tests.Services
             // Assert
             Assert.Equal(newLimit, result.CreditLimit);
             _mockCreditCardRepository.Verify(r => r.UpdateAsync(card), Times.Once);
-            _mockCreditCardRepository.Verify(r => r.SaveChangesAsync(), Times.Once);
+            _mockUnitOfWork.Verify(u => u.CommitAsync(), Times.Once);
         }
 
         [Fact]
@@ -192,7 +196,7 @@ namespace ArtemisBankingPro.Tests.Services
             // Assert
             Assert.Equal("Cancelada", card.Status);
             _mockCreditCardRepository.Verify(r => r.UpdateAsync(card), Times.Once);
-            _mockCreditCardRepository.Verify(r => r.SaveChangesAsync(), Times.Once);
+            _mockUnitOfWork.Verify(u => u.CommitAsync(), Times.Once);
         }
 
         [Fact]

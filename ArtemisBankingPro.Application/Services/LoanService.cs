@@ -36,7 +36,8 @@ namespace ArtemisBankingPro.Application.Services
             IGenericRepository<User> userRepository,
             IEmailService emailService,
             IUnitOfWork unitOfWork,
-            IMapper mapper)
+            IMapper mapper,
+            ILogger<LoanService> logger)
         {
             _loanRepository = loanRepository;
             _installmentRepository = installmentRepository;

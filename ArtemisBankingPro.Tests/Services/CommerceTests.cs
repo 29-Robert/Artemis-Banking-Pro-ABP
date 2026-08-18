@@ -114,6 +114,43 @@ namespace ArtemisBankingPro.Tests
         }
 
         [Fact]
+        public async Task CreateCommerce_WithDuplicateEmail_ShouldThrowInvalidOperationException()
+        {
+            // Arrange
+            var db = GetInMemoryDbContext();
+            var existing = new Commerce
+            {
+                BusinessName = "Farmacia X",
+                RNC = "101001018",
+                Email = "farmaciax@mail.com",
+                IsActive = true,
+                PrincipalAccountNumber = "999888777"
+            };
+            db.Commerces.Add(existing);
+            await db.SaveChangesAsync();
+
+            var commerceRepo = new CommerceRepository(db);
+            var userRepo = new GenericRepository<User>(db);
+            var accountRepo = new GenericRepository<SavingsAccount>(db);
+            var (createVal, updateVal) = GetValidators();
+
+            var service = new CommerceService(commerceRepo, userRepo, accountRepo, createVal, updateVal);
+
+            var dto = new CreateCommerceDto
+            {
+                BusinessName = "Farmacia Y",
+                RNC = "202002029",
+                Email = "farmaciax@mail.com", // Duplicate Email
+                Password = "password123",
+                Phone = "8095551234",
+                Address = "Santo Domingo, RD"
+            };
+
+            // Act & Assert
+            await Assert.ThrowsAsync<InvalidOperationException>(() => service.CreateCommerceAsync(dto));
+        }
+
+        [Fact]
         public async Task UpdateCommerce_ShouldPreserveIsActiveStatus()
         {
             // Arrange

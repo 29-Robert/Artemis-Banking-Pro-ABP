@@ -585,6 +585,7 @@ namespace ArtemisBankingPro.Tests
                 transactions?.Object ?? Mock.Of<ITransactionRepository>(),
                 users?.Object ?? Mock.Of<IGenericRepository<User>>(),
                 emailService?.Object ?? Mock.Of<IEmailService>(),
+                unitOfWork?.Object ?? Mock.Of<IUnitOfWork>(),
                 mapper?.Object ?? Mock.Of<IMapper>(),
                 Mock.Of<ILogger<LoanService>>());
         }

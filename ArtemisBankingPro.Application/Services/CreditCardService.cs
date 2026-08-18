@@ -1,5 +1,6 @@
 using ArtemisBankingPro.Application.Common;
 using ArtemisBankingPro.Application.DTOs.CreditCard;
+using ArtemisBankingPro.Application.Extensions;
 using ArtemisBankingPro.Application.Interfaces.Repositories;
 using ArtemisBankingPro.Application.Interfaces.Services;
 using ArtemisBankingPro.Domain.Entities;
@@ -25,7 +26,8 @@ namespace ArtemisBankingPro.Application.Services
             IGenericRepository<User> userRepository,
             IEmailService emailService,
             IUnitOfWork unitOfWork,
-            IMapper mapper)
+            IMapper mapper,
+            ILogger<CreditCardService> logger)
         {
             _creditCardRepository = creditCardRepository;
             _userRepository = userRepository;
@@ -223,6 +225,8 @@ namespace ArtemisBankingPro.Application.Services
                 await _unitOfWork.RollbackAsync();
                 throw;
             }
+
+            _logger.LogInformation("Tarjeta de crédito CANCELADA: Tarjeta ID: {CardId}, Tarjeta: {CardNo}", cardId, card.CardNumber.MaskCardNumber());
         }
 
         // Helpers privados
