@@ -145,46 +145,74 @@ namespace ArtemisBankingPro.Application.Services
             var clientId = int.Parse(request.ClientId);
 
             var client = await _userRepository.GetByIdAsync(clientId);
-            if (client == null) throw new KeyNotFoundException("El cliente seleccionado no existe.");
-            if (!client.IsActive) throw new InvalidOperationException("Solo se puede asignar préstamos a clientes activos.");
+
+            if (client == null)
+                throw new KeyNotFoundException("El cliente seleccionado no existe.");
+
+            if (!client.IsActive)
+                throw new InvalidOperationException("Solo se puede asignar préstamos a clientes activos.");
+
             if (await _loanRepository.HasActiveLoanAsync(clientId))
                 throw new InvalidOperationException("Este cliente ya tiene un préstamo activo asignado.");
+
             if (!AllowedTerms.Contains(request.TermInMonths))
                 throw new ArgumentException("El plazo seleccionado no es válido.");
+
             if (request.CapitalAmount <= 0)
                 throw new ArgumentException("El monto a prestar debe ser mayor que cero.");
+
             if (request.AnnualInterestRate < 0)
                 throw new ArgumentException("La tasa de interés anual no puede ser negativa.");
 
-            var principalAccount = await _accountRepository.GetPrincipalByClientAsync(clientId);
-            if (principalAccount == null || principalAccount.Status != AccountStatus.Activa)
+            var principalAccount =
+                await _accountRepository.GetPrincipalByClientAsync(clientId);
+
+            if (principalAccount == null ||
+                principalAccount.Status != AccountStatus.Activa)
+            {
                 throw new InvalidOperationException(
                     "El cliente no tiene una cuenta de ahorro principal activa para recibir el desembolso del préstamo.");
+            }
 
-            // Tabla de amortización 
-            var installments = GenerateAmortizationTable(request.CapitalAmount, request.AnnualInterestRate, request.TermInMonths);
+            // Tabla de amortización
+            var installments = GenerateAmortizationTable(
+                request.CapitalAmount,
+                request.AnnualInterestRate,
+                request.TermInMonths);
+
             var totalToPay = installments.Sum(i => i.InstallmentAmount);
 
-            // Evaluación de riesgo 
-            var currentDebt = await _loanRepository.GetTotalActiveDebtByClientAsync(clientId)
-                             + await _creditCardRepository.GetTotalActiveDebtByClientAsync(clientId);
+            // Evaluación de riesgo
+            var currentDebt =
+                await _loanRepository.GetTotalActiveDebtByClientAsync(clientId)
+                + await _creditCardRepository.GetTotalActiveDebtByClientAsync(clientId);
+
             var projectedDebt = currentDebt + totalToPay;
             var averageDebt = await CalculateSystemAverageDebtAsync();
 
             if (!request.ConfirmHighRisk)
             {
                 if (averageDebt > 0 && currentDebt > averageDebt)
+                {
                     throw new HighRiskClientException(
                         "Este cliente se considera de alto riesgo, ya que su deuda actual supera el promedio del sistema.",
-                        "CurrentHighRisk", currentDebt, projectedDebt, averageDebt);
+                        "CurrentHighRisk",
+                        currentDebt,
+                        projectedDebt,
+                        averageDebt);
+                }
 
                 if (averageDebt > 0 && projectedDebt > averageDebt)
+                {
                     throw new HighRiskClientException(
                         "Asignar este préstamo convertirá al cliente en un cliente de alto riesgo, ya que su deuda superará el umbral promedio del sistema.",
-                        "ProjectedHighRisk", currentDebt, projectedDebt, averageDebt);
+                        "ProjectedHighRisk",
+                        currentDebt,
+                        projectedDebt,
+                        averageDebt);
+                }
             }
 
-            // Número de préstamo único 
             var loanNumber = await GenerateUniqueLoanNumberAsync();
 
             var loan = new Loan
@@ -199,12 +227,16 @@ namespace ArtemisBankingPro.Application.Services
                 CreatedAt = DateTime.UtcNow
             };
 
-            // INICIO DE LA TRANSACCIÓN
+            
+            Loan createdLoan = null!;
+
+            
             await _unitOfWork.BeginTransactionAsync();
+
             try
             {
-                var createdLoan = await _loanRepository.AddAsync(loan);
-                await _loanRepository.SaveChangesAsync(); 
+                createdLoan = await _loanRepository.AddAsync(loan);
+                await _loanRepository.SaveChangesAsync();
 
                 foreach (var installment in installments)
                     installment.LoanId = createdLoan.Id;
@@ -214,6 +246,7 @@ namespace ArtemisBankingPro.Application.Services
 
                 
                 principalAccount.Balance += request.CapitalAmount;
+
                 await _accountRepository.UpdateAsync(principalAccount);
 
                 await _transactionRepository.AddAsync(new Transaction
@@ -226,36 +259,11 @@ namespace ArtemisBankingPro.Application.Services
                     PerformedByUserId = adminId,
                     CreatedAt = DateTime.UtcNow
                 });
+
                 await _accountRepository.SaveChangesAsync();
 
-              
-                await _unitOfWork.CommitAsync();
-
                 
-                var loanWithDetails = await _loanRepository.GetByIdWithDetailsAsync(createdLoan.Id);
-                var response = _mapper.Map<LoanResponseDto>(loanWithDetails);
-
-               
-                try
-                {
-                    var monthlyPayment = installments.First().InstallmentAmount;
-                    await _emailService.SendNotificationEmailAsync(
-                        client.Email,
-                        "Préstamo aprobado",
-                        $"Su préstamo ha sido aprobado correctamente.\n" +
-                        $"Número de préstamo: {loanNumber}\n" +
-                        $"Monto aprobado: RD${request.CapitalAmount:N2}\n" +
-                        $"Plazo: {request.TermInMonths} meses\n" +
-                        $"Tasa de interés anual: {request.AnnualInterestRate}%\n" +
-                        $"Cuota mensual: RD${monthlyPayment:N2}\n" +
-                        "El monto aprobado ha sido depositado en su cuenta de ahorro principal.");
-                }
-                catch
-                {
-                    response.EmailNotificationFailed = true;
-                }
-
-                return response;
+                await _unitOfWork.CommitAsync();
             }
             catch
             {
@@ -263,8 +271,37 @@ namespace ArtemisBankingPro.Application.Services
                 await _unitOfWork.RollbackAsync();
                 throw;
             }
-        }
 
+            var loanWithDetails =
+                await _loanRepository.GetByIdWithDetailsAsync(createdLoan.Id);
+
+            var response = _mapper.Map<LoanResponseDto>(loanWithDetails);
+
+            
+            try
+            {
+                var monthlyPayment = installments.First().InstallmentAmount;
+
+                await _emailService.SendNotificationEmailAsync(
+                    client.Email,
+                    "Préstamo aprobado",
+                    $"Su préstamo ha sido aprobado correctamente.\n" +
+                    $"Número de préstamo: {loanNumber}\n" +
+                    $"Monto aprobado: RD${request.CapitalAmount:N2}\n" +
+                    $"Plazo: {request.TermInMonths} meses\n" +
+                    $"Tasa de interés anual: {request.AnnualInterestRate}%\n" +
+                    $"Cuota mensual: RD${monthlyPayment:N2}\n" +
+                    "El monto aprobado ha sido depositado en su cuenta de ahorro principal.");
+            }
+            catch
+            {
+                // El préstamo ya fue creado correctamente.
+                // Solo informamos que falló el email.
+                response.EmailNotificationFailed = true;
+            }
+
+            return response;
+        }
         // MODIFICAR TASA
 
         public async Task<LoanResponseDto> UpdateInterestRateAsync(int loanId, decimal newAnnualRate)
