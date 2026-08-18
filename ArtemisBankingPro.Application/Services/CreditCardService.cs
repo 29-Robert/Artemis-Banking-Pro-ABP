@@ -1,9 +1,11 @@
 using ArtemisBankingPro.Application.Common;
 using ArtemisBankingPro.Application.DTOs.CreditCard;
+using ArtemisBankingPro.Application.Extensions;
 using ArtemisBankingPro.Application.Interfaces.Services;
 using ArtemisBankingPro.Domain.Entities;
 using ArtemisBankingPro.Domain.Interfaces.Repositories;
 using AutoMapper;
+using Microsoft.Extensions.Logging;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -15,17 +17,20 @@ namespace ArtemisBankingPro.Application.Services
         private readonly IGenericRepository<User> _userRepository;
         private readonly IEmailService _emailService;
         private readonly IMapper _mapper;
+        private readonly ILogger<CreditCardService> _logger;
 
         public CreditCardService(
             ICreditCardRepository creditCardRepository,
             IGenericRepository<User> userRepository,
             IEmailService emailService,
-            IMapper mapper)
+            IMapper mapper,
+            ILogger<CreditCardService> logger)
         {
             _creditCardRepository = creditCardRepository;
             _userRepository = userRepository;
             _emailService = emailService;
             _mapper = mapper;
+            _logger = logger;
         }
 
         
@@ -111,6 +116,8 @@ namespace ArtemisBankingPro.Application.Services
             await _creditCardRepository.AddAsync(creditCard);
             await _creditCardRepository.SaveChangesAsync();
 
+            _logger.LogInformation("Tarjeta de crédito ASIGNADA: Cliente ID: {ClientId}, Tarjeta: {CardNo}, Límite: RD$ {Limit:N2}, Admin: {AdminId}", clientId, cardNumber.MaskCardNumber(), request.CreditLimit, adminId);
+
             var response = _mapper.Map<CreditCardCreatedResponseDto>(creditCard);
             response.Cvc = cvc; 
 
@@ -150,6 +157,8 @@ namespace ArtemisBankingPro.Application.Services
             await _creditCardRepository.UpdateAsync(card);
             await _creditCardRepository.SaveChangesAsync();
 
+            _logger.LogInformation("Límite de tarjeta de crédito ACTUALIZADO: Tarjeta ID: {CardId}, Tarjeta: {CardNo}, Nuevo Límite: RD$ {Limit:N2}", cardId, card.CardNumber.MaskCardNumber(), newLimit);
+
             var modifiedAt = DateTime.UtcNow;
             var response = _mapper.Map<CreditCardResponseDto>(card);
 
@@ -185,6 +194,8 @@ namespace ArtemisBankingPro.Application.Services
             card.Status = "Cancelada";
             await _creditCardRepository.UpdateAsync(card);
             await _creditCardRepository.SaveChangesAsync();
+
+            _logger.LogInformation("Tarjeta de crédito CANCELADA: Tarjeta ID: {CardId}, Tarjeta: {CardNo}", cardId, card.CardNumber.MaskCardNumber());
         }
 
         // Helpers privados

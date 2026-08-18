@@ -7,6 +7,7 @@ using ArtemisBankingPro.Domain.Enums;
 using ArtemisBankingPro.Application.Exceptions;
 using ArtemisBankingPro.Domain.Interfaces.Repositories;
 using AutoMapper;
+using Microsoft.Extensions.Logging;
 using System.Security.Cryptography;
 
 namespace ArtemisBankingPro.Application.Services
@@ -23,6 +24,7 @@ namespace ArtemisBankingPro.Application.Services
         private readonly IGenericRepository<User> _userRepository;
         private readonly IEmailService _emailService;
         private readonly IMapper _mapper;
+        private readonly ILogger<LoanService> _logger;
 
         public LoanService(
             ILoanRepository loanRepository,
@@ -32,7 +34,8 @@ namespace ArtemisBankingPro.Application.Services
             ITransactionRepository transactionRepository,
             IGenericRepository<User> userRepository,
             IEmailService emailService,
-            IMapper mapper)
+            IMapper mapper,
+            ILogger<LoanService> logger)
         {
             _loanRepository = loanRepository;
             _installmentRepository = installmentRepository;
@@ -42,6 +45,7 @@ namespace ArtemisBankingPro.Application.Services
             _userRepository = userRepository;
             _emailService = emailService;
             _mapper = mapper;
+            _logger = logger;
         }
 
         
@@ -215,6 +219,7 @@ namespace ArtemisBankingPro.Application.Services
             });
             await _accountRepository.SaveChangesAsync();
 
+            _logger.LogInformation("Préstamo ASIGNADO y DESEMBOLSADO: Préstamo: {LoanNo}, Cliente: {ClientId}, Capital: RD$ {Amount:N2}, Admin: {AdminId}", loanNumber, clientId, request.CapitalAmount, adminId);
 
             var loanWithDetails = await _loanRepository.GetByIdWithDetailsAsync(createdLoan.Id);
             var response = _mapper.Map<LoanResponseDto>(loanWithDetails);
@@ -283,6 +288,8 @@ namespace ArtemisBankingPro.Application.Services
             await _loanRepository.UpdateAsync(loan);
             await _loanRepository.SaveChangesAsync();
             await _installmentRepository.SaveChangesAsync();
+
+            _logger.LogInformation("Tasa de interés de préstamo ACTUALIZADA: Préstamo ID: {LoanId}, Nueva Tasa: {Rate}%", loanId, newAnnualRate);
 
             var response = _mapper.Map<LoanResponseDto>(loan);
 

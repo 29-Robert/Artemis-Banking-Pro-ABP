@@ -18,19 +18,22 @@ namespace ArtemisBankingPro.Application.Services
         private readonly ITransactionRepository _transactionRepository;
         private readonly IEmailService _emailService;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IUserRepository _userRepository;
 
         public BeneficiaryService(
             IBeneficiaryRepository beneficiaryRepository,
             ISavingsAccountRepository accountRepository,
             ITransactionRepository transactionRepository,
             IEmailService emailService,
-            IUnitOfWork unitOfWork)
+            IUnitOfWork unitOfWork,
+            IUserRepository userRepository)
         {
             _beneficiaryRepository = beneficiaryRepository;
             _accountRepository = accountRepository;
             _transactionRepository = transactionRepository;
             _emailService = emailService;
             _unitOfWork = unitOfWork;
+            _userRepository = userRepository;
         }
 
         public async Task<BeneficiaryDto> AddBeneficiaryAsync(int clientId, CreateBeneficiaryDto dto)
@@ -99,8 +102,15 @@ namespace ArtemisBankingPro.Application.Services
                 if (srcAcc.Status == AccountStatus.Cancelada)
                     throw new Exception("La cuenta de origen se encuentra cancelada.");
 
-                if (srcAcc.Balance < dto.Amount)
+                if (srcAcc.IsBlocked)
+                    throw new Exception("La cuenta de origen se encuentra bloqueada.");
+
+                if (srcAcc.Balance - srcAcc.BlockedAmount < dto.Amount)
                     throw new Exception("Fondos insuficientes en la cuenta de origen.");
+
+                var srcUser = await _userRepository.GetByIdAsync(srcAcc.UserId);
+                if (srcUser == null || !srcUser.IsActive)
+                    throw new Exception("El usuario de la cuenta de origen no se encuentra activo.");
 
                 var tgtAcc = await _accountRepository.GetByAccountNumberAsync(dto.DestinationAccountNumber);
                 if (tgtAcc == null)
@@ -108,6 +118,13 @@ namespace ArtemisBankingPro.Application.Services
 
                 if (tgtAcc.Status == AccountStatus.Cancelada)
                     throw new Exception("La cuenta de destino se encuentra cancelada.");
+
+                if (tgtAcc.IsBlocked)
+                    throw new Exception("La cuenta de destino se encuentra bloqueada.");
+
+                var tgtUser = await _userRepository.GetByIdAsync(tgtAcc.UserId);
+                if (tgtUser == null || !tgtUser.IsActive)
+                    throw new Exception("El usuario de la cuenta de destino no se encuentra activo.");
 
                 srcAcc.Balance -= dto.Amount;
                 tgtAcc.Balance += dto.Amount;
@@ -146,7 +163,7 @@ namespace ArtemisBankingPro.Application.Services
                                   $"Cuenta destino: {dto.DestinationAccountNumber}\n" +
                                   $"Monto transferido: RD$ {dto.Amount:N2}\n" +
                                   $"Fecha: {DateTime.Now:dd/MM/yyyy HH:mm:ss}\n";
-                    await _emailService.SendNotificationEmailAsync("correo@ejemplo.com", "Transferencia a Beneficiario Realizada", body);
+                    await _emailService.SendNotificationEmailAsync(srcUser.Email ?? "soporte@artemisbanking.com", "Transferencia a Beneficiario Realizada", body);
                 }
                 catch { }
             }

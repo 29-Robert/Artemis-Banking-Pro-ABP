@@ -5,6 +5,7 @@ using ArtemisBankingPro.Application.Services;
 using ArtemisBankingPro.Domain.Entities;
 using ArtemisBankingPro.Domain.Enums;
 using ArtemisBankingPro.Domain.Interfaces.Repositories;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 
@@ -345,6 +346,65 @@ namespace ArtemisBankingPro.Tests
 
             Assert.Equal(800m, result.RemainingBalance);
         }
+
+        [Fact]
+        public async Task ProcessWithdrawalAsync_WhenAccountIsBlocked_ReturnsRejected()
+        {
+            var account = new SavingsAccount { AccountNumber = "123456789", Status = AccountStatus.Activa, IsBlocked = true, Balance = 1000m };
+            var accounts = new Mock<ISavingsAccountRepository>();
+            accounts.Setup(x => x.GetByAccountNumberAsync("123456789")).ReturnsAsync(account);
+
+            var service = CreateService(accounts, new Mock<ITransactionRepository>());
+
+            var request = new WithdrawRequestDto { SourceAccountNumber = "123456789", Amount = 100m };
+            var result = await service.ProcessWithdrawalAsync(request, 2);
+
+            Assert.False(result.Approved);
+            Assert.Equal("La cuenta seleccionada está bloqueada.", result.RejectionReason);
+        }
+
+        [Fact]
+        public async Task ProcessWithdrawalAsync_WhenUserIsInactive_ReturnsRejected()
+        {
+            var account = new SavingsAccount { AccountNumber = "123456789", Status = AccountStatus.Activa, IsBlocked = false, Balance = 1000m, UserId = 10 };
+            var user = new User { Id = 10, IsActive = false };
+
+            var accounts = new Mock<ISavingsAccountRepository>();
+            accounts.Setup(x => x.GetByAccountNumberAsync("123456789")).ReturnsAsync(account);
+
+            var users = new Mock<IUserRepository>();
+            users.Setup(x => x.GetByIdAsync(10)).ReturnsAsync(user);
+
+            var service = CreateService(accounts, new Mock<ITransactionRepository>(), userRepository: users);
+
+            var request = new WithdrawRequestDto { SourceAccountNumber = "123456789", Amount = 100m };
+            var result = await service.ProcessWithdrawalAsync(request, 2);
+
+            Assert.False(result.Approved);
+            Assert.Equal("El usuario de la cuenta no se encuentra activo.", result.RejectionReason);
+        }
+
+        [Fact]
+        public async Task ProcessWithdrawalAsync_WhenBlockedAmountExceedsAvailable_ReturnsRejected()
+        {
+            var account = new SavingsAccount { AccountNumber = "123456789", Status = AccountStatus.Activa, IsBlocked = false, Balance = 1000m, BlockedAmount = 800m, UserId = 10 };
+            var user = new User { Id = 10, IsActive = true };
+
+            var accounts = new Mock<ISavingsAccountRepository>();
+            accounts.Setup(x => x.GetByAccountNumberAsync("123456789")).ReturnsAsync(account);
+
+            var users = new Mock<IUserRepository>();
+            users.Setup(x => x.GetByIdAsync(10)).ReturnsAsync(user);
+
+            var service = CreateService(accounts, new Mock<ITransactionRepository>(), userRepository: users);
+
+            var request = new WithdrawRequestDto { SourceAccountNumber = "123456789", Amount = 300m }; // 1000 - 800 = 200 available
+            var result = await service.ProcessWithdrawalAsync(request, 2);
+
+            Assert.False(result.Approved);
+            Assert.Equal("El monto ingresado excede el saldo disponible de la cuenta.", result.RejectionReason);
+        }
+
         // Helper
         private static CashierService CreateService(
       Mock<ISavingsAccountRepository> accounts,
@@ -352,8 +412,16 @@ namespace ArtemisBankingPro.Tests
       Mock<ICreditCardRepository>? cards = null,
       Mock<ILoanRepository>? loans = null,
       Mock<ILoanInstallmentRepository>? installments = null,
-      Mock<IEmailService>? emailService = null)
+      Mock<IEmailService>? emailService = null,
+      Mock<IUserRepository>? userRepository = null)
         {
+            var userRepoMock = userRepository ?? new Mock<IUserRepository>();
+            if (userRepository == null)
+            {
+                userRepoMock.Setup(x => x.GetByIdAsync(It.IsAny<int>()))
+                    .ReturnsAsync((int id) => new User { Id = id, IsActive = true, Email = "test@example.com", FirstName = "Test", LastName = "User" });
+            }
+
             return new CashierService(
                 loans?.Object ?? Mock.Of<ILoanRepository>(),
                 installments?.Object ?? Mock.Of<ILoanInstallmentRepository>(),
@@ -361,7 +429,9 @@ namespace ArtemisBankingPro.Tests
                 accounts.Object,
                 transactions.Object,
                 emailService?.Object ?? Mock.Of<IEmailService>(),
-                Mock.Of<IUnitOfWork>());
+                Mock.Of<IUnitOfWork>(),
+                userRepoMock.Object,
+                Mock.Of<ILogger<CashierService>>());
         }
     }
 }

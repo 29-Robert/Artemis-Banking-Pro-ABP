@@ -1,9 +1,11 @@
 using ArtemisBankingPro.Application.DTOs.Cashier;
+using ArtemisBankingPro.Application.Extensions;
 using ArtemisBankingPro.Application.Interfaces.Repositories;
 using ArtemisBankingPro.Application.Interfaces.Services;
 using ArtemisBankingPro.Domain.Entities;
 using ArtemisBankingPro.Domain.Enums;
 using ArtemisBankingPro.Domain.Interfaces.Repositories;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,6 +22,8 @@ namespace ArtemisBankingPro.Application.Services
         private readonly ITransactionRepository _transactionRepository;
         private readonly IEmailService _emailService;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IUserRepository _userRepository;
+        private readonly ILogger<CashierService> _logger;
 
         public CashierService(
             ILoanRepository loanRepository,
@@ -28,7 +32,9 @@ namespace ArtemisBankingPro.Application.Services
             ISavingsAccountRepository accountRepository,
             ITransactionRepository transactionRepository,
             IEmailService emailService,
-            IUnitOfWork unitOfWork)
+            IUnitOfWork unitOfWork,
+            IUserRepository userRepository,
+            ILogger<CashierService> logger)
         {
             _loanRepository = loanRepository;
             _loanInstallmentRepository = loanInstallmentRepository;
@@ -37,6 +43,8 @@ namespace ArtemisBankingPro.Application.Services
             _transactionRepository = transactionRepository;
             _emailService = emailService;
             _unitOfWork = unitOfWork;
+            _userRepository = userRepository;
+            _logger = logger;
         }
 
         public async Task<TransactionResponseDto> ProcessDepositAsync(DepositRequestDto request, int cashierId)
@@ -48,8 +56,17 @@ namespace ArtemisBankingPro.Application.Services
 
             if (account == null || account.Status != AccountStatus.Activa)
             {
+                _logger.LogWarning("Depósito fallido: cuenta {AccountNo} no existe o no está activa. Cajero: {CashierId}", request.DestinationAccountNumber, cashierId);
                 return await RegisterRejectedAsync(request.DestinationAccountNumber, request.Amount,
                     "El número de cuenta ingresado no corresponde a una cuenta válida.", cashierId);
+            }
+
+            var user = await _userRepository.GetByIdAsync(account.UserId);
+            if (user == null || !user.IsActive)
+            {
+                _logger.LogWarning("Depósito fallido: el usuario de la cuenta {AccountNo} no se encuentra activo. Cajero: {CashierId}", account.AccountNumber, cashierId);
+                return await RegisterRejectedAsync(account.AccountNumber, request.Amount,
+                    "El usuario de la cuenta no se encuentra activo.", cashierId);
             }
 
             var transaction = new Transaction
@@ -70,16 +87,19 @@ namespace ArtemisBankingPro.Application.Services
                 await _accountRepository.UpdateAsync(account);
                 await _transactionRepository.AddAsync(transaction);
                 await _unitOfWork.CommitAsync();
+                _logger.LogInformation("Depósito APROBADO: Cuenta: {AccountNo}, Monto: RD$ {Amount:N2}, Cajero: {CashierId}", account.AccountNumber, request.Amount, cashierId);
             }
-            catch
+            catch (Exception ex)
             {
                 await _unitOfWork.RollbackAsync();
+                _logger.LogError(ex, "Error al procesar depósito de cajero para la cuenta {AccountNo}.", account.AccountNumber);
                 throw;
             }
 
             bool emailSent = true;
 
-            if (account.User != null && !string.IsNullOrEmpty(account.User.Email))
+            var emailDest = user.Email ?? account.User?.Email;
+            if (!string.IsNullOrEmpty(emailDest))
             {
                 try
                 {
@@ -87,7 +107,7 @@ namespace ArtemisBankingPro.Application.Services
                     string subject = $"Depósito realizado a su cuenta {ultimosCuatro}";
                     var fechaHoraLocal = transaction.CreatedAt.ToLocalTime();
                     string body = $@"
-                        <p>Hola {account.User.FirstName},</p>
+                        <p>Hola {user.FirstName},</p>
                         <p>Se ha realizado un depósito a su cuenta terminada en {ultimosCuatro}.</p>
                         <ul>
                             <li><strong>Monto depositado:</strong> {request.Amount:C}</li>
@@ -95,7 +115,7 @@ namespace ArtemisBankingPro.Application.Services
                         </ul>
                         <p>Si usted no reconoce esta operación, comuníquese con la entidad bancaria.</p>";
 
-                    await _emailService.SendNotificationEmailAsync(account.User.Email, subject, body);
+                    await _emailService.SendNotificationEmailAsync(emailDest, subject, body);
                 }
                 catch
                 {
@@ -124,12 +144,29 @@ namespace ArtemisBankingPro.Application.Services
             if (account == null || account.Status != AccountStatus.Activa)
             {
                 string accountNum = account?.AccountNumber ?? request.SourceAccountNumber;
+                _logger.LogWarning("Retiro fallido: cuenta {AccountNo} no existe o no está activa. Cajero: {CashierId}", accountNum, cashierId);
                 return await RegisterRejectedAsync(accountNum, request.Amount,
                     "El número de cuenta ingresado no corresponde a una cuenta válida.", cashierId);
             }
 
-            if (account.Balance < request.Amount)
+            if (account.IsBlocked)
             {
+                _logger.LogWarning("Retiro fallido: cuenta {AccountNo} se encuentra bloqueada. Cajero: {CashierId}", account.AccountNumber, cashierId);
+                return await RegisterRejectedAsync(account.AccountNumber, request.Amount,
+                    "La cuenta seleccionada está bloqueada.", cashierId);
+            }
+
+            var user = await _userRepository.GetByIdAsync(account.UserId);
+            if (user == null || !user.IsActive)
+            {
+                _logger.LogWarning("Retiro fallido: el usuario de la cuenta {AccountNo} no se encuentra activo. Cajero: {CashierId}", account.AccountNumber, cashierId);
+                return await RegisterRejectedAsync(account.AccountNumber, request.Amount,
+                    "El usuario de la cuenta no se encuentra activo.", cashierId);
+            }
+
+            if (account.Balance - account.BlockedAmount < request.Amount)
+            {
+                _logger.LogWarning("Retiro fallido: fondos insuficientes (saldo congelado o insuficiente) en cuenta {AccountNo}. Cajero: {CashierId}", account.AccountNumber, cashierId);
                 return await RegisterRejectedAsync(account.AccountNumber, request.Amount,
                     "El monto ingresado excede el saldo disponible de la cuenta.", cashierId);
             }
@@ -152,14 +189,17 @@ namespace ArtemisBankingPro.Application.Services
                 await _accountRepository.UpdateAsync(account);
                 await _transactionRepository.AddAsync(transaction);
                 await _unitOfWork.CommitAsync();
+                _logger.LogInformation("Retiro APROBADO: Cuenta: {AccountNo}, Monto: RD$ {Amount:N2}, Cajero: {CashierId}", account.AccountNumber, request.Amount, cashierId);
             }
-            catch
+            catch (Exception ex)
             {
                 await _unitOfWork.RollbackAsync();
+                _logger.LogError(ex, "Error al procesar retiro de cajero para la cuenta {AccountNo}.", account.AccountNumber);
                 throw;
             }
 
-            if (account.User != null && !string.IsNullOrEmpty(account.User.Email))
+            var emailDest = user.Email ?? account.User?.Email;
+            if (!string.IsNullOrEmpty(emailDest))
             {
                 try
                 {
@@ -167,7 +207,7 @@ namespace ArtemisBankingPro.Application.Services
                     string subject = $"Retiro realizado desde su cuenta {ultimosCuatro}";
                     var fechaHoraLocal = transaction.CreatedAt.ToLocalTime();
                     string body = $@"
-                        <p>Hola {account.User.FirstName},</p>
+                        <p>Hola {user.FirstName},</p>
                         <p>Se ha realizado un retiro desde su cuenta terminada en {ultimosCuatro}.</p>
                         <ul>
                             <li><strong>Monto retirado:</strong> {request.Amount:C}</li>
@@ -175,7 +215,7 @@ namespace ArtemisBankingPro.Application.Services
                         </ul>
                         <p>Si usted no reconoce esta operación, comuníquese con la entidad bancaria.</p>";
 
-                    await _emailService.SendNotificationEmailAsync(account.User.Email, subject, body);
+                    await _emailService.SendNotificationEmailAsync(emailDest, subject, body);
                 }
                 catch { }
             }
@@ -192,27 +232,46 @@ namespace ArtemisBankingPro.Application.Services
             if (account == null || account.Status != AccountStatus.Activa)
             {
                 string accNum = account?.AccountNumber ?? request.SourceAccountNumber;
+                _logger.LogWarning("Pago tarjeta fallido: cuenta {AccountNo} no existe o no está activa. Cajero: {CashierId}", accNum, cashierId);
                 return await RegisterRejectedAsync(accNum, request.Amount,
                     "El número de cuenta ingresado no corresponde a una cuenta válida.", cashierId);
+            }
+
+            if (account.IsBlocked)
+            {
+                _logger.LogWarning("Pago tarjeta fallido: cuenta {AccountNo} se encuentra bloqueada. Cajero: {CashierId}", account.AccountNumber, cashierId);
+                return await RegisterRejectedAsync(account.AccountNumber, request.Amount,
+                    "La cuenta seleccionada está bloqueada.", cashierId);
+            }
+
+            var user = await _userRepository.GetByIdAsync(account.UserId);
+            if (user == null || !user.IsActive)
+            {
+                _logger.LogWarning("Pago tarjeta fallido: el usuario de la cuenta {AccountNo} no se encuentra activo. Cajero: {CashierId}", account.AccountNumber, cashierId);
+                return await RegisterRejectedAsync(account.AccountNumber, request.Amount,
+                    "El usuario de la cuenta no se encuentra activo.", cashierId);
             }
 
             var card = await _creditCardRepository.GetByCardNumberAsync(request.CardNumber);
             if (card == null || card.Status != "Activa")
             {
+                _logger.LogWarning("Pago tarjeta fallido: tarjeta {CardNo} no existe o no está activa. Cajero: {CashierId}", request.CardNumber.MaskCardNumber(), cashierId);
                 return await RegisterRejectedAsync(account.AccountNumber, request.Amount,
                     "El número de tarjeta ingresado no corresponde a una tarjeta válida.", cashierId);
             }
 
             if (card.CurrentDebt <= 0)
             {
+                _logger.LogWarning("Pago tarjeta fallido: tarjeta {CardNo} no tiene deuda pendiente. Cajero: {CashierId}", card.CardNumber.MaskCardNumber(), cashierId);
                 return await RegisterRejectedAsync(account.AccountNumber, request.Amount,
                     "La tarjeta seleccionada no tiene deuda pendiente.", cashierId);
             }
 
             var appliedAmount = Math.Min(request.Amount, card.CurrentDebt);
 
-            if (account.Balance < appliedAmount)
+            if (account.Balance - account.BlockedAmount < appliedAmount)
             {
+                _logger.LogWarning("Pago tarjeta fallido: fondos insuficientes en cuenta {AccountNo}. Cajero: {CashierId}", account.AccountNumber, cashierId);
                 return await RegisterRejectedAsync(account.AccountNumber, request.Amount,
                     "El monto ingresado excede el saldo disponible de la cuenta.", cashierId);
             }
@@ -238,10 +297,12 @@ namespace ArtemisBankingPro.Application.Services
                 await _creditCardRepository.UpdateAsync(card);
                 await _transactionRepository.AddAsync(transaction);
                 await _unitOfWork.CommitAsync();
+                _logger.LogInformation("Pago de tarjeta APROBADO: Cuenta origen: {AccountNo}, Tarjeta: {CardNo}, Monto: RD$ {Amount:N2}, Cajero: {CashierId}", account.AccountNumber, card.CardNumber.MaskCardNumber(), appliedAmount, cashierId);
             }
-            catch
+            catch (Exception ex)
             {
                 await _unitOfWork.RollbackAsync();
+                _logger.LogError(ex, "Error al procesar pago de tarjeta de crédito desde cajero.");
                 throw;
             }
 
@@ -297,13 +358,30 @@ namespace ArtemisBankingPro.Application.Services
             if (account == null || account.Status != AccountStatus.Activa)
             {
                 string accNum = account?.AccountNumber ?? request.SourceAccountNumber;
+                _logger.LogWarning("Pago préstamo fallido: cuenta {AccountNo} no existe o no está activa. Cajero: {CashierId}", accNum, cashierId);
                 return await RegisterRejectedAsync(accNum, request.Amount,
                     "El número de cuenta ingresado no corresponde a una cuenta válida.", cashierId);
+            }
+
+            if (account.IsBlocked)
+            {
+                _logger.LogWarning("Pago préstamo fallido: cuenta {AccountNo} se encuentra bloqueada. Cajero: {CashierId}", account.AccountNumber, cashierId);
+                return await RegisterRejectedAsync(account.AccountNumber, request.Amount,
+                    "La cuenta seleccionada está bloqueada.", cashierId);
+            }
+
+            var user = await _userRepository.GetByIdAsync(account.UserId);
+            if (user == null || !user.IsActive)
+            {
+                _logger.LogWarning("Pago préstamo fallido: el usuario de la cuenta {AccountNo} no se encuentra activo. Cajero: {CashierId}", account.AccountNumber, cashierId);
+                return await RegisterRejectedAsync(account.AccountNumber, request.Amount,
+                    "El usuario de la cuenta no se encuentra activo.", cashierId);
             }
 
             var loan = await _loanRepository.GetByLoanNumberWithInstallmentsAsync(request.LoanNumber);
             if (loan == null || loan.Status == "Completado")
             {
+                _logger.LogWarning("Pago préstamo fallido: préstamo {LoanNo} no existe o está completado. Cajero: {CashierId}", request.LoanNumber, cashierId);
                 return await RegisterRejectedAsync(account.AccountNumber, request.Amount,
                     "El número de préstamo ingresado no corresponde a un préstamo válido.", cashierId);
             }
@@ -311,14 +389,16 @@ namespace ArtemisBankingPro.Application.Services
             var remainingDebt = loan.Installments.Sum(i => i.PendingInstallmentAmount);
             if (remainingDebt <= 0)
             {
+                _logger.LogWarning("Pago préstamo fallido: préstamo {LoanNo} no tiene cuotas pendientes. Cajero: {CashierId}", loan.LoanNumber, cashierId);
                 return await RegisterRejectedAsync(account.AccountNumber, request.Amount,
                     "El préstamo seleccionado no tiene cuotas pendientes de pago.", cashierId);
             }
 
             var appliedAmount = Math.Min(request.Amount, remainingDebt);
 
-            if (account.Balance < appliedAmount)
+            if (account.Balance - account.BlockedAmount < appliedAmount)
             {
+                _logger.LogWarning("Pago préstamo fallido: fondos insuficientes en cuenta {AccountNo}. Cajero: {CashierId}", account.AccountNumber, cashierId);
                 return await RegisterRejectedAsync(account.AccountNumber, request.Amount,
                     "El monto ingresado excede el saldo disponible de la cuenta.", cashierId);
             }
@@ -374,10 +454,12 @@ namespace ArtemisBankingPro.Application.Services
                 await _accountRepository.UpdateAsync(account);
                 await _transactionRepository.AddAsync(transaction);
                 await _unitOfWork.CommitAsync();
+                _logger.LogInformation("Pago de préstamo APROBADO: Cuenta origen: {AccountNo}, Préstamo: {LoanNo}, Monto: RD$ {Amount:N2}, Cajero: {CashierId}", account.AccountNumber, loan.LoanNumber, appliedAmount, cashierId);
             }
-            catch
+            catch (Exception ex)
             {
                 await _unitOfWork.RollbackAsync();
+                _logger.LogError(ex, "Error al procesar pago de préstamo desde cajero.");
                 throw;
             }
 
@@ -438,19 +520,52 @@ namespace ArtemisBankingPro.Application.Services
             if (srcAcc == null || srcAcc.Status != AccountStatus.Activa)
             {
                 string accNum = srcAcc?.AccountNumber ?? request.SourceAccountNumber;
+                _logger.LogWarning("Transferencia fallida: cuenta origen {AccountNo} no existe o no está activa. Cajero: {CashierId}", accNum, cashierId);
                 return await RegisterRejectedAsync(accNum, request.Amount,
                     "El número de cuenta origen ingresado no corresponde a una cuenta válida.", cashierId);
+            }
+
+            if (srcAcc.IsBlocked)
+            {
+                _logger.LogWarning("Transferencia fallida: cuenta origen {AccountNo} está bloqueada. Cajero: {CashierId}", srcAcc.AccountNumber, cashierId);
+                return await RegisterRejectedAsync(srcAcc.AccountNumber, request.Amount,
+                    "La cuenta de origen seleccionada está bloqueada.", cashierId);
+            }
+
+            var srcUser = await _userRepository.GetByIdAsync(srcAcc.UserId);
+            if (srcUser == null || !srcUser.IsActive)
+            {
+                _logger.LogWarning("Transferencia fallida: el usuario de la cuenta origen {AccountNo} no se encuentra activo. Cajero: {CashierId}", srcAcc.AccountNumber, cashierId);
+                return await RegisterRejectedAsync(srcAcc.AccountNumber, request.Amount,
+                    "El usuario de la cuenta de origen no se encuentra activo.", cashierId);
             }
 
             var tgtAcc = await _accountRepository.GetByAccountNumberAsync(request.DestinationAccountNumber);
             if (tgtAcc == null || tgtAcc.Status != AccountStatus.Activa)
             {
+                _logger.LogWarning("Transferencia fallida: cuenta destino {AccountNo} no existe o no está activa. Cajero: {CashierId}", request.DestinationAccountNumber, cashierId);
                 return await RegisterRejectedAsync(srcAcc.AccountNumber, request.Amount,
                     "El número de cuenta destino ingresado no corresponde a una cuenta válida.", cashierId);
             }
 
-            if (srcAcc.Balance < request.Amount)
+            if (tgtAcc.IsBlocked)
             {
+                _logger.LogWarning("Transferencia fallida: cuenta destino {AccountNo} está bloqueada. Cajero: {CashierId}", tgtAcc.AccountNumber, cashierId);
+                return await RegisterRejectedAsync(srcAcc.AccountNumber, request.Amount,
+                    "La cuenta de destino seleccionada está bloqueada.", cashierId);
+            }
+
+            var tgtUser = await _userRepository.GetByIdAsync(tgtAcc.UserId);
+            if (tgtUser == null || !tgtUser.IsActive)
+            {
+                _logger.LogWarning("Transferencia fallida: el usuario de la cuenta destino {AccountNo} no se encuentra activo. Cajero: {CashierId}", tgtAcc.AccountNumber, cashierId);
+                return await RegisterRejectedAsync(srcAcc.AccountNumber, request.Amount,
+                    "El usuario de la cuenta de destino no se encuentra activo.", cashierId);
+            }
+
+            if (srcAcc.Balance - srcAcc.BlockedAmount < request.Amount)
+            {
+                _logger.LogWarning("Transferencia fallida: fondos insuficientes en cuenta origen {AccountNo}. Cajero: {CashierId}", srcAcc.AccountNumber, cashierId);
                 return await RegisterRejectedAsync(srcAcc.AccountNumber, request.Amount,
                     "El monto ingresado excede el saldo disponible de la cuenta.", cashierId);
             }
@@ -490,10 +605,12 @@ namespace ArtemisBankingPro.Application.Services
                 await _transactionRepository.AddAsync(creditTx);
 
                 await _unitOfWork.CommitAsync();
+                _logger.LogInformation("Transferencia a terceros APROBADA: Origen: {SrcAccount}, Destino: {TgtAccount}, Monto: RD$ {Amount:N2}, Cajero: {CashierId}", srcAcc.AccountNumber, tgtAcc.AccountNumber, request.Amount, cashierId);
             }
-            catch
+            catch (Exception ex)
             {
                 await _unitOfWork.RollbackAsync();
+                _logger.LogError(ex, "Error al procesar transferencia a terceros desde cajero.");
                 throw;
             }
 
@@ -503,11 +620,12 @@ namespace ArtemisBankingPro.Application.Services
                 string srcLast4 = srcAcc.AccountNumber[^4..];
                 string tgtLast4 = tgtAcc.AccountNumber[^4..];
 
-                if (srcAcc.User != null && !string.IsNullOrEmpty(srcAcc.User.Email))
+                var srcEmail = srcUser.Email ?? srcAcc.User?.Email;
+                if (!string.IsNullOrEmpty(srcEmail))
                 {
                     string subjectSrc = $"Transacción realizada a la cuenta {tgtLast4}";
                     string bodySrc = $@"
-                        <p>Hola {srcAcc.User.FirstName},</p>
+                        <p>Hola {srcUser.FirstName},</p>
                         <p>Se ha debitado dinero de su cuenta para realizar una transferencia.</p>
                         <ul>
                             <li><strong>Monto transferido:</strong> {request.Amount:C}</li>
@@ -517,14 +635,15 @@ namespace ArtemisBankingPro.Application.Services
                         </ul>
                         <p>Si usted no reconoce esta operación, comuníquese con la entidad bancaria inmediatamente.</p>";
 
-                    await _emailService.SendNotificationEmailAsync(srcAcc.User.Email, subjectSrc, bodySrc);
+                    await _emailService.SendNotificationEmailAsync(srcEmail, subjectSrc, bodySrc);
                 }
 
-                if (tgtAcc.User != null && !string.IsNullOrEmpty(tgtAcc.User.Email))
+                var tgtEmail = tgtUser.Email ?? tgtAcc.User?.Email;
+                if (!string.IsNullOrEmpty(tgtEmail))
                 {
                     string subjectTgt = $"Transacción enviada desde la cuenta {srcLast4}";
                     string bodyTgt = $@"
-                        <p>Hola {tgtAcc.User.FirstName},</p>
+                        <p>Hola {tgtUser.FirstName},</p>
                         <p>Se ha acreditado una transferencia en su cuenta.</p>
                         <ul>
                             <li><strong>Monto recibido:</strong> {request.Amount:C}</li>
@@ -534,7 +653,7 @@ namespace ArtemisBankingPro.Application.Services
                         </ul>
                         <p>Si usted no reconoce esta operación, comuníquese con la entidad bancaria.</p>";
 
-                    await _emailService.SendNotificationEmailAsync(tgtAcc.User.Email, subjectTgt, bodyTgt);
+                    await _emailService.SendNotificationEmailAsync(tgtEmail, subjectTgt, bodyTgt);
                 }
             }
             catch { }

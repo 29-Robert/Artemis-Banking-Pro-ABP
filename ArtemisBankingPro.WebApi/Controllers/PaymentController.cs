@@ -8,18 +8,36 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace ArtemisBankingPro.WebApi.Controllers
 {
+    /// <summary>
+    /// Controlador para procesar cobros y consultar transacciones a través de la pasarela Hermes Pay.
+    /// </summary>
     [ApiController]
     [Route("pay")]
     [Authorize(Roles = "Administrador,Comercio")]
+    [Produces("application/json")]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
     public class PaymentController(
         IMediator mediator,
         ICurrentUserService currentUserService) : ControllerBase
     {
+        /// <summary>
+        /// Procesa un pago/consumo a través de una tarjeta de crédito en Hermes Pay.
+        /// </summary>
+        /// <param name="commerceId">ID del comercio destino (ignorado para usuarios con rol Comercio).</param>
+        /// <param name="request">Datos de la tarjeta de crédito y detalles del pago.</param>
+        /// <returns>La información del consumo procesado, incluyendo código de autorización si aplica.</returns>
         [HttpPost("process-payment/{commerceId}")]
+        [ProducesResponseType(typeof(TransactionResponseDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(TransactionResponseDto), StatusCodes.Status422UnprocessableEntity)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> ProcessPayment(string commerceId, [FromBody] ProcessPaymentRequestDto request)
         {
             var userRole = currentUserService.Role;
@@ -30,7 +48,7 @@ namespace ArtemisBankingPro.WebApi.Controllers
                 var jwtCommerceId = currentUserService.CommerceId;
                 if (!jwtCommerceId.HasValue)
                 {
-                    return StatusCode(StatusCodes.Status403Forbidden, new { Message = "El usuario no tiene un comercio asociado." });
+                    throw new UnauthorizedAccessException("El usuario no tiene un comercio asociado.");
                 }
                 resolvedCommerceId = jwtCommerceId.Value;
             }
@@ -38,48 +56,51 @@ namespace ArtemisBankingPro.WebApi.Controllers
             {
                 if (!int.TryParse(commerceId, out var parsedCommerceId) || parsedCommerceId <= 0)
                 {
-                    return BadRequest(new { Message = "El formato del ID es inválido. Debe ser un entero positivo." });
+                    throw new ArgumentException("El formato del ID es inválido. Debe ser un entero positivo.");
                 }
 
                 var commerce = await mediator.Send(new GetCommerceByIdQuery { Id = parsedCommerceId });
                 if (commerce == null)
                 {
-                    return NotFound(new { Message = $"El comercio con ID {commerceId} no existe." });
+                    throw new KeyNotFoundException($"El comercio con ID {commerceId} no existe.");
                 }
 
                 resolvedCommerceId = parsedCommerceId;
             }
 
-            try
+            var command = new ProcessPaymentCommand
             {
-                var command = new ProcessPaymentCommand
-                {
-                    CommerceId = resolvedCommerceId,
-                    CardNumber = request.CardNumber,
-                    ExpirationMonth = request.ExpirationMonth,
-                    ExpirationYear = request.ExpirationYear,
-                    Cvc = request.Cvc,
-                    Amount = request.Amount,
-                    Description = request.Description,
-                    UserId = currentUserService.UserId
-                };
+                CommerceId = resolvedCommerceId,
+                CardNumber = request.CardNumber,
+                ExpirationMonth = request.ExpirationMonth,
+                ExpirationYear = request.ExpirationYear,
+                Cvc = request.Cvc,
+                Amount = request.Amount,
+                Description = request.Description,
+                UserId = currentUserService.UserId
+            };
 
-                var result = await mediator.Send(command);
+            var result = await mediator.Send(command);
 
-                if (result.Status == ArtemisBankingPro.Domain.Enums.TransactionStatus.Rechazada)
-                {
-                    return UnprocessableEntity(result);
-                }
-
-                return Ok(result);
-            }
-            catch (Exception ex)
+            if (result.Status == ArtemisBankingPro.Domain.Enums.TransactionStatus.Rechazada)
             {
-                return BadRequest(new { Error = ex.Message });
+                return UnprocessableEntity(result);
             }
+
+            return Ok(result);
         }
 
+        /// <summary>
+        /// Obtiene un historial paginado de transacciones y consumos de tarjetas de crédito procesadas por un comercio.
+        /// </summary>
+        /// <param name="commerceId">ID del comercio (ignorado para usuarios con rol Comercio).</param>
+        /// <param name="page">Número de página actual.</param>
+        /// <param name="limit">Cantidad máxima de registros por página.</param>
+        /// <returns>Listado paginado de transacciones del comercio.</returns>
         [HttpGet("get-transactions/{commerceId}")]
+        [ProducesResponseType(typeof(PagedTransactionsDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetTransactions(string commerceId, [FromQuery] int page = 1, [FromQuery] int limit = 10)
         {
             var userRole = currentUserService.Role;
@@ -90,7 +111,7 @@ namespace ArtemisBankingPro.WebApi.Controllers
                 var jwtCommerceId = currentUserService.CommerceId;
                 if (!jwtCommerceId.HasValue)
                 {
-                    return StatusCode(StatusCodes.Status403Forbidden, new { Message = "El usuario no tiene un comercio asociado." });
+                    throw new UnauthorizedAccessException("El usuario no tiene un comercio asociado.");
                 }
                 resolvedCommerceId = jwtCommerceId.Value;
             }
@@ -98,33 +119,26 @@ namespace ArtemisBankingPro.WebApi.Controllers
             {
                 if (!int.TryParse(commerceId, out var parsedCommerceId) || parsedCommerceId <= 0)
                 {
-                    return BadRequest(new { Message = "El formato del ID es inválido. Debe ser un entero positivo." });
+                    throw new ArgumentException("El formato del ID es inválido. Debe ser un entero positivo.");
                 }
 
                 var commerce = await mediator.Send(new GetCommerceByIdQuery { Id = parsedCommerceId });
                 if (commerce == null)
                 {
-                    return NotFound(new { Message = $"El comercio con ID {commerceId} no existe." });
+                    throw new KeyNotFoundException($"El comercio con ID {commerceId} no existe.");
                 }
 
                 resolvedCommerceId = parsedCommerceId;
             }
 
-            try
+            var query = new GetTransactionsQuery
             {
-                var query = new GetTransactionsQuery
-                {
-                    CommerceId = resolvedCommerceId,
-                    Page = page,
-                    Limit = limit
-                };
-                var result = await mediator.Send(query);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { Error = ex.Message });
-            }
+                CommerceId = resolvedCommerceId,
+                Page = page,
+                Limit = limit
+            };
+            var result = await mediator.Send(query);
+            return Ok(result);
         }
     }
 }

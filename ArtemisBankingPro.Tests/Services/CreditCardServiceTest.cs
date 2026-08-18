@@ -1,9 +1,10 @@
-﻿using ArtemisBankingPro.Application.DTOs.CreditCard;
+using ArtemisBankingPro.Application.DTOs.CreditCard;
 using ArtemisBankingPro.Application.Interfaces.Services;
 using ArtemisBankingPro.Application.Services;
 using ArtemisBankingPro.Domain.Entities;
 using ArtemisBankingPro.Domain.Interfaces.Repositories;
 using AutoMapper;
+using Microsoft.Extensions.Logging;
 using Moq;
 using System;
 using System.Collections.Generic;
@@ -31,7 +32,8 @@ namespace ArtemisBankingPro.Tests.Services
                 _mockCreditCardRepository.Object,
                 _mockUserRepository.Object,
                 _mockEmailService.Object,
-                _mockMapper.Object);
+                _mockMapper.Object,
+                Mock.Of<ILogger<CreditCardService>>());
         }
 
         #region GetCreditCardByIdAsync Tests

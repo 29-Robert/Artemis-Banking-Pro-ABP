@@ -123,6 +123,9 @@ namespace ArtemisBankingPro.Tests
             // Arrange
             var db = GetInMemoryDbContext();
 
+            var role = new Role { Id = 3, Name = "Cliente" };
+            db.Roles.Add(role);
+
             var client = new User
             {
                 Id = 2,
