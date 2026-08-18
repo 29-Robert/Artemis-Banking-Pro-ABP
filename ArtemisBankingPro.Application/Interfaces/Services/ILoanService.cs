@@ -10,5 +10,6 @@ namespace ArtemisBankingPro.Application.Interfaces.Services
         Task<EligibleClientsResponseDto> GetEligibleClientsAsync(string? cedula, int pageNumber, int pageSize);
         Task<LoanResponseDto> AssignLoanAsync(CreateLoanRequestDto request, int adminId);
         Task<LoanResponseDto> UpdateInterestRateAsync(int loanId, decimal newAnnualRate);
+        Task<LoanResponseDto> GetLoanByNumberAsync(string loanNumber);
     }
 }

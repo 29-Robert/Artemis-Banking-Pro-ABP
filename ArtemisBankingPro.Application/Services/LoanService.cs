@@ -82,9 +82,15 @@ namespace ArtemisBankingPro.Application.Services
 
             return _mapper.Map<LoanResponseDto>(loan);
         }
+        public async Task<LoanResponseDto> GetLoanByNumberAsync(string loanNumber)
+        {
+            var loan = await _loanRepository.GetByLoanNumberWithInstallmentsAsync(loanNumber);
+            if (loan == null) throw new KeyNotFoundException("El préstamo seleccionado no existe.");
 
+            return _mapper.Map<LoanResponseDto>(loan);
+        }
         // CLIENTES ELEGIBLES 
-        
+
         public async Task<EligibleClientsResponseDto> GetEligibleClientsAsync(string? cedula, int pageNumber, int pageSize)
         {
             var allUsers = await _userRepository.GetAllAsync();
@@ -422,6 +428,6 @@ namespace ArtemisBankingPro.Application.Services
             }
             throw new InvalidOperationException("No fue posible generar un número de préstamo único.");
         }
-
+      
     }
 }
