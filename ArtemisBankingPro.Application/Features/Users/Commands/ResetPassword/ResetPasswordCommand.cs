@@ -7,6 +7,7 @@ namespace ArtemisBankingPro.Application.Features.Users.Commands.ResetPassword
 {
     public class ResetPasswordCommand : IRequest<bool>
     {
+        public int? UserId { get; set; }
         public string Token { get; set; } = string.Empty;
         public string NewPassword { get; set; } = string.Empty;
     }
@@ -25,17 +26,23 @@ namespace ArtemisBankingPro.Application.Features.Users.Commands.ResetPassword
                 t.ExpirationDate > DateTime.UtcNow);
 
             if (validToken == null)
-                throw new Exception("El token es inválido o ha expirado.");
+                throw new Exception("El enlace de restablecimiento ha expirado o no es válido.");
+
+            if (request.UserId.HasValue && validToken.UserId != request.UserId.Value)
+                throw new Exception("El token no pertenece al usuario indicado.");
 
             var user = await userRepository.GetByIdAsync(validToken.UserId);
             if (user == null)
                 throw new Exception("Usuario no encontrado.");
 
             user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
-            await userRepository.UpdateAsync(user);
+
+            user.IsActive = true;
 
             validToken.IsUsed = true;
-            await tokenRepository.UpdateAsync(validToken);
+
+            await userRepository.SaveChangesAsync();
+            await tokenRepository.SaveChangesAsync();
 
             return true;
         }

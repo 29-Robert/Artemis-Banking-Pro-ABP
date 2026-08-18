@@ -5,39 +5,23 @@ using AutoMapper;
 using MediatR;
 using System.Linq;
 
-namespace ArtemisBankingPro.Application.Features.Users.Queries.GetAllUsers
+namespace ArtemisBankingPro.Application.Features.Users.Queries.GetCommerceUsers
 {
-    public class GetAllUsersQuery : IRequest<PagedUserResponseDto>
+    public class GetCommerceUsersQuery : IRequest<PagedUserResponseDto>
     {
-        public string? RoleFilter { get; set; }
         public int Page { get; set; } = 1;
         public int PageSize { get; set; } = 20;
     }
 
-    public class GetAllUsersQueryHandler(
+    public class GetCommerceUsersQueryHandler(
         IGenericRepository<User> userRepository,
-        IMapper mapper) : IRequestHandler<GetAllUsersQuery, PagedUserResponseDto>
+        IMapper mapper) : IRequestHandler<GetCommerceUsersQuery, PagedUserResponseDto>
     {
-        public async Task<PagedUserResponseDto> Handle(GetAllUsersQuery request, CancellationToken cancellationToken)
+        public async Task<PagedUserResponseDto> Handle(GetCommerceUsersQuery request, CancellationToken cancellationToken)
         {
             var users = await userRepository.GetAllAsync();
 
-            var query = users.Where(u => u.RoleId != 4).AsQueryable();
-
-            if (!string.IsNullOrEmpty(request.RoleFilter))
-            {
-                var roleId = request.RoleFilter switch
-                {
-                    "Administrador" => 1,
-                    "Cajero" => 2,
-                    "Cliente" => 3,
-                    _ => 0
-                };
-                if (roleId > 0)
-                {
-                    query = query.Where(u => u.RoleId == roleId);
-                }
-            }
+            var query = users.Where(u => u.RoleId == 4).AsQueryable();
 
             query = query.OrderByDescending(u => u.CreatedAt);
 

@@ -4,6 +4,7 @@ using ArtemisBankingPro.Application.Interfaces.Services;
 using ArtemisBankingPro.Application.Services;
 using ArtemisBankingPro.Domain.Entities;
 using ArtemisBankingPro.Domain.Interfaces.Repositories;
+using ArtemisBankingPro.Application.Interfaces.Repositories;
 using AutoMapper;
 using Microsoft.Extensions.Logging;
 using Moq;

@@ -1,18 +1,17 @@
 ﻿using MediatR;
 
-namespace ArtemisBankingPro.Application.Features.Users.Commands.CreateUser
+namespace ArtemisBankingPro.Application.Features.Users.Commands.UpdateUser
 {
-    public class CreateUserCommand : IRequest<int>
+    public class UpdateUserCommand : IRequest
     {
+        public int Id { get; set; }
         public string FirstName { get; set; } = string.Empty;
         public string LastName { get; set; } = string.Empty;
         public string Cedula { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
         public string Username { get; set; } = string.Empty;
-        public string Password { get; set; } = string.Empty;
-        public int RoleId { get; set; }
-        public int? CommerceId { get; set; }
+        public string? Password { get; set; } 
 
-        public decimal InitialAmount { get; set; }
+        public decimal AdditionalAmount { get; set; }
     }
 }
