@@ -123,6 +123,9 @@ namespace ArtemisBankingPro.Tests
             // Arrange
             var db = GetInMemoryDbContext();
 
+            var role = new Role { Id = 3, Name = "Cliente" };
+            db.Roles.Add(role);
+
             var client = new User
             {
                 Id = 2,
@@ -364,6 +367,126 @@ namespace ArtemisBankingPro.Tests
             Assert.Equal(5000.00m, disbursementTx.Amount);
             Assert.Equal(TransactionType.Credito, disbursementTx.Type);
             Assert.Equal(TransactionStatus.Aprobada, disbursementTx.Status);
+        }
+
+        [Fact]
+        public async Task ProcessCashAdvance_WhenAccountIsCancelled_ShouldThrowException()
+        {
+            // Arrange
+            var db = GetInMemoryDbContext();
+
+            var role = new Role { Id = 3, Name = "Cliente" };
+            db.Roles.Add(role);
+
+            var client = new User
+            {
+                Id = 6,
+                FirstName = "Laura",
+                LastName = "Gomez",
+                Cedula = "402-8888888-8",
+                Email = "laura@mail.com",
+                Username = "laura",
+                PasswordHash = "hash",
+                PhoneNumber = "8095558888",
+                RoleId = 3,
+                IsActive = true
+            };
+            db.Users.Add(client);
+
+            var account = new SavingsAccount
+            {
+                UserId = 6,
+                AccountNumber = "600000001",
+                Balance = 1000.00m,
+                Type = AccountType.Principal,
+                Status = AccountStatus.Cancelada, // Cancelada
+                IsPrincipal = true
+            };
+            db.SavingsAccounts.Add(account);
+
+            var card = new CreditCard
+            {
+                Id = 2,
+                ClientId = 6,
+                CardNumber = "4444555566668888",
+                CreditLimit = 10000m,
+                CurrentDebt = 0m,
+                Status = "Activa",
+                CvcHash = "hash",
+                ExpirationMonth = "12",
+                ExpirationYear = "2028"
+            };
+            db.CreditCards.Add(card);
+            await db.SaveChangesAsync();
+
+            var userRepo = new UserRepository(db);
+            var accountRepo = new SavingsAccountRepository(db);
+            var transactionRepo = new TransactionRepository(db);
+            var loanRepo = new LoanRepository(db);
+            var cardRepo = new CreditCardRepository(db);
+            var emailServiceMock = new Mock<IEmailService>();
+
+            var service = new SavingsAccountService(accountRepo, transactionRepo, userRepo, loanRepo, cardRepo, emailServiceMock.Object);
+
+            // Act & Assert
+            var exception = await Assert.ThrowsAnyAsync<Exception>(() =>
+                service.ProcessCashAdvanceAsync("600000001", "4444555566668888", 500m, "6")
+            );
+            Assert.Contains("cancelada", exception.Message);
+        }
+
+        [Fact]
+        public async Task CreditToMainAsync_WithDecimalPrecision_ShouldCalculateDecimalBalanceCorrectly()
+        {
+            // Arrange
+            var db = GetInMemoryDbContext();
+
+            var role = new Role { Id = 3, Name = "Cliente" };
+            db.Roles.Add(role);
+
+            var client = new User
+            {
+                Id = 7,
+                FirstName = "Maria",
+                LastName = "Santos",
+                Cedula = "402-7777777-7",
+                Email = "maria@mail.com",
+                Username = "maria",
+                PasswordHash = "hash",
+                PhoneNumber = "8095557777",
+                RoleId = 3,
+                IsActive = true
+            };
+            db.Users.Add(client);
+
+            var account = new SavingsAccount
+            {
+                UserId = 7,
+                AccountNumber = "700000001",
+                Balance = 1000.55m, // Decimal starting balance
+                Type = AccountType.Principal,
+                Status = AccountStatus.Activa,
+                IsPrincipal = true
+            };
+            db.SavingsAccounts.Add(account);
+            await db.SaveChangesAsync();
+
+            var userRepo = new UserRepository(db);
+            var accountRepo = new SavingsAccountRepository(db);
+            var transactionRepo = new TransactionRepository(db);
+            var loanRepo = new LoanRepository(db);
+            var cardRepo = new CreditCardRepository(db);
+            var emailServiceMock = new Mock<IEmailService>();
+
+            var service = new SavingsAccountService(accountRepo, transactionRepo, userRepo, loanRepo, cardRepo, emailServiceMock.Object);
+
+            // Act
+            await service.CreditToMainAsync("7", 500.44m); // Decimal credit amount
+
+            // Assert
+            var updatedAcc = await accountRepo.GetByAccountNumberAsync("700000001");
+            Assert.NotNull(updatedAcc);
+            Assert.Equal(1500.99m, updatedAcc.Balance); // Exactly 1500.99m
         }
     }
 }

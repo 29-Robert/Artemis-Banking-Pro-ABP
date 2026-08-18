@@ -1,10 +1,12 @@
 using ArtemisBankingPro.Application.DTOs.CreditCard;
+using ArtemisBankingPro.Application.Interfaces.Repositories;
 using ArtemisBankingPro.Application.Interfaces.Services;
 using ArtemisBankingPro.Application.Services;
 using ArtemisBankingPro.Domain.Entities;
 using ArtemisBankingPro.Domain.Interfaces.Repositories;
 using ArtemisBankingPro.Application.Interfaces.Repositories;
 using AutoMapper;
+using Microsoft.Extensions.Logging;
 using Moq;
 using System;
 using System.Collections.Generic;
@@ -35,7 +37,8 @@ namespace ArtemisBankingPro.Tests.Services
                 _mockUserRepository.Object,
                 _mockEmailService.Object,
                 _mockUnitOfWork.Object,
-                _mockMapper.Object);
+                _mockMapper.Object,
+                Mock.Of<ILogger<CreditCardService>>());
         }
 
         #region GetCreditCardByIdAsync Tests
@@ -101,7 +104,7 @@ namespace ArtemisBankingPro.Tests.Services
             Assert.NotNull(result);
             Assert.Equal(50000m, result.CreditLimit); // 'm' indica que es decimal
             _mockCreditCardRepository.Verify(r => r.AddAsync(It.IsAny<CreditCard>()), Times.Once);
-            _mockUnitOfWork.Verify(r => r.CommitAsync(), Times.Once);
+            _mockUnitOfWork.Verify(u => u.CommitAsync(), Times.Once);
             _mockEmailService.Verify(e => e.SendNotificationEmailAsync(client.Email, It.IsAny<string>(), It.IsAny<string>()), Times.Once);
         }
 
@@ -158,7 +161,7 @@ namespace ArtemisBankingPro.Tests.Services
             // Assert
             Assert.Equal(newLimit, result.CreditLimit);
             _mockCreditCardRepository.Verify(r => r.UpdateAsync(card), Times.Once);
-            _mockUnitOfWork.Verify(r => r.CommitAsync(), Times.Once);
+            _mockUnitOfWork.Verify(u => u.CommitAsync(), Times.Once);
         }
 
         [Fact]
@@ -194,7 +197,7 @@ namespace ArtemisBankingPro.Tests.Services
             // Assert
             Assert.Equal("Cancelada", card.Status);
             _mockCreditCardRepository.Verify(r => r.UpdateAsync(card), Times.Once);
-            _mockUnitOfWork.Verify(r => r.CommitAsync(), Times.Once);
+            _mockUnitOfWork.Verify(u => u.CommitAsync(), Times.Once);
         }
 
         [Fact]

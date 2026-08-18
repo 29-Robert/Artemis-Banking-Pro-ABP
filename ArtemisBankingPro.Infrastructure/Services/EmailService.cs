@@ -1,12 +1,15 @@
-﻿using System.Net;
+using System;
+using System.Net;
 using System.Net.Mail;
+using System.Threading.Tasks;
 using ArtemisBankingPro.Application.Interfaces.Services;
 using ArtemisBankingPro.Infrastructure.Settings;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace ArtemisBankingPro.Infrastructure.Services
 {
-    public class EmailService(IOptions<MailSettings> mailSettings) : IEmailService
+    public class EmailService(IOptions<MailSettings> mailSettings, ILogger<EmailService> logger) : IEmailService
     {
         private readonly MailSettings _mailSettings = mailSettings.Value;
 
@@ -37,26 +40,38 @@ namespace ArtemisBankingPro.Infrastructure.Services
             await SendNotificationEmailAsync(to, subject, body);
         }
 
-        public async Task SendNotificationEmailAsync(string to, string subject, string body)
+        public Task SendNotificationEmailAsync(string to, string subject, string body)
         {
-            using var client = new SmtpClient(_mailSettings.SmtpHost, _mailSettings.SmtpPort)
+            // Enviar correo de forma asíncrona, desacoplada y no bloqueante
+            _ = Task.Run(async () =>
             {
-                Credentials = new NetworkCredential(_mailSettings.SmtpUser, _mailSettings.SmtpPass),
-                EnableSsl = true
-            };
+                try
+                {
+                    using var client = new SmtpClient(_mailSettings.SmtpHost, _mailSettings.SmtpPort)
+                    {
+                        Credentials = new NetworkCredential(_mailSettings.SmtpUser, _mailSettings.SmtpPass),
+                        EnableSsl = true
+                    };
 
-            var mailMessage = new MailMessage
-            {
-                From = new MailAddress(_mailSettings.EmailFrom, "Artemis Banking Pro"),
-                Subject = subject,
-                Body = body,
-                IsBodyHtml = true
-            };
+                    var mailMessage = new MailMessage
+                    {
+                        From = new MailAddress(_mailSettings.EmailFrom, "Artemis Banking Pro"),
+                        Subject = subject,
+                        Body = body,
+                        IsBodyHtml = true
+                    };
 
-            mailMessage.To.Add(to);
-            await client.SendMailAsync(mailMessage);
+                    mailMessage.To.Add(to);
+                    await client.SendMailAsync(mailMessage);
+                    logger.LogInformation("Correo de notificación enviado exitosamente a {To}.", to);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Error al enviar correo de notificación en segundo plano a {To}.", to);
+                }
+            });
+
+            return Task.CompletedTask;
         }
-
-        
     }
 }

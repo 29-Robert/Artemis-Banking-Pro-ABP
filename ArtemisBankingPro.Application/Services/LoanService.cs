@@ -7,6 +7,7 @@ using ArtemisBankingPro.Domain.Enums;
 using ArtemisBankingPro.Application.Exceptions;
 using ArtemisBankingPro.Domain.Interfaces.Repositories;
 using AutoMapper;
+using Microsoft.Extensions.Logging;
 using System.Security.Cryptography;
 
 namespace ArtemisBankingPro.Application.Services
@@ -24,6 +25,7 @@ namespace ArtemisBankingPro.Application.Services
         private readonly IEmailService _emailService;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+        private readonly ILogger<LoanService> _logger;
 
         public LoanService(
             ILoanRepository loanRepository,
@@ -34,7 +36,8 @@ namespace ArtemisBankingPro.Application.Services
             IGenericRepository<User> userRepository,
             IEmailService emailService,
             IUnitOfWork unitOfWork,
-            IMapper mapper)
+            IMapper mapper,
+            ILogger<LoanService> logger)
         {
             _loanRepository = loanRepository;
             _installmentRepository = installmentRepository;
@@ -45,6 +48,7 @@ namespace ArtemisBankingPro.Application.Services
             _emailService = emailService;
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _logger = logger;
         }
 
         

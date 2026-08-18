@@ -5,12 +5,22 @@ using System.Threading.Tasks;
 
 namespace ArtemisBankingPro.Application.Features.Accounts.Commands
 {
-    public class CancelSecondaryAccountCommandHandler(ISavingsAccountService accountService) : IRequestHandler<CancelSecondaryAccountCommand, Unit>
+    public class CancelSecondaryAccountCommandHandler(ISavingsAccountService accountService, ArtemisBankingPro.Application.Interfaces.Repositories.IUnitOfWork unitOfWork) : IRequestHandler<CancelSecondaryAccountCommand, Unit>
     {
         public async Task<Unit> Handle(CancelSecondaryAccountCommand request, CancellationToken cancellationToken)
         {
-            await accountService.CancelSecondaryAccountAsync(request.AccountNumber);
-            return Unit.Value;
+            await unitOfWork.BeginTransactionAsync();
+            try
+            {
+                await accountService.CancelSecondaryAccountAsync(request.AccountNumber);
+                await unitOfWork.CommitAsync();
+                return Unit.Value;
+            }
+            catch
+            {
+                await unitOfWork.RollbackAsync();
+                throw;
+            }
         }
     }
 }
