@@ -1,5 +1,6 @@
 using ArtemisBankingPro.Application.Common;
 using ArtemisBankingPro.Application.DTOs.CreditCard;
+using ArtemisBankingPro.Application.Interfaces.Repositories;
 using ArtemisBankingPro.Application.Interfaces.Services;
 using ArtemisBankingPro.Domain.Entities;
 using ArtemisBankingPro.Domain.Interfaces.Repositories;
@@ -14,17 +15,20 @@ namespace ArtemisBankingPro.Application.Services
         private readonly ICreditCardRepository _creditCardRepository;
         private readonly IGenericRepository<User> _userRepository;
         private readonly IEmailService _emailService;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
 
         public CreditCardService(
             ICreditCardRepository creditCardRepository,
             IGenericRepository<User> userRepository,
             IEmailService emailService,
+            IUnitOfWork unitOfWork,
             IMapper mapper)
         {
             _creditCardRepository = creditCardRepository;
             _userRepository = userRepository;
             _emailService = emailService;
+            _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
 
@@ -74,9 +78,9 @@ namespace ArtemisBankingPro.Application.Services
             return dto;
         }
 
-        
+
         // ASIGNAR TARJETA
-        
+
         public async Task<CreditCardCreatedResponseDto> AssignCreditCardAsync(CreateCreditCardRequestDto request, int adminId)
         {
             if (string.IsNullOrWhiteSpace(request.ClientId))
@@ -108,12 +112,23 @@ namespace ArtemisBankingPro.Application.Services
                 CreatedAt = createdAt
             };
 
-            await _creditCardRepository.AddAsync(creditCard);
-            await _creditCardRepository.SaveChangesAsync();
+            
+            await _unitOfWork.BeginTransactionAsync();
+            try
+            {
+                await _creditCardRepository.AddAsync(creditCard);
+                await _unitOfWork.CommitAsync(); 
+            }
+            catch
+            {
+                await _unitOfWork.RollbackAsync(); 
+                throw;
+            }
 
             var response = _mapper.Map<CreditCardCreatedResponseDto>(creditCard);
-            response.Cvc = cvc; 
+            response.Cvc = cvc;
 
+            
             try
             {
                 await _emailService.SendNotificationEmailAsync(
@@ -134,9 +149,7 @@ namespace ArtemisBankingPro.Application.Services
             return response;
         }
 
-        
         // MODIFICAR LÍMITE
-        
         public async Task<CreditCardResponseDto> UpdateCreditLimitAsync(int cardId, decimal newLimit)
         {
             var card = await _creditCardRepository.GetByIdWithDetailsAsync(cardId);
@@ -147,8 +160,18 @@ namespace ArtemisBankingPro.Application.Services
                 throw new InvalidOperationException("El límite de la tarjeta no puede ser inferior al monto adeudado actualmente.");
 
             card.CreditLimit = newLimit;
-            await _creditCardRepository.UpdateAsync(card);
-            await _creditCardRepository.SaveChangesAsync();
+
+            await _unitOfWork.BeginTransactionAsync();
+            try
+            {
+                await _creditCardRepository.UpdateAsync(card);
+                await _unitOfWork.CommitAsync();
+            }
+            catch
+            {
+                await _unitOfWork.RollbackAsync();
+                throw;
+            }
 
             var modifiedAt = DateTime.UtcNow;
             var response = _mapper.Map<CreditCardResponseDto>(card);
@@ -171,9 +194,7 @@ namespace ArtemisBankingPro.Application.Services
             return response;
         }
 
-        
         // CANCELAR TARJETA
-     
         public async Task CancelCreditCardAsync(int cardId)
         {
             var card = await _creditCardRepository.GetByIdAsync(cardId);
@@ -183,12 +204,22 @@ namespace ArtemisBankingPro.Application.Services
                 throw new InvalidOperationException("Para cancelar esta tarjeta, el cliente debe saldar la totalidad de la deuda pendiente.");
 
             card.Status = "Cancelada";
-            await _creditCardRepository.UpdateAsync(card);
-            await _creditCardRepository.SaveChangesAsync();
+
+            await _unitOfWork.BeginTransactionAsync();
+            try
+            {
+                await _creditCardRepository.UpdateAsync(card);
+                await _unitOfWork.CommitAsync();
+            }
+            catch
+            {
+                await _unitOfWork.RollbackAsync();
+                throw;
+            }
         }
 
         // Helpers privados
-        
+
         private async Task<string> GenerateUniqueCreditCardNumberAsync()
         {
             for (var attempt = 0; attempt < 20; attempt++)
