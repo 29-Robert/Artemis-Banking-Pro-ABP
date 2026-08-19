@@ -129,6 +129,8 @@ namespace ArtemisBankingPro.Tests
                 accountRepo,
                 transactionRepo,
                 emailServiceMock.Object,
+                new Mock<ArtemisBankingPro.Application.Interfaces.Repositories.IUnitOfWork>().Object,
+                new Mock<Microsoft.Extensions.Logging.ILogger<PaymentService>>().Object,
                 GetValidator()
             );
 
@@ -256,6 +258,8 @@ namespace ArtemisBankingPro.Tests
                 accountRepo,
                 transactionRepo,
                 emailServiceMock.Object,
+                new Mock<ArtemisBankingPro.Application.Interfaces.Repositories.IUnitOfWork>().Object,
+                new Mock<Microsoft.Extensions.Logging.ILogger<PaymentService>>().Object,
                 GetValidator()
             );
 
@@ -395,6 +399,8 @@ namespace ArtemisBankingPro.Tests
                 accountRepo,
                 transactionRepo,
                 emailServiceMock.Object,
+                new Mock<ArtemisBankingPro.Application.Interfaces.Repositories.IUnitOfWork>().Object,
+                new Mock<Microsoft.Extensions.Logging.ILogger<PaymentService>>().Object,
                 GetValidator()
             );
 

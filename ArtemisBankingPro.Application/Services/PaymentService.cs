@@ -1,17 +1,18 @@
 using ArtemisBankingPro.Application.DTOs.HermesPay;
+using ArtemisBankingPro.Application.Extensions;
 using ArtemisBankingPro.Application.Interfaces.Repositories;
 using ArtemisBankingPro.Application.Interfaces.Services;
 using ArtemisBankingPro.Domain.Entities;
 using ArtemisBankingPro.Domain.Enums;
 using ArtemisBankingPro.Domain.Interfaces.Repositories;
 using FluentValidation;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
-using System.Transactions;
 
 namespace ArtemisBankingPro.Application.Services
 {
@@ -23,6 +24,8 @@ namespace ArtemisBankingPro.Application.Services
         ISavingsAccountRepository savingsAccountRepository,
         ITransactionRepository transactionRepository,
         IEmailService emailService,
+        IUnitOfWork unitOfWork,
+        ILogger<PaymentService> logger,
         IValidator<ProcessPaymentRequestDto> validator) : IPaymentService
     {
         public async Task<TransactionResponseDto> ProcessPaymentAsync(int commerceId, ProcessPaymentRequestDto request, int currentUserId)
@@ -94,6 +97,9 @@ namespace ArtemisBankingPro.Application.Services
                 await creditCardConsumptionRepository.AddAsync(consumption);
                 await creditCardConsumptionRepository.SaveChangesAsync();
 
+                logger.LogWarning("Pago Hermes Pay RECHAZADO. Tarjeta: {CardNo}, Comercio: {CommerceName}, Monto: RD$ {Amount:N2}, Razón: {Reason}", 
+                    request.CardNumber.MaskCardNumber(), commerce.BusinessName, request.Amount, rejectionReason);
+
                 return new TransactionResponseDto
                 {
                     Id = consumption.Id,
@@ -108,7 +114,8 @@ namespace ArtemisBankingPro.Application.Services
             string authCode = Guid.NewGuid().ToString("N")[..8].ToUpper();
             CreditCardConsumption approvedConsumption;
 
-            using (var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+            await unitOfWork.BeginTransactionAsync();
+            try
             {
                 // Aumentar deuda
                 card.CurrentDebt += request.Amount;
@@ -165,7 +172,17 @@ namespace ArtemisBankingPro.Application.Services
                 await transactionRepository.AddAsync(bankTransaction);
                 await transactionRepository.SaveChangesAsync();
 
-                transaction.Complete();
+                await unitOfWork.CommitAsync();
+
+                logger.LogInformation("Pago Hermes Pay APROBADO. Tarjeta: {CardNo}, Comercio: {CommerceName}, Monto: RD$ {Amount:N2}, Cód. Auto: {AuthCode}", 
+                    request.CardNumber.MaskCardNumber(), commerce.BusinessName, request.Amount, authCode);
+            }
+            catch (Exception ex)
+            {
+                await unitOfWork.RollbackAsync();
+                logger.LogError(ex, "Error al procesar cobro Hermes Pay para tarjeta {CardNo} y comercio {CommerceName}.", 
+                    request.CardNumber.MaskCardNumber(), commerce.BusinessName);
+                throw;
             }
 
             // 6. Enviar notificaciones asíncronas por correo (tolerante a fallos)
