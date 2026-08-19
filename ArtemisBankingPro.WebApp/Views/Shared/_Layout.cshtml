@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -30,7 +30,7 @@
                         @if (User.Identity.IsAuthenticated && User.IsInRole("Administrador"))
                         {
                             <li class="nav-item">
-                                <a class="nav-link text-dark" asp-controller="SavingsAccount" asp-action="Index">Gestión Cuentas</a>
+                                <a class="nav-link text-dark" asp-controller="SavingsAccount" asp-action="Index">GestiÃ³n Cuentas</a>
                             </li>
                         }
 
@@ -47,7 +47,7 @@
                         @if (User.Identity.IsAuthenticated && User.IsInRole("Administrador"))
                         {
                             <li class="nav-item">
-                                <a class="nav-link text-dark" asp-controller="SavingsAccount" asp-action="Index">Gestión Cuentas</a>
+                                <a class="nav-link text-dark" asp-controller="SavingsAccount" asp-action="Index">GestiÃ³n Cuentas</a>
                             </li>
                         }
                     </ul>
@@ -72,3 +72,4 @@
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
+
