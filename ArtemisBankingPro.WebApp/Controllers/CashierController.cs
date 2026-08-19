@@ -6,9 +6,7 @@ using AutoMapper;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System;
 using System.Security.Claims;
-using System.Threading.Tasks;
 
 namespace ArtemisBankingPro.WebApp.Controllers
 {
@@ -22,22 +20,18 @@ namespace ArtemisBankingPro.WebApp.Controllers
             return View(indicators);
         }
 
+        // --- DEPÓSITO ---
         [HttpGet]
-        public IActionResult Deposit()
-        {
-            return View(new DepositViewModel());
-        }
+        public IActionResult Deposit() => View(new DepositViewModel());
 
         [HttpPost]
         public async Task<IActionResult> Deposit(DepositViewModel model)
         {
             if (!ModelState.IsValid) return View(model);
-
             try
             {
                 var command = mapper.Map<DepositCommand>(model);
                 command.CashierId = GetCashierId();
-
                 var response = await mediator.Send(command);
 
                 if (!response.Approved)
@@ -46,12 +40,8 @@ namespace ArtemisBankingPro.WebApp.Controllers
                     return View(model);
                 }
 
-                if (!string.IsNullOrEmpty(response.WarningMessage))
-                    TempData["WarningMessage"] = response.WarningMessage;
-                else
-                    TempData["SuccessMessage"] = "Depósito realizado correctamente.";
-
-                return RedirectToAction("Index");
+                TempData["SuccessMessage"] = string.IsNullOrEmpty(response.WarningMessage) ? "Depósito realizado correctamente." : response.WarningMessage;
+                return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
             {
@@ -59,17 +49,19 @@ namespace ArtemisBankingPro.WebApp.Controllers
                 return View(model);
             }
         }
+
+        // --- RETIRO ---
+        [HttpGet]
+        public IActionResult Withdrawal() => View(new WithdrawalViewModel());
 
         [HttpPost]
         public async Task<IActionResult> Withdrawal(WithdrawalViewModel model)
         {
             if (!ModelState.IsValid) return View(model);
-
             try
             {
                 var command = mapper.Map<WithdrawCommand>(model);
                 command.CashierId = GetCashierId();
-
                 var response = await mediator.Send(command);
 
                 if (!response.Approved)
@@ -78,12 +70,8 @@ namespace ArtemisBankingPro.WebApp.Controllers
                     return View(model);
                 }
 
-                if (!string.IsNullOrEmpty(response.WarningMessage))
-                    TempData["WarningMessage"] = response.WarningMessage;
-                else
-                    TempData["SuccessMessage"] = "Retiro realizado correctamente.";
-
-                return RedirectToAction("Index");
+                TempData["SuccessMessage"] = string.IsNullOrEmpty(response.WarningMessage) ? "Retiro realizado correctamente." : response.WarningMessage;
+                return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
             {
@@ -91,17 +79,19 @@ namespace ArtemisBankingPro.WebApp.Controllers
                 return View(model);
             }
         }
+
+        // --- PAGO A TARJETA DE CRÉDITO ---
+        [HttpGet]
+        public IActionResult CreditCardPayment() => View(new CreditCardPaymentViewModel());
 
         [HttpPost]
         public async Task<IActionResult> CreditCardPayment(CreditCardPaymentViewModel model)
         {
             if (!ModelState.IsValid) return View(model);
-
             try
             {
                 var command = mapper.Map<PayCreditCardCommand>(model);
                 command.CashierId = GetCashierId();
-
                 var response = await mediator.Send(command);
 
                 if (!response.Approved)
@@ -110,12 +100,8 @@ namespace ArtemisBankingPro.WebApp.Controllers
                     return View(model);
                 }
 
-                if (!string.IsNullOrEmpty(response.WarningMessage))
-                    TempData["WarningMessage"] = response.WarningMessage;
-                else
-                    TempData["SuccessMessage"] = "Pago a tarjeta realizado correctamente.";
-
-                return RedirectToAction("Index");
+                TempData["SuccessMessage"] = string.IsNullOrEmpty(response.WarningMessage) ? "Pago a tarjeta realizado correctamente." : response.WarningMessage;
+                return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
             {
@@ -123,17 +109,19 @@ namespace ArtemisBankingPro.WebApp.Controllers
                 return View(model);
             }
         }
+
+        // --- PAGO A PRÉSTAMO ---
+        [HttpGet]
+        public IActionResult LoanPayment() => View(new LoanPaymentViewModel());
 
         [HttpPost]
         public async Task<IActionResult> LoanPayment(LoanPaymentViewModel model)
         {
             if (!ModelState.IsValid) return View(model);
-
             try
             {
                 var command = mapper.Map<PayLoanCommand>(model);
                 command.CashierId = GetCashierId();
-
                 var response = await mediator.Send(command);
 
                 if (!response.Approved)
@@ -142,12 +130,8 @@ namespace ArtemisBankingPro.WebApp.Controllers
                     return View(model);
                 }
 
-                if (!string.IsNullOrEmpty(response.WarningMessage))
-                    TempData["WarningMessage"] = response.WarningMessage;
-                else
-                    TempData["SuccessMessage"] = "Pago a préstamo realizado correctamente.";
-
-                return RedirectToAction("Index");
+                TempData["SuccessMessage"] = string.IsNullOrEmpty(response.WarningMessage) ? "Pago a préstamo realizado correctamente." : response.WarningMessage;
+                return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
             {
@@ -156,16 +140,18 @@ namespace ArtemisBankingPro.WebApp.Controllers
             }
         }
 
+        // --- TRANSFERENCIA A TERCEROS ---
+        [HttpGet]
+        public IActionResult ThirdPartyTransfer() => View(new ThirdTransferViewModel());
+
         [HttpPost]
         public async Task<IActionResult> ThirdPartyTransfer(ThirdTransferViewModel model)
         {
             if (!ModelState.IsValid) return View(model);
-
             try
             {
                 var command = mapper.Map<TransferCommand>(model);
                 command.CashierId = GetCashierId();
-
                 var response = await mediator.Send(command);
 
                 if (!response.Approved)
@@ -174,12 +160,8 @@ namespace ArtemisBankingPro.WebApp.Controllers
                     return View(model);
                 }
 
-                if (!string.IsNullOrEmpty(response.WarningMessage))
-                    TempData["WarningMessage"] = response.WarningMessage;
-                else
-                    TempData["SuccessMessage"] = "Transferencia realizada correctamente.";
-
-                return RedirectToAction("Index");
+                TempData["SuccessMessage"] = string.IsNullOrEmpty(response.WarningMessage) ? "Transferencia realizada correctamente." : response.WarningMessage;
+                return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
             {

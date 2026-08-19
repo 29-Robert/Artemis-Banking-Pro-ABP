@@ -1,0 +1,161 @@
+@using ArtemisBankingPro.Application.DTOs.Loan
+@model IReadOnlyList<LoanResponseDto>
+
+@{
+    ViewData["Title"] = "Gestión de Préstamos";
+}
+
+<div class="container mt-4 mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Gestión de Préstamos</h2>
+        <a asp-action="Assign" class="btn btn-primary">Asignar Préstamo</a>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @* Filtros *@
+    <div class="card shadow border-0 mb-4">
+        <div class="card-body">
+            <form method="get" asp-action="Index" class="row gx-3 gy-2 align-items-center">
+                <div class="col-sm-4">
+                    <input type="text" name="cedula" value="@ViewBag.Cedula"
+                           class="form-control" placeholder="Buscar por cédula..." />
+                </div>
+                <div class="col-sm-3">
+                    <select name="status" class="form-select">
+                        <option value="">Todos los estados</option>
+                        <option value="Activo"    selected="@((string)ViewBag.Status == "Activo"    ? "selected" : null)">Activo</option>
+                        <option value="Pagado"    selected="@((string)ViewBag.Status == "Pagado"    ? "selected" : null)">Pagado</option>
+                        <option value="Vencido"   selected="@((string)ViewBag.Status == "Vencido"   ? "selected" : null)">Vencido</option>
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-outline-secondary">Filtrar</button>
+                </div>
+                <div class="col-auto">
+                    <a asp-action="Index" class="btn btn-outline-danger">Limpiar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @* Tabla *@
+    <div class="card shadow border-0">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>No. Préstamo</th>
+                            <th>Cliente</th>
+                            <th>Capital</th>
+                            <th>Cuota Mensual</th>
+                            <th>Plazo</th>
+                            <th>Tasa Anual</th>
+                            <th>Estado</th>
+                            <th>Estado de Pago</th>
+                            <th class="text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.Any())
+                        {
+                            <tr>
+                                <td colspan="9" class="text-center text-muted py-4">No se encontraron préstamos.</td>
+                            </tr>
+                        }
+                        @foreach (var loan in Model)
+                        {
+                            <tr>
+                                <td><code>@loan.LoanNumber</code></td>
+                                <td>@loan.ClientFullName</td>
+                                <td>RD$ @loan.CapitalAmount.ToString("N2")</td>
+                                <td>RD$ @loan.MonthlyInstallment.ToString("N2")</td>
+                                <td>@loan.TermInMonths meses</td>
+                                <td>@loan.AnnualInterestRate.ToString("N2")%</td>
+                                <td>
+                                    @{
+                                        var badgeClass = loan.Status switch
+                                        {
+                                            "Activo" => "bg-success",
+                                            "Pagado" => "bg-secondary",
+                                            "Vencido" => "bg-danger",
+                                            _ => "bg-warning text-dark"
+                                        };
+                                    }
+                                    <span class="badge @badgeClass">@loan.Status</span>
+                                </td>
+                                <td>
+                                    @{
+                                        var payBadge = loan.ClientPaymentStatus switch
+                                        {
+                                            "AlDia" => ("bg-success", "Al día"),
+                                            "Atrasado" => ("bg-warning text-dark", "Atrasado"),
+                                            "EnMora" => ("bg-danger", "En mora"),
+                                            _ => ("bg-secondary", loan.ClientPaymentStatus)
+                                        };
+                                    }
+                                    <span class="badge @payBadge.Item1">@payBadge.Item2</span>
+                                </td>
+                                <td class="text-center">
+                                    <div class="d-flex gap-1 justify-content-center flex-wrap">
+                                        <a asp-action="Details" asp-route-id="@loan.Id"
+                                           class="btn btn-sm btn-outline-info">Ver</a>
+                                        @if (loan.Status == "Activo")
+                                        {
+                                            <a asp-action="EditRate" asp-route-id="@loan.Id"
+                                               class="btn btn-sm btn-outline-warning">Editar Tasa</a>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    @* Paginación *@
+    @if (ViewBag.TotalPages > 1)
+    {
+        <nav aria-label="Paginación de préstamos" class="mt-4">
+            <ul class="pagination justify-content-center">
+                <li class="page-item @(ViewBag.CurrentPage == 1 ? "disabled" : "")">
+                    <a class="page-link" asp-action="Index"
+                       asp-route-page="@(ViewBag.CurrentPage - 1)"
+                       asp-route-cedula="@ViewBag.Cedula"
+                       asp-route-status="@ViewBag.Status">Anterior</a>
+                </li>
+                @for (int i = 1; i <= ViewBag.TotalPages; i++)
+                {
+                    <li class="page-item @(ViewBag.CurrentPage == i ? "active" : "")">
+                        <a class="page-link" asp-action="Index"
+                           asp-route-page="@i"
+                           asp-route-cedula="@ViewBag.Cedula"
+                           asp-route-status="@ViewBag.Status">@i</a>
+                    </li>
+                }
+                <li class="page-item @(ViewBag.CurrentPage == ViewBag.TotalPages ? "disabled" : "")">
+                    <a class="page-link" asp-action="Index"
+                       asp-route-page="@(ViewBag.CurrentPage + 1)"
+                       asp-route-cedula="@ViewBag.Cedula"
+                       asp-route-status="@ViewBag.Status">Siguiente</a>
+                </li>
+            </ul>
+        </nav>
+    }
+</div>

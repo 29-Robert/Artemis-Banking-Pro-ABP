@@ -1,5 +1,7 @@
 using ArtemisBankingPro.Application.DTOs.Loan;
-using ArtemisBankingPro.Application.Interfaces.Services;
+using ArtemisBankingPro.Application.Features.Loans.Commands;
+using ArtemisBankingPro.Application.Features.Loans.Queries;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -11,14 +13,13 @@ namespace ArtemisBankingPro.WebApi.Controllers
     [Authorize(Roles = "Administrador")]
     public class LoanController : ControllerBase
     {
-        private readonly ILoanService _loanService;
+        private readonly IMediator _mediator;
 
-        public LoanController(ILoanService loanService)
+        public LoanController(IMediator mediator)
         {
-            _loanService = loanService;
+            _mediator = mediator;
         }
 
-        // GET api/
         [HttpGet]
         public async Task<IActionResult> Get(
             [FromQuery] string? cedula,
@@ -26,45 +27,103 @@ namespace ArtemisBankingPro.WebApi.Controllers
             [FromQuery] int pageNumber = 1,
             [FromQuery] int pageSize = 20)
         {
-            var result = await _loanService.GetLoansAsync(cedula, status, pageNumber, pageSize);
+            var query = new GetLoansQuery
+            {
+                Cedula = cedula,
+                Status = status,
+                PageNumber = pageNumber,
+                PageSize = pageSize
+            };
+
+            var result = await _mediator.Send(query);
             return Ok(result);
         }
 
-        // GET api/loan
         [HttpGet("eligible-clients")]
         public async Task<IActionResult> GetEligibleClients(
             [FromQuery] string? cedula,
             [FromQuery] int pageNumber = 1,
             [FromQuery] int pageSize = 20)
         {
-            var result = await _loanService.GetEligibleClientsAsync(cedula, pageNumber, pageSize);
+            var query = new GetEligibleClientsQuery
+            {
+                Cedula = cedula,
+                PageNumber = pageNumber,
+                PageSize = pageSize
+            };
+
+            var result = await _mediator.Send(query);
             return Ok(result);
         }
 
-        // GET api/loan/{id}
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById(int id)
         {
-            
-            var result = await _loanService.GetLoanByIdAsync(id);
+            var query = new GetLoanByIdQuery
+            {
+                Id = id
+            };
+
+            var result = await _mediator.Send(query);
+            if (result == null) return NotFound();
+
             return Ok(result);
         }
 
-        // POST api/loan
+        [HttpGet("by-number/{loanNumber}")]
+        public async Task<IActionResult> GetByNumber(string loanNumber)
+        {
+            var query = new GetLoanByNumberQuery
+            {
+                LoanNumber = loanNumber
+            };
+
+            var result = await _mediator.Send(query);
+            if (result == null) return NotFound();
+
+            return Ok(result);
+        }
+
         [HttpPost]
-        public async Task<IActionResult> AssignLoan([FromBody] CreateLoanRequestDto request)
+        public async Task<IActionResult> AssignLoan(
+            [FromBody] CreateLoanRequestDto request)
         {
-            var adminId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
-            var result = await _loanService.AssignLoanAsync(request, adminId);
-            return Created($"api/loan/{result.Id}", result);
+            var adminId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(adminId))
+            {
+                return Unauthorized();
+            }
+
+            var command = new AssignLoanCommand
+            {
+                ClientId = request.ClientId,
+                CapitalAmount = request.CapitalAmount,
+                TermInMonths = request.TermInMonths,
+                AnnualInterestRate = request.AnnualInterestRate,
+                ConfirmHighRisk = request.ConfirmHighRisk,
+                AdminId = adminId
+            };
+
+            var result = await _mediator.Send(command);
+
+            return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
         }
 
-        // PATCH api/loan/{id}/rate
         [HttpPatch("{id:int}/rate")]
-        public async Task<IActionResult> UpdateRate(int id, [FromBody] UpdateLoanRateRequestDto request)
+        public async Task<IActionResult> UpdateRate(
+            int id,
+            [FromBody] UpdateLoanRateRequestDto request)
         {
-            var result = await _loanService.UpdateInterestRateAsync(id, request.AnnualInterestRate);
-            return Ok(result);
+            var command = new UpdateLoanRateCommand
+            {
+                LoanId = id,
+                NewAnnualInterestRate = request.AnnualInterestRate
+            };
+
+            await _mediator.Send(command);
+
+            return NoContent();
         }
     }
 }
