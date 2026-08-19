@@ -1,8 +1,8 @@
 using ArtemisBankingPro.Application.Features.Users.Commands.ActivateUser;
 using ArtemisBankingPro.Application.Features.Users.Commands.ForgotPassword;
 using ArtemisBankingPro.Application.Features.Users.Commands.ResetPassword;
+using ArtemisBankingPro.Application.Interfaces.Repositories;
 using ArtemisBankingPro.Domain.Entities;
-using ArtemisBankingPro.Domain.Interfaces.Repositories;
 using ArtemisBankingPro.WebApp.ViewModels;
 using MediatR;
 using Microsoft.AspNetCore.Authentication;
@@ -12,7 +12,7 @@ using System.Security.Claims;
 
 namespace ArtemisBankingPro.WebApp.Controllers
 {
-    public class AccountController(IGenericRepository<User> userRepository, IMediator mediator) : Controller
+    public class AccountController(IUserRepository userRepository, IMediator mediator) : Controller
     {
         [HttpGet]
         public IActionResult Login()
@@ -37,8 +37,7 @@ namespace ArtemisBankingPro.WebApp.Controllers
                 return View(model);
             }
 
-            var allUsers = await userRepository.GetAllAsync();
-            var user = allUsers.FirstOrDefault(u => u.Username == model.Username);
+            var user = await userRepository.GetByUsernameAsync(model.Username);
 
             if (user == null || !BCrypt.Net.BCrypt.Verify(model.Password, user.PasswordHash))
             {
@@ -52,7 +51,7 @@ namespace ArtemisBankingPro.WebApp.Controllers
                 return View(model);
             }
 
-            if (user.RoleId == 4)
+            if (user.RoleId == (int)ArtemisBankingPro.Domain.Enums.Roles.Comercio)
             {
                 ModelState.AddModelError(string.Empty, "Este usuario no tiene permisos para acceder a la aplicación web.");
                 return View(model);

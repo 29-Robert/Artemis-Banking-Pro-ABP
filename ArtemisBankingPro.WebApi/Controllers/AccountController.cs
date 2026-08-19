@@ -1,17 +1,13 @@
 using ArtemisBankingPro.Application.DTOs;
 using ArtemisBankingPro.Application.Features.Users.Commands.ActivateUser;
 using ArtemisBankingPro.Application.Features.Users.Commands.CreateUser;
+using ArtemisBankingPro.Application.Interfaces.Repositories;
 using ArtemisBankingPro.Application.Interfaces.Services;
 using ArtemisBankingPro.Domain.Entities;
-using ArtemisBankingPro.Domain.Interfaces.Repositories;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace ArtemisBankingPro.WebApi.Controllers
 {
@@ -23,15 +19,13 @@ namespace ArtemisBankingPro.WebApi.Controllers
     [Produces("application/json")]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
     public class AccountController(
-        IGenericRepository<User> userRepository,
+        IUserRepository userRepository,
         IJwtService jwtService,
         IMediator mediator) : ControllerBase
     {
         /// <summary>
-        /// Inicia sesión de usuario y retorna un token JWT válido.
+        /// Autentica un usuario (Administrador o Comercio) y genera un token JWT.
         /// </summary>
-        /// <param name="request">Credenciales del usuario.</param>
-        /// <returns>Token JWT de acceso.</returns>
         [HttpPost("login")]
         [AllowAnonymous]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -42,8 +36,7 @@ namespace ArtemisBankingPro.WebApi.Controllers
             if (string.IsNullOrEmpty(request.Username) || string.IsNullOrEmpty(request.Password))
                 throw new ArgumentException("Faltan parámetros requeridos.");
 
-            var allUsers = await userRepository.GetAllAsync();
-            var user = allUsers.FirstOrDefault(u => u.Username == request.Username);
+            var user = await userRepository.GetByUsernameAsync(request.Username);
 
             if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
                 throw new UnauthorizedAccessException("Credenciales inválidas.");
@@ -51,7 +44,7 @@ namespace ArtemisBankingPro.WebApi.Controllers
             if (!user.IsActive)
                 throw new UnauthorizedAccessException("Su cuenta se encuentra inactiva. Debe activar su cuenta antes de iniciar sesión.");
 
-            if (user.RoleId != 1 && user.RoleId != 4)
+            if (user.RoleId != (int)ArtemisBankingPro.Domain.Enums.Roles.Administrador && user.RoleId != (int)ArtemisBankingPro.Domain.Enums.Roles.Comercio)
                 throw new UnauthorizedAccessException("Acceso denegado. No tiene permisos para utilizar este recurso.");
 
             var token = jwtService.GenerateToken(user);
@@ -59,10 +52,8 @@ namespace ArtemisBankingPro.WebApi.Controllers
         }
 
         /// <summary>
-        /// Registra un nuevo usuario en la plataforma. Envía un correo con un token de activación.
+        /// Registra un nuevo usuario y envía correo de activación.
         /// </summary>
-        /// <param name="command">Datos del usuario a registrar.</param>
-        /// <returns>Mensaje de éxito y ID del usuario creado.</returns>
         [HttpPost("register")]
         [AllowAnonymous]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -74,10 +65,24 @@ namespace ArtemisBankingPro.WebApi.Controllers
         }
 
         /// <summary>
-        /// Activa la cuenta de un usuario recién registrado utilizando el token de activación recibido por correo.
+        /// Activa una cuenta de usuario mediante un token enviado en el cuerpo de la petición.
         /// </summary>
-        /// <param name="token">Token de activación recibido por correo.</param>
-        /// <returns>Mensaje de confirmación de activación.</returns>
+        [HttpPost("confirm")]
+        [AllowAnonymous]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> ConfirmAccount([FromBody] ActivateUserCommand command)
+        {
+            if (string.IsNullOrEmpty(command.Token))
+                throw new ArgumentException("El token es requerido en el cuerpo de la petición.");
+
+            await mediator.Send(command);
+            return Ok(new { Message = "Su cuenta ha sido activada exitosamente. Ya puede iniciar sesión." });
+        }
+
+        /// <summary>
+        /// Activa una cuenta de usuario mediante un token en el query string (para enlaces de correo).
+        /// </summary>
         [HttpGet("activate")]
         [AllowAnonymous]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -91,6 +96,38 @@ namespace ArtemisBankingPro.WebApi.Controllers
             await mediator.Send(command);
 
             return Ok(new { Message = "Su cuenta ha sido activada exitosamente. Ya puede iniciar sesión." });
+        }
+
+        /// <summary>
+        /// Solicita un token de restablecimiento de contraseña. Inactiva temporalmente al usuario.
+        /// </summary>
+        [HttpPost("get-reset-token")]
+        [AllowAnonymous]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> GetResetToken([FromBody] ArtemisBankingPro.Application.Features.Users.Commands.ForgotPassword.ForgotPasswordCommand command)
+        {
+            if (string.IsNullOrEmpty(command.Username))
+                throw new ArgumentException("El nombre de usuario es requerido.");
+
+            await mediator.Send(command);
+            return Ok(new { Message = "Si el usuario existe y tiene un correo registrado, se le ha enviado un enlace de recuperación." });
+        }
+
+        /// <summary>
+        /// Restablece la contraseña del usuario con un token válido y reactiva su cuenta.
+        /// </summary>
+        [HttpPost("reset-password")]
+        [AllowAnonymous]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> ResetPassword([FromBody] ArtemisBankingPro.Application.Features.Users.Commands.ResetPassword.ResetPasswordCommand command)
+        {
+            if (string.IsNullOrEmpty(command.Token) || string.IsNullOrEmpty(command.NewPassword))
+                throw new ArgumentException("El token y la nueva contraseña son requeridos.");
+
+            await mediator.Send(command);
+            return Ok(new { Message = "Su contraseña ha sido restablecida exitosamente. Su cuenta ha sido reactivada." });
         }
     }
 }

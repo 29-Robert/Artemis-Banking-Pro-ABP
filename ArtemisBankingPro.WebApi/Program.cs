@@ -27,13 +27,11 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddApplicationLayer();
 builder.Services.AddInfrastructureLayer(builder.Configuration);
 
+// Repositorios genéricos y servicios genéricos
 builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 builder.Services.AddScoped(typeof(IGenericService<>), typeof(GenericService<>));
 
-// Repositorios
-builder.Services.AddScoped<IUserRepository, UserRepository>();
-builder.Services.AddScoped<ISavingsAccountRepository, SavingsAccountRepository>();
-builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
+// Repositorios específicos (Domain)
 builder.Services.AddScoped<ILoanRepository, LoanRepository>();
 builder.Services.AddScoped<ICreditCardRepository, CreditCardRepository>();
 builder.Services.AddScoped<ILoanInstallmentRepository, LoanInstallmentRepository>();
@@ -42,19 +40,28 @@ builder.Services.AddScoped<IBeneficiaryRepository, BeneficiaryRepository>();
 builder.Services.AddScoped<ICommerceRepository, CommerceRepository>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
-// Servicios
+// Repositorios específicos (Application)
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<ISavingsAccountRepository, SavingsAccountRepository>();
+builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
+builder.Services.AddScoped<ICommerceRepository, CommerceRepository>();
+builder.Services.AddScoped<IBeneficiaryRepository, BeneficiaryRepository>();
+
+// Servicios de negocio
 builder.Services.AddScoped<ISavingsAccountService, SavingsAccountService>();
-builder.Services.AddScoped<ITransactionService, TransactionService>();
-builder.Services.AddScoped<ICashierService, CashierService>();
-builder.Services.AddScoped<IBeneficiaryService, BeneficiaryService>();
 builder.Services.AddScoped<ILoanService, LoanService>();
 builder.Services.AddScoped<ICreditCardService, CreditCardService>();
 builder.Services.AddScoped<ICommerceService, CommerceService>();
+builder.Services.AddScoped<ICashierService, CashierService>();
+builder.Services.AddScoped<IBeneficiaryService, BeneficiaryService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
+// Servicios de infraestructura
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserService, ArtemisBankingPro.WebApi.Services.CurrentUserService>();
 
+// JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 
 builder.Services.AddAuthentication(options =>
@@ -77,7 +84,6 @@ builder.Services.AddAuthentication(options =>
 });
 
 builder.Services.AddControllers();
-builder.Services.AddExceptionHandler<ArtemisBankingPro.WebApi.Middleware.GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -115,6 +121,9 @@ builder.Services.AddSwaggerGen(c =>
         }
     });
 });
+
+// Global Exception Handling
+builder.Services.AddExceptionHandler<ArtemisBankingPro.WebApi.Middlewares.GlobalExceptionHandler>();
 
 var app = builder.Build();
 

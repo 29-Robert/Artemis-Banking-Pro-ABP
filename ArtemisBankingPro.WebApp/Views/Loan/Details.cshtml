@@ -1,0 +1,166 @@
+@using ArtemisBankingPro.Application.DTOs.Loan
+@model LoanResponseDto
+
+@{
+    ViewData["Title"] = "Detalle del Préstamo";
+}
+
+<div class="container mt-4 mb-5">
+    <div class="d-flex align-items-center mb-4">
+        <a asp-action="Index" class="btn btn-outline-secondary btn-sm me-3">&larr; Volver</a>
+        <h2 class="mb-0">Detalle del Préstamo</h2>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @* Datos generales *@
+    <div class="card shadow border-0 mb-4">
+        <div class="card-header fw-bold bg-dark text-white">Información General</div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <small class="text-muted d-block">No. Préstamo</small>
+                    <code class="fs-6">@Model.LoanNumber</code>
+                </div>
+                <div class="col-md-4">
+                    <small class="text-muted d-block">Cliente</small>
+                    <strong>@Model.ClientFullName</strong>
+                </div>
+                <div class="col-md-4">
+                    <small class="text-muted d-block">Fecha de creación</small>
+                    @Model.CreatedAt.ToString("dd/MM/yyyy")
+                </div>
+                <div class="col-md-4">
+                    <small class="text-muted d-block">Capital</small>
+                    RD$ @Model.CapitalAmount.ToString("N2")
+                </div>
+                <div class="col-md-4">
+                    <small class="text-muted d-block">Total a Pagar</small>
+                    RD$ @Model.TotalAmountToPay.ToString("N2")
+                </div>
+                <div class="col-md-4">
+                    <small class="text-muted d-block">Monto Pendiente</small>
+                    <strong class="text-danger">RD$ @Model.PendingAmount.ToString("N2")</strong>
+                </div>
+                <div class="col-md-4">
+                    <small class="text-muted d-block">Cuota Mensual</small>
+                    RD$ @Model.MonthlyInstallment.ToString("N2")
+                </div>
+                <div class="col-md-4">
+                    <small class="text-muted d-block">Tasa de Interés Anual</small>
+                    @Model.AnnualInterestRate.ToString("N2")%
+                    @if (Model.Status == "Activo")
+                    {
+                        <a asp-action="EditRate" asp-route-id="@Model.Id"
+                           class="btn btn-xs btn-outline-warning btn-sm ms-2">Editar</a>
+                    }
+                </div>
+                <div class="col-md-4">
+                    <small class="text-muted d-block">Plazo</small>
+                    @Model.TermInMonths meses (@Model.PaidInstallments pagadas)
+                </div>
+                <div class="col-md-4">
+                    <small class="text-muted d-block">Estado</small>
+                    @{
+                        var badgeClass = Model.Status switch
+                        {
+                            "Activo" => "bg-success",
+                            "Pagado" => "bg-secondary",
+                            "Vencido" => "bg-danger",
+                            _ => "bg-warning text-dark"
+                        };
+                    }
+                    <span class="badge @badgeClass">@Model.Status</span>
+                </div>
+                <div class="col-md-4">
+                    <small class="text-muted d-block">Estado de Pago</small>
+                    @{
+                        var payBadge = Model.ClientPaymentStatus switch
+                        {
+                            "AlDia" => ("bg-success", "Al día"),
+                            "Atrasado" => ("bg-warning text-dark", "Atrasado"),
+                            "EnMora" => ("bg-danger", "En mora"),
+                            _ => ("bg-secondary", Model.ClientPaymentStatus)
+                        };
+                    }
+                    <span class="badge @payBadge.Item1">@payBadge.Item2</span>
+                </div>
+
+                @if (Model.EmailNotificationFailed)
+                {
+                    <div class="col-12">
+                        <div class="alert alert-warning py-2 mb-0">
+                            ⚠️ La notificación por correo al cliente no pudo ser enviada.
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    @* Tabla de amortización *@
+    <div class="card shadow border-0">
+        <div class="card-header fw-bold bg-dark text-white d-flex justify-content-between align-items-center">
+            <span>Tabla de Amortización (Sistema Francés)</span>
+            <span class="badge bg-secondary">@(Model.Amortization?.Count ?? 0) cuotas</span>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Vencimiento</th>
+                            <th>Cuota</th>
+                            <th>Interés</th>
+                            <th>Capital</th>
+                            <th>Saldo Pendiente</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Amortization == null || !Model.Amortization.Any())
+                        {
+                            <tr>
+                                <td colspan="7" class="text-center text-muted py-4">
+                                    No hay cuotas registradas.
+                                </td>
+                            </tr>
+                        }
+                        @foreach (var installment in Model.Amortization ?? new List<LoanInstallmentDto>())
+                        {
+                            var rowClass = installment.IsLate ? "table-danger" : "";
+                            <tr class="@rowClass">
+                                <td>@installment.InstallmentNumber</td>
+                                <td>@installment.DueDate.ToString("dd/MM/yyyy")</td>
+                                <td>RD$ @installment.InstallmentAmount.ToString("N2")</td>
+                                <td>RD$ @installment.InterestAmount.ToString("N2")</td>
+                                <td>RD$ @installment.CapitalAmount.ToString("N2")</td>
+                                <td>RD$ @installment.PendingInstallmentAmount.ToString("N2")</td>
+                                <td>
+                                    @{
+                                        var (cls, lbl) = installment.PaymentStatus switch
+                                        {
+                                            "Pagada"    => ("bg-success", "Pagada"),
+                                            "Pendiente" => installment.IsLate
+                                                            ? ("bg-danger", "Vencida")
+                                                            : ("bg-warning text-dark", "Pendiente"),
+                                            _ => ("bg-secondary", installment.PaymentStatus)
+                                        };
+                                    }
+                                    <span class="badge @cls">@lbl</span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,4 +1,4 @@
-ï»¿using ArtemisBankingPro.Application.Interfaces.Services;
+using ArtemisBankingPro.Application.Interfaces.Services;
 using ArtemisBankingPro.Domain.Entities;
 using ArtemisBankingPro.Domain.Enums;
 using ArtemisBankingPro.Domain.Interfaces.Repositories;
@@ -25,10 +25,10 @@ namespace ArtemisBankingPro.Application.Features.Users.Commands.ForgotPassword
                 throw new Exception("No existe un usuario registrado con este nombre de usuario.");
 
             if (string.IsNullOrEmpty(user.Email))
-                throw new Exception("Este usuario no tiene un correo electrÃ³nico registrado. No es posible enviar la solicitud de restablecimiento.");
+                throw new Exception("Este usuario no tiene un correo electrónico registrado. No es posible enviar la solicitud de restablecimiento.");
 
-            if (user.RoleId == 4)
-                throw new Exception("Este usuario no tiene permisos para acceder a la aplicaciÃ³n web.");
+            if (user.RoleId == (int)ArtemisBankingPro.Domain.Enums.Roles.Comercio)
+                throw new Exception("Este usuario no tiene permisos para acceder a la aplicación web.");
 
             user.IsActive = false;
 

@@ -1,80 +1,84 @@
-﻿@model ArtemisBankingPro.WebApp.ViewModels.RegisterViewModel
+@model ArtemisBankingPro.WebApp.ViewModels.RegisterViewModel
 
 @{
     ViewData["Title"] = "Registro de Usuario";
 }
 
-<div class="row justify-content-center mt-4 mb-5">
-    <div class="col-md-6">
-        <div class="card shadow">
-            <div class="card-body">
-                <h3 class="card-title text-center mb-4">Crear una cuenta</h3>
+<div class="auth-wrapper">
+    <div style="width: 100%; max-width: 580px;">
+        <div class="card">
+            <div class="card-body p-4 p-md-5">
+                <div class="text-center mb-4">
+                    <div class="auth-logo">Crear una cuenta</div>
+                    <p class="auth-subtitle">Complete el formulario para registrarse en Artemis Banking Pro</p>
+                </div>
 
                 <form asp-action="Register" method="post">
-                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger" style="display: @(ViewData.ModelState.ErrorCount > 0 ? "block" : "none");"></div>
 
                     <div class="row">
-                        <div class="col-md-6 form-group mb-3">
-                            <label asp-for="FirstName" class="control-label">Nombre</label>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="FirstName" class="form-label fw-semibold">Nombre</label>
                             <input asp-for="FirstName" class="form-control" />
-                            <span asp-validation-for="FirstName" class="text-danger"></span>
+                            <span asp-validation-for="FirstName" class="text-danger small"></span>
                         </div>
-                        <div class="col-md-6 form-group mb-3">
-                            <label asp-for="LastName" class="control-label">Apellido</label>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="LastName" class="form-label fw-semibold">Apellido</label>
                             <input asp-for="LastName" class="form-control" />
-                            <span asp-validation-for="LastName" class="text-danger"></span>
+                            <span asp-validation-for="LastName" class="text-danger small"></span>
                         </div>
                     </div>
 
                     <div class="row">
-                        <div class="col-md-6 form-group mb-3">
-                            <label asp-for="Cedula" class="control-label">Cédula</label>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Cedula" class="form-label fw-semibold">Cédula</label>
                             <input asp-for="Cedula" class="form-control" />
-                            <span asp-validation-for="Cedula" class="text-danger"></span>
+                            <span asp-validation-for="Cedula" class="text-danger small"></span>
                         </div>
-                        <div class="col-md-6 form-group mb-3">
-                            <label asp-for="RoleId" class="control-label">Tipo de Cuenta</label>
-                            <select asp-for="RoleId" class="form-control">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="RoleId" class="form-label fw-semibold">Tipo de Cuenta</label>
+                            <select asp-for="RoleId" class="form-select">
                                 <option value="">-- Seleccione --</option>
                                 <option value="3">Cliente Individual</option>
                                 <option value="4">Cuenta Comercial</option>
                             </select>
-                            <span asp-validation-for="RoleId" class="text-danger"></span>
+                            <span asp-validation-for="RoleId" class="text-danger small"></span>
                         </div>
                     </div>
 
-                    <div class="form-group mb-3">
-                        <label asp-for="Email" class="control-label">Correo Electrónico</label>
-                        <input asp-for="Email" class="form-control" />
-                        <span asp-validation-for="Email" class="text-danger"></span>
+                    <div class="mb-3">
+                        <label asp-for="Email" class="form-label fw-semibold">Correo Electrónico</label>
+                        <input asp-for="Email" class="form-control" type="email" />
+                        <span asp-validation-for="Email" class="text-danger small"></span>
                     </div>
 
-                    <div class="form-group mb-3">
-                        <label asp-for="Username" class="control-label">Nombre de Usuario</label>
+                    <div class="mb-3">
+                        <label asp-for="Username" class="form-label fw-semibold">Nombre de Usuario</label>
                         <input asp-for="Username" class="form-control" />
-                        <span asp-validation-for="Username" class="text-danger"></span>
+                        <span asp-validation-for="Username" class="text-danger small"></span>
                     </div>
 
                     <div class="row">
-                        <div class="col-md-6 form-group mb-3">
-                            <label asp-for="Password" class="control-label">Contraseña</label>
-                            <input asp-for="Password" class="form-control" />
-                            <span asp-validation-for="Password" class="text-danger"></span>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Password" class="form-label fw-semibold">Contraseña</label>
+                            <input asp-for="Password" class="form-control" type="password" />
+                            <span asp-validation-for="Password" class="text-danger small"></span>
                         </div>
-                        <div class="col-md-6 form-group mb-3">
-                            <label asp-for="ConfirmPassword" class="control-label">Confirmar Contraseña</label>
-                            <input asp-for="ConfirmPassword" class="form-control" />
-                            <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="ConfirmPassword" class="form-label fw-semibold">Confirmar Contraseña</label>
+                            <input asp-for="ConfirmPassword" class="form-control" type="password" />
+                            <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
                         </div>
                     </div>
 
-                    <div class="d-grid gap-2 mt-4">
-                        <button type="submit" class="btn btn-success">Registrarse</button>
+                    <div class="d-grid mt-4">
+                        <button type="submit" class="btn btn-success btn-lg">Registrarse</button>
                     </div>
                 </form>
 
                 <div class="text-center mt-3">
-                    <p>¿Ya tienes cuenta? <a asp-controller="Account" asp-action="Login">Inicia sesión aquí</a></p>
+                    <span class="text-muted small">¿Ya tiene cuenta?</span>
+                    <a asp-controller="Account" asp-action="Login" class="text-decoration-none small fw-bold">Inicie sesión aquí</a>
                 </div>
             </div>
         </div>
@@ -82,7 +86,5 @@
 </div>
 
 @section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
+    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
 }

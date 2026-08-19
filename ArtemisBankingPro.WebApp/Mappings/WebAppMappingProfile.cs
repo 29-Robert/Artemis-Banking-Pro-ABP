@@ -28,7 +28,7 @@ namespace ArtemisBankingPro.WebApp.Mappings
 
             CreateMap<ThirdTransferViewModel, TransferCommand>()
                 .ForMember(dest => dest.SourceAccountNumber, opt => opt.MapFrom(src => src.SourceAccountNumber))
-                .ForMember(dest => dest.DestinationAccountNumber, opt => opt.MapFrom(src => src.TargetAccountNumber))
+                .ForMember(dest => dest.DestinationAccountNumber, opt => opt.MapFrom(src => src.DestinationAccountNumber))
                 .ForMember(dest => dest.Amount, opt => opt.MapFrom(src => src.Amount))
                 .ForMember(dest => dest.IsOwnAccount, opt => opt.MapFrom(src => false))
                 .ForMember(dest => dest.IsThirdParty, opt => opt.MapFrom(src => true))
@@ -37,7 +37,7 @@ namespace ArtemisBankingPro.WebApp.Mappings
                 .ForMember(dest => dest.ClientId, opt => opt.Ignore());
 
             CreateMap<DepositViewModel, DepositCommand>()
-                .ForMember(dest => dest.DestinationAccountNumber, opt => opt.MapFrom(src => src.TargetAccountNumber))
+                .ForMember(dest => dest.DestinationAccountNumber, opt => opt.MapFrom(src => src.DestinationAccountNumber))
                 .ForMember(dest => dest.Amount, opt => opt.MapFrom(src => src.Amount))
                 .ForMember(dest => dest.CashierId, opt => opt.Ignore());
 

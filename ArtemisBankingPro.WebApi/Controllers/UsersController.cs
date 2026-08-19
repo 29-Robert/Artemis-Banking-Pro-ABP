@@ -46,7 +46,7 @@ namespace ArtemisBankingPro.WebApi.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateUser([FromBody] CreateUserCommand command)
         {
-            if (command.RoleId == 4)
+            if (command.RoleId == (int)ArtemisBankingPro.Domain.Enums.Roles.Comercio)
                 return BadRequest(new { Error = "Para crear un usuario comercio debe usar el endpoint /api/users/commerce/{commerceId}" });
 
             try

@@ -16,6 +16,11 @@ namespace ArtemisBankingPro.Application.Interfaces.Services
             Task<CreditCardResponseDto> UpdateCreditLimitAsync(int cardId, decimal newLimit); 
 
             Task CancelCreditCardAsync(int cardId);
-        }
+
+            Task<EligibleClientsResponseDto> GetEligibleClientsAsync(string? cedula, int pageNumber, int pageSize);
+
+
+
+    }
     
 }

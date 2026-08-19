@@ -423,6 +423,21 @@ namespace ArtemisBankingPro.Persistence.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("SavingsAccounts");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            AccountNumber = "100200300",
+                            Balance = 5000.00m,
+                            BlockedAmount = 0m,
+                            CreatedAt = new DateTime(2026, 8, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsBlocked = false,
+                            IsPrincipal = true,
+                            Status = 0,
+                            Type = 0,
+                            UserId = 3
+                        });
                 });
 
             modelBuilder.Entity("ArtemisBankingPro.Domain.Entities.Transaction", b =>
@@ -535,6 +550,60 @@ namespace ArtemisBankingPro.Persistence.Migrations
                         .HasFilter("[Username] IS NOT NULL");
 
                     b.ToTable("Users");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Cedula = "00000000001",
+                            CreatedAt = new DateTime(2026, 8, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Email = "admin@artemis.com",
+                            FirstName = "Admin",
+                            IsActive = true,
+                            LastName = "Defecto",
+                            PasswordHash = "$2a$11$N9V2/U9qL5/7T.E8W5A29uT6l4G8B0rZ/Q/e1v0sD9t5R3N0Q9K8W",
+                            RoleId = 1,
+                            Username = "admin"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Cedula = "00000000002",
+                            CreatedAt = new DateTime(2026, 8, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Email = "cajero@artemis.com",
+                            FirstName = "Cajero",
+                            IsActive = true,
+                            LastName = "Defecto",
+                            PasswordHash = "$2a$11$N9V2/U9qL5/7T.E8W5A29uT6l4G8B0rZ/Q/e1v0sD9t5R3N0Q9K8W",
+                            RoleId = 2,
+                            Username = "cajero"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Cedula = "00000000003",
+                            CreatedAt = new DateTime(2026, 8, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Email = "cliente@artemis.com",
+                            FirstName = "Cliente",
+                            IsActive = true,
+                            LastName = "Defecto",
+                            PasswordHash = "$2a$11$N9V2/U9qL5/7T.E8W5A29uT6l4G8B0rZ/Q/e1v0sD9t5R3N0Q9K8W",
+                            RoleId = 3,
+                            Username = "cliente"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Cedula = "00000000004",
+                            CreatedAt = new DateTime(2026, 8, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Email = "comercio@artemis.com",
+                            FirstName = "Comercio",
+                            IsActive = true,
+                            LastName = "Defecto",
+                            PasswordHash = "$2a$11$N9V2/U9qL5/7T.E8W5A29uT6l4G8B0rZ/Q/e1v0sD9t5R3N0Q9K8W",
+                            RoleId = 4,
+                            Username = "comercio"
+                        });
                 });
 
             modelBuilder.Entity("ArtemisBankingPro.Domain.Entities.ConfirmationToken", b =>

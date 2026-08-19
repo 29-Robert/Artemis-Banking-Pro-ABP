@@ -1,0 +1,108 @@
+@model ArtemisBankingPro.WebApp.ViewModels.AssignLoanViewModel
+
+@{
+    ViewData["Title"] = "Asignar Préstamo";
+}
+
+<div class="container mt-4 mb-5" style="max-width: 680px;">
+    <div class="d-flex align-items-center mb-4">
+        <a asp-action="Index" class="btn btn-outline-secondary btn-sm me-3">&larr; Volver</a>
+        <h2 class="mb-0">Asignar Préstamo</h2>
+    </div>
+
+    
+    @if (TempData["HighRiskMessage"] != null)
+    {
+        <div class="alert alert-warning border-warning shadow-sm" role="alert">
+            <h5 class="alert-heading">⚠️ Cliente de Alto Riesgo</h5>
+            <p>@TempData["HighRiskMessage"]</p>
+            <hr />
+            <dl class="row mb-0">
+                <dt class="col-sm-5">Tipo de riesgo</dt>
+                <dd class="col-sm-7">@TempData["HighRiskType"]</dd>
+
+                <dt class="col-sm-5">Deuda actual</dt>
+                <dd class="col-sm-7">RD$ @TempData["HighRiskCurrentDebt"]</dd>
+
+                <dt class="col-sm-5">Deuda proyectada</dt>
+                <dd class="col-sm-7">RD$ @TempData["HighRiskProjectedDebt"]</dd>
+
+                <dt class="col-sm-5">Deuda promedio</dt>
+                <dd class="col-sm-7">RD$ @TempData["HighRiskAverageDebt"]</dd>
+            </dl>
+            <p class="mt-2 mb-0">
+                Si desea continuar de igual manera, marque la casilla de confirmación antes de enviar.
+            </p>
+        </div>
+    }
+
+    <div class="card shadow border-0">
+        <div class="card-body p-4">
+            <form asp-action="Assign" method="post">
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+                <div class="mb-3">
+                    <label asp-for="ClientId" class="form-label fw-semibold"></label>
+                    <input asp-for="ClientId" class="form-control"
+                           placeholder="Ingrese el ID del cliente" />
+                    <span asp-validation-for="ClientId" class="text-danger small"></span>
+                    <div class="form-text">Puede consultarlo en Gestión de Usuarios.</div>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="CapitalAmount" class="form-label fw-semibold"></label>
+                    <div class="input-group">
+                        <span class="input-group-text">RD$</span>
+                        <input asp-for="CapitalAmount" type="number" step="0.01" min="1"
+                               class="form-control" placeholder="0.00" />
+                    </div>
+                    <span asp-validation-for="CapitalAmount" class="text-danger small"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="TermInMonths" class="form-label fw-semibold"></label>
+                    <input asp-for="TermInMonths" type="number" min="1" max="360"
+                           class="form-control" placeholder="Ej: 12, 24, 36..." />
+                    <span asp-validation-for="TermInMonths" class="text-danger small"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="AnnualInterestRate" class="form-label fw-semibold"></label>
+                    <div class="input-group">
+                        <input asp-for="AnnualInterestRate" type="number" step="0.01" min="0.01" max="100"
+                               class="form-control" placeholder="Ej: 12.50" />
+                        <span class="input-group-text">%</span>
+                    </div>
+                    <span asp-validation-for="AnnualInterestRate" class="text-danger small"></span>
+                </div>
+
+                @if (TempData["HighRiskMessage"] != null)
+                {
+                    <div class="mb-3 p-3 bg-warning-subtle border border-warning rounded">
+                        <div class="form-check">
+                            <input asp-for="ConfirmHighRisk" class="form-check-input" type="checkbox" />
+                            <label asp-for="ConfirmHighRisk" class="form-check-label fw-semibold text-warning-emphasis">
+                                Confirmo que deseo asignar el préstamo a este cliente de alto riesgo
+                            </label>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <input asp-for="ConfirmHighRisk" type="hidden" value="false" />
+                }
+
+                <div class="d-flex gap-2 mt-4">
+                    <button type="submit" class="btn btn-primary px-4">Asignar Préstamo</button>
+                    <a asp-action="Index" class="btn btn-outline-secondary px-4">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

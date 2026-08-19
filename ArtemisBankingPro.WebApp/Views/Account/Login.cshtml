@@ -1,44 +1,53 @@
-﻿@model ArtemisBankingPro.WebApp.ViewModels.LoginViewModel
+@model ArtemisBankingPro.WebApp.ViewModels.LoginViewModel
 
 @{
     ViewData["Title"] = "Iniciar Sesión";
+    Layout = "_Layout";
 }
 
 @if (TempData["SuccessMessage"] != null)
 {
-    <div class="alert alert-success mt-3 text-center">
+    <div class="alert alert-success text-center mx-auto mt-3" style="max-width: 440px;">
         @TempData["SuccessMessage"]
     </div>
 }
 
-<div class="row justify-content-center mt-5">
-    <div class="col-md-4">
-        <div class="card shadow">
+<div class="auth-wrapper">
+    <div class="auth-card">
+        <div class="card">
             <div class="card-body">
-                <h3 class="card-title text-center mb-4">Artemis Banking Pro</h3>
+                <div class="text-center mb-4">
+                    <div class="auth-logo">🏛️ Artemis Banking Pro</div>
+                    <p class="auth-subtitle">Ingrese sus credenciales para acceder</p>
+                </div>
 
                 <form asp-action="Login" method="post">
-                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger" style="display: @(ViewData.ModelState.ErrorCount > 0 ? "block" : "none");"></div>
 
-                    <div class="form-group mb-3">
-                        <label asp-for="Username" class="control-label"></label>
-                        <input asp-for="Username" class="form-control" placeholder="Ingrese su usuario" />
-                        <span asp-validation-for="Username" class="text-danger"></span>
+                    <div class="form-floating mb-3">
+                        <input asp-for="Username" class="form-control" placeholder="Usuario" autofocus />
+                        <label asp-for="Username">Usuario</label>
+                        <span asp-validation-for="Username" class="text-danger small"></span>
                     </div>
 
-                    <div class="form-group mb-3">
-                        <label asp-for="Password" class="control-label"></label>
-                        <input asp-for="Password" class="form-control" placeholder="Ingrese su contraseña" />
-                        <span asp-validation-for="Password" class="text-danger"></span>
+                    <div class="form-floating mb-4">
+                        <input asp-for="Password" class="form-control" placeholder="Contraseña" />
+                        <label asp-for="Password">Contraseña</label>
+                        <span asp-validation-for="Password" class="text-danger small"></span>
                     </div>
 
-                    <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-primary">Ingresar</button>
+                    <div class="d-grid mb-3">
+                        <button type="submit" class="btn btn-primary btn-lg">Ingresar</button>
                     </div>
                 </form>
 
-                <div class="text-center mt-3">
-                    <p>¿No tienes cuenta? <a asp-controller="Account" asp-action="Register">Regístrate aquí</a></p>
+                <div class="text-center">
+                    <a asp-action="ForgotPassword" class="text-decoration-none small">¿Olvidó su contraseña?</a>
+                </div>
+                <hr />
+                <div class="text-center">
+                    <span class="text-muted small">¿No tiene cuenta?</span>
+                    <a asp-action="Register" class="text-decoration-none small fw-bold">Regístrese aquí</a>
                 </div>
             </div>
         </div>
@@ -46,7 +55,5 @@
 </div>
 
 @section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
+    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
 }

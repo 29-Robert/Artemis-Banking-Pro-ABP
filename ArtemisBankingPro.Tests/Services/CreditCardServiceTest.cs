@@ -4,7 +4,6 @@ using ArtemisBankingPro.Application.Interfaces.Services;
 using ArtemisBankingPro.Application.Services;
 using ArtemisBankingPro.Domain.Entities;
 using ArtemisBankingPro.Domain.Interfaces.Repositories;
-using ArtemisBankingPro.Application.Interfaces.Repositories;
 using AutoMapper;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -20,6 +19,7 @@ namespace ArtemisBankingPro.Tests.Services
         private readonly Mock<ICreditCardRepository> _mockCreditCardRepository;
         private readonly Mock<IGenericRepository<User>> _mockUserRepository;
         private readonly Mock<IEmailService> _mockEmailService;
+        private readonly Mock<ILoanRepository> _mockLoanRepository;
         private readonly Mock<IMapper> _mockMapper;
         private readonly Mock<IUnitOfWork> _mockUnitOfWork;
         private readonly CreditCardService _creditCardService;
@@ -29,12 +29,14 @@ namespace ArtemisBankingPro.Tests.Services
             _mockCreditCardRepository = new Mock<ICreditCardRepository>();
             _mockUserRepository = new Mock<IGenericRepository<User>>();
             _mockEmailService = new Mock<IEmailService>();
+            _mockLoanRepository = new Mock<ILoanRepository>();
             _mockMapper = new Mock<IMapper>();
             _mockUnitOfWork = new Mock<IUnitOfWork>();
 
             _creditCardService = new CreditCardService(
                 _mockCreditCardRepository.Object,
                 _mockUserRepository.Object,
+                 _mockLoanRepository.Object,
                 _mockEmailService.Object,
                 _mockUnitOfWork.Object,
                 _mockMapper.Object,
