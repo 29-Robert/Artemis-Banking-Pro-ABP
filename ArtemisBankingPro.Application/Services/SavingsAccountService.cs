@@ -138,6 +138,17 @@ namespace ArtemisBankingPro.Application.Services
                 throw new Exception("No es posible cancelar la cuenta porque el cliente no tiene una cuenta principal activa para recibir los fondos.");
             }
 
+            if (principalAccount.IsBlocked)
+            {
+                throw new Exception("No es posible cancelar la cuenta porque la cuenta principal del cliente se encuentra bloqueada.");
+            }
+
+            var user = await _userRepository.GetByIdAsync(accountToCancel.UserId);
+            if (user == null || !user.IsActive)
+            {
+                throw new Exception("El usuario de la cuenta no se encuentra activo.");
+            }
+
             if (accountToCancel.Balance > 0 )
             {
                 decimal transferAmount = accountToCancel.Balance;
@@ -294,6 +305,10 @@ namespace ArtemisBankingPro.Application.Services
             if (account.Balance - account.BlockedAmount < amount)
                 throw new Exception("Fondos insuficientes en la cuenta de ahorro.");
 
+            var user = await _userRepository.GetByIdAsync(account.UserId);
+            if (user == null || !user.IsActive)
+                throw new Exception("El usuario de la cuenta no se encuentra activo.");
+
             var card = await _creditCardRepository.GetByCardNumberAsync(cardNumber);
             if (card == null)
                 throw new Exception("La tarjeta de crédito no existe.");
@@ -330,7 +345,7 @@ namespace ArtemisBankingPro.Application.Services
                               $"Tarjeta de crédito: {cardNumber}\n" +
                               $"Monto pagado: RD$ {amount:N2}\n" +
                               $"Fecha: {DateTime.Now:dd/MM/yyyy HH:mm:ss}\n";
-                await _emailService.SendNotificationEmailAsync("correo@ejemplo.com", "Pago de Tarjeta de Crédito Realizado", body);
+                await _emailService.SendNotificationEmailAsync(user.Email ?? "soporte@artemisbanking.com", "Pago de Tarjeta de Crédito Realizado", body);
             }
             catch { }
         }
@@ -351,6 +366,10 @@ namespace ArtemisBankingPro.Application.Services
 
             if (account.Balance - account.BlockedAmount < amount)
                 throw new Exception("Fondos insuficientes en la cuenta de ahorro.");
+
+            var user = await _userRepository.GetByIdAsync(account.UserId);
+            if (user == null || !user.IsActive)
+                throw new Exception("El usuario de la cuenta no se encuentra activo.");
 
             var loan = await _loanRepository.GetByLoanNumberAsync(loanNumber);
             if (loan == null)
@@ -412,7 +431,7 @@ namespace ArtemisBankingPro.Application.Services
                               $"Préstamo: {loanNumber}\n" +
                               $"Monto pagado: RD$ {amount:N2}\n" +
                               $"Fecha: {DateTime.Now:dd/MM/yyyy HH:mm:ss}\n";
-                await _emailService.SendNotificationEmailAsync("correo@ejemplo.com", "Pago de Préstamo Realizado", body);
+                await _emailService.SendNotificationEmailAsync(user.Email ?? "soporte@artemisbanking.com", "Pago de Préstamo Realizado", body);
             }
             catch { }
         }
@@ -427,6 +446,13 @@ namespace ArtemisBankingPro.Application.Services
 
             if (account.Status == AccountStatus.Cancelada)
                 throw new Exception("La cuenta seleccionada está cancelada.");
+
+            if (account.IsBlocked)
+                throw new Exception("La cuenta de ahorros seleccionada se encuentra bloqueada.");
+
+            var user = await _userRepository.GetByIdAsync(account.UserId);
+            if (user == null || !user.IsActive)
+                throw new Exception("El usuario de la cuenta no se encuentra activo.");
 
             var card = await _creditCardRepository.GetByCardNumberAsync(cardNumber);
             if (card == null)
@@ -469,7 +495,7 @@ namespace ArtemisBankingPro.Application.Services
                               $"Comisión de avance cobrada (6.25%): RD$ {interest:N2}\n" +
                               $"Total cargado a la tarjeta: RD$ {totalCharge:N2}\n" +
                               $"Fecha: {DateTime.Now:dd/MM/yyyy HH:mm:ss}\n";
-                await _emailService.SendNotificationEmailAsync("correo@ejemplo.com", "Avance de Efectivo Procesado", body);
+                await _emailService.SendNotificationEmailAsync(user.Email ?? "soporte@artemisbanking.com", "Avance de Efectivo Procesado", body);
             }
             catch { }
         }

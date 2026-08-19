@@ -1,10 +1,12 @@
 using ArtemisBankingPro.Application.Common;
 using ArtemisBankingPro.Application.DTOs.CreditCard;
+using ArtemisBankingPro.Application.Extensions;
 using ArtemisBankingPro.Application.Interfaces.Repositories;
 using ArtemisBankingPro.Application.Interfaces.Services;
 using ArtemisBankingPro.Domain.Entities;
 using ArtemisBankingPro.Domain.Interfaces.Repositories;
 using AutoMapper;
+using Microsoft.Extensions.Logging;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -18,6 +20,7 @@ namespace ArtemisBankingPro.Application.Services
         private readonly ILoanRepository _loanRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+        private readonly ILogger<CreditCardService> _logger;
 
         public CreditCardService(
             ICreditCardRepository creditCardRepository,
@@ -25,7 +28,8 @@ namespace ArtemisBankingPro.Application.Services
             ILoanRepository loanRepository,
             IEmailService emailService,
             IUnitOfWork unitOfWork,
-            IMapper mapper)
+            IMapper mapper,
+            ILogger<CreditCardService> logger)
         {
             _creditCardRepository = creditCardRepository;
             _userRepository = userRepository;
@@ -33,6 +37,7 @@ namespace ArtemisBankingPro.Application.Services
             _loanRepository = loanRepository;
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _logger = logger;
         }
 
         
@@ -128,6 +133,8 @@ namespace ArtemisBankingPro.Application.Services
                 throw;
             }
 
+            _logger.LogInformation("Tarjeta de crédito ASIGNADA: Cliente ID: {ClientId}, Tarjeta: {CardNo}, Límite: RD$ {Limit:N2}, Admin: {AdminId}", clientId, cardNumber.MaskCardNumber(), request.CreditLimit, adminId);
+
             var response = _mapper.Map<CreditCardCreatedResponseDto>(creditCard);
             response.Cvc = cvc;
 
@@ -176,6 +183,8 @@ namespace ArtemisBankingPro.Application.Services
                 throw;
             }
 
+            _logger.LogInformation("Límite de tarjeta de crédito ACTUALIZADO: Tarjeta ID: {CardId}, Tarjeta: {CardNo}, Nuevo Límite: RD$ {Limit:N2}", cardId, card.CardNumber.MaskCardNumber(), newLimit);
+
             var modifiedAt = DateTime.UtcNow;
             var response = _mapper.Map<CreditCardResponseDto>(card);
 
@@ -219,6 +228,8 @@ namespace ArtemisBankingPro.Application.Services
                 await _unitOfWork.RollbackAsync();
                 throw;
             }
+
+            _logger.LogInformation("Tarjeta de crédito CANCELADA: Tarjeta ID: {CardId}, Tarjeta: {CardNo}", cardId, card.CardNumber.MaskCardNumber());
         }
 
         public async Task<EligibleClientsResponseDto> GetEligibleClientsAsync(string? cedula, int pageNumber, int pageSize)

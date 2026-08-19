@@ -16,17 +16,20 @@ namespace ArtemisBankingPro.Application.Services
         private readonly ITransactionRepository _transactionRepository;
         private readonly IEmailService _emailService;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IUserRepository _userRepository;
 
         public TransactionService(
             ISavingsAccountRepository accountRepository,
             ITransactionRepository transactionRepository,
             IEmailService emailService,
-            IUnitOfWork unitOfWork)
+            IUnitOfWork unitOfWork,
+            IUserRepository userRepository)
         {
             _accountRepository = accountRepository;
             _transactionRepository = transactionRepository;
             _emailService = emailService;
             _unitOfWork = unitOfWork;
+            _userRepository = userRepository;
         }
 
         public async Task ExpressTransactionAsync(ExpressTransactionDto dto)
@@ -40,11 +43,19 @@ namespace ArtemisBankingPro.Application.Services
                 var srcAcc = await _accountRepository.GetByAccountNumberAsync(dto.SourceAccountNumber);
                 if (srcAcc == null) throw new Exception("La cuenta de origen no existe.");
                 if (srcAcc.Status == AccountStatus.Cancelada) throw new Exception("Operación denegada. La cuenta de origen se encuentra cancelada.");
-                if (srcAcc.Balance < dto.Amount) throw new Exception("Fondos insuficientes en la cuenta de origen.");
+                if (srcAcc.IsBlocked) throw new Exception("La cuenta de origen se encuentra bloqueada.");
+                if (srcAcc.Balance - srcAcc.BlockedAmount < dto.Amount) throw new Exception("Fondos insuficientes en la cuenta de origen.");
+
+                var srcUser = await _userRepository.GetByIdAsync(srcAcc.UserId);
+                if (srcUser == null || !srcUser.IsActive) throw new Exception("El usuario de la cuenta de origen no se encuentra activo.");
 
                 var tgtAcc = await _accountRepository.GetByAccountNumberAsync(dto.DestinationAccountNumber);
                 if (tgtAcc == null) throw new Exception("La cuenta de destino no existe.");
                 if (tgtAcc.Status == AccountStatus.Cancelada) throw new Exception("Operación denegada. La cuenta de destino se encuentra cancelada.");
+                if (tgtAcc.IsBlocked) throw new Exception("La cuenta de destino se encuentra bloqueada.");
+
+                var tgtUser = await _userRepository.GetByIdAsync(tgtAcc.UserId);
+                if (tgtUser == null || !tgtUser.IsActive) throw new Exception("El usuario de la cuenta de destino no se encuentra activo.");
 
                 srcAcc.Balance -= dto.Amount;
                 tgtAcc.Balance += dto.Amount;
@@ -86,7 +97,7 @@ namespace ArtemisBankingPro.Application.Services
                                   $"Monto transferido: RD$ {dto.Amount:N2}\n" +
                                   $"Fecha: {DateTime.Now:dd/MM/yyyy HH:mm:ss}\n";
                     
-                    string emailOrigen = srcAcc.User?.Email ?? "soporte@artemisbanking.com";
+                    string emailOrigen = srcUser.Email ?? "soporte@artemisbanking.com";
                     await _emailService.SendNotificationEmailAsync(emailOrigen, "Transferencia Express Realizada", body);
                 }
                 catch { }
@@ -133,7 +144,18 @@ namespace ArtemisBankingPro.Application.Services
                 return new AccountResponseDto { IsSuccess = false, Message = "Operación denegada. Una o ambas cuentas se encuentran canceladas." };
             }
 
-            if (sourceAccount.Balance < dto.Amount)
+            if (sourceAccount.IsBlocked || destAccount.IsBlocked)
+            {
+                return new AccountResponseDto { IsSuccess = false, Message = "Operación denegada. Una o ambas cuentas se encuentran bloqueadas." };
+            }
+
+            var user = await _userRepository.GetByIdAsync(idCliente);
+            if (user == null || !user.IsActive)
+            {
+                return new AccountResponseDto { IsSuccess = false, Message = "El usuario de la cuenta no se encuentra activo." };
+            }
+
+            if (sourceAccount.Balance - sourceAccount.BlockedAmount < dto.Amount)
             {
                 await LogRejectedTransactionAsync(dto.SourceAccountNumber, dto.Amount, "No dispone del monto requerido en la cuenta seleccionada.");
                 return new AccountResponseDto { IsSuccess = false, Message = "No dispone del monto requerido en la cuenta seleccionada." };

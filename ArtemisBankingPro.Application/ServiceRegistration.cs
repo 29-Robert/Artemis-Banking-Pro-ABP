@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 using ArtemisBankingPro.Application.Behaviors;
 using ArtemisBankingPro.Application.Interfaces.Services; 
 using ArtemisBankingPro.Application.Services;           
@@ -23,8 +23,13 @@ namespace ArtemisBankingPro.Application
             services.AddTransient<ISavingsAccountService, SavingsAccountService>();
             services.AddTransient<ITransactionService, TransactionService>();
             services.AddTransient<ICreditCardService, CreditCardService>();
-
             services.AddTransient<ILoanService, LoanService>();
+            
+            // New services registered
+            services.AddTransient<IBeneficiaryService, BeneficiaryService>();
+            services.AddTransient<ICashierService, CashierService>();
+            services.AddTransient<ICommerceService, CommerceService>();
+            services.AddTransient<IPaymentService, PaymentService>();
 
         }
     }

@@ -27,6 +27,15 @@ namespace ArtemisBankingPro.Application.Features.Users.Commands.CreateUser
                 throw new Exception("Ya existe un usuario con ese nombre de usuario, correo o cédula.");
             }
 
+            if (request.RoleId == (int)ArtemisBankingPro.Domain.Enums.Roles.Comercio && request.CommerceId.HasValue)
+            {
+                var commerceHasUser = users.Any(u => u.RoleId == (int)ArtemisBankingPro.Domain.Enums.Roles.Comercio && u.CommerceId == request.CommerceId.Value);
+                if (commerceHasUser)
+                {
+                    throw new Exception("El comercio seleccionado ya tiene un usuario asociado. Solo se permite un usuario por comercio.");
+                }
+            }
+
             var user = mapper.Map<User>(request);
             user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
             user.IsActive = false;
@@ -35,7 +44,7 @@ namespace ArtemisBankingPro.Application.Features.Users.Commands.CreateUser
             var newUser = await userRepository.AddAsync(user);
             await userRepository.SaveChangesAsync();
 
-            if (newUser.RoleId == 3 || newUser.RoleId == 4)
+            if (newUser.RoleId == (int)ArtemisBankingPro.Domain.Enums.Roles.Cliente || newUser.RoleId == (int)ArtemisBankingPro.Domain.Enums.Roles.Comercio)
             {
                 var account = new SavingsAccount
                 {

@@ -52,7 +52,7 @@ namespace ArtemisBankingPro.WebApp.Controllers
                 return View(model);
             }
 
-            if (user.RoleId == 4)
+            if (user.RoleId == (int)ArtemisBankingPro.Domain.Enums.Roles.Comercio)
             {
                 ModelState.AddModelError(string.Empty, "Este usuario no tiene permisos para acceder a la aplicación web.");
                 return View(model);

@@ -1,4 +1,4 @@
-﻿using ArtemisBankingPro.Application.Common;
+using ArtemisBankingPro.Application.Common;
 using ArtemisBankingPro.Application.DTOs.Loan;
 using ArtemisBankingPro.Application.Exceptions;
 using ArtemisBankingPro.Application.Interfaces.Repositories;
@@ -8,6 +8,7 @@ using ArtemisBankingPro.Domain.Entities;
 using ArtemisBankingPro.Domain.Enums;
 using ArtemisBankingPro.Domain.Interfaces.Repositories;
 using AutoMapper;
+using Microsoft.Extensions.Logging;
 using Moq;
 using System;
 using System.Collections.Generic;
@@ -585,7 +586,8 @@ namespace ArtemisBankingPro.Tests
                 users?.Object ?? Mock.Of<IGenericRepository<User>>(),
                 emailService?.Object ?? Mock.Of<IEmailService>(),
                 unitOfWork?.Object ?? Mock.Of<IUnitOfWork>(),
-                mapper?.Object ?? Mock.Of<IMapper>());
+                mapper?.Object ?? Mock.Of<IMapper>(),
+                Mock.Of<ILogger<LoanService>>());
         }
     }
 }
