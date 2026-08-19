@@ -1,5 +1,5 @@
 using ArtemisBankingPro.Application.Extensions;
-using ArtemisBankingPro.WebApi.Middleware;
+using ArtemisBankingPro.WebApi.Middlewares;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;

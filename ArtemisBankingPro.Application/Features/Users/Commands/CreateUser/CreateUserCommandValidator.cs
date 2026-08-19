@@ -1,4 +1,4 @@
-﻿using FluentValidation;
+using FluentValidation;
 
 namespace ArtemisBankingPro.Application.Features.Users.Commands.CreateUser
 {
@@ -26,7 +26,11 @@ namespace ArtemisBankingPro.Application.Features.Users.Commands.CreateUser
 
             RuleFor(p => p.Password)
                 .NotEmpty().WithMessage("La contraseña es requerida.")
-                .MinimumLength(6).WithMessage("La contraseña debe tener al menos 6 caracteres.");
+                .MinimumLength(6).WithMessage("La contraseña debe tener al menos 6 caracteres.")
+                .Matches(@"[A-Z]+").WithMessage("La contraseña debe contener al menos una letra mayúscula.")
+                .Matches(@"[a-z]+").WithMessage("La contraseña debe contener al menos una letra minúscula.")
+                .Matches(@"[0-9]+").WithMessage("La contraseña debe contener al menos un número.")
+                .Matches(@"[\!\?\*\.]+").WithMessage("La contraseña debe contener al menos un carácter especial (!? *.).");
 
             RuleFor(p => p.RoleId)
                 .InclusiveBetween(1, 4).WithMessage("Rol inválido. Debe ser entre 1 y 4.");
