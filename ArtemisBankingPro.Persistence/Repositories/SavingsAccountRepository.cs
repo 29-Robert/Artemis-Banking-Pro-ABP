@@ -1,4 +1,5 @@
 using ArtemisBankingPro.Application.Interfaces.Repositories;
+using ArtemisBankingPro.Application.DTOs.Account;
 using ArtemisBankingPro.Domain.Entities;
 using ArtemisBankingPro.Domain.Enums;
 using ArtemisBankingPro.Domain.Interfaces.Repositories;
@@ -26,7 +27,7 @@ namespace ArtemisBankingPro.Persistence.Repositories
        .FirstOrDefaultAsync(s => s.AccountNumber == accountNumber);
         }
 
-        public async Task<object> GetPagedAsync(int page, int pageSize, AccountStatus? status, AccountType? type, string cedula)
+        public async Task<PagedAccountResponseDto> GetPagedAsync(int page, int pageSize, AccountStatus? status, AccountType? type, string cedula)
         {
             var query = _dbContext.SavingsAccounts
                 .Include(s => s.User)
@@ -51,7 +52,7 @@ namespace ArtemisBankingPro.Persistence.Repositories
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
-            return new { Data = data, TotalCount = totalCount };
+            return new PagedAccountResponseDto { Data = data, TotalCount = totalCount };
         }
 
         public async Task<SavingsAccount> GetPrincipalByClientAsync(int clientId)
