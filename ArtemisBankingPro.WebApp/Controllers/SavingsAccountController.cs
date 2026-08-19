@@ -63,7 +63,9 @@ namespace ArtemisBankingPro.WebApp.Controllers
             ViewBag.CedulaFilter = cedula;
             ViewBag.TotalPages = (int)Math.Ceiling((double)data.TotalCount / pageSize);
 
-            return View(data.Data);
+            var accounts = (IEnumerable<SavingsAccount>)data.Data;
+            var dtos = mapper.Map<IEnumerable<ArtemisBankingPro.Application.DTOs.Account.SavingsAccountListItemDto>>(accounts);
+            return View(dtos);
         }
 
         [HttpGet]
@@ -159,7 +161,8 @@ namespace ArtemisBankingPro.WebApp.Controllers
                 PageSize = pageSize
             });
 
-            ViewBag.Account = account;
+            var accountDto = mapper.Map<ArtemisBankingPro.Application.DTOs.Account.SavingsAccountListItemDto>(account);
+            ViewBag.Account = accountDto;
             ViewBag.CurrentPage = page;
             ViewBag.PageSize = pageSize;
 
@@ -172,7 +175,8 @@ namespace ArtemisBankingPro.WebApp.Controllers
             var account = await mediator.Send(new GetAccountByAccountNumberQuery { AccountNumber = accountNumber });
             if (account == null) return NotFound();
 
-            return View(account);
+            var accountDto = mapper.Map<ArtemisBankingPro.Application.DTOs.Account.SavingsAccountListItemDto>(account);
+            return View(accountDto);
         }
 
         [HttpPost]

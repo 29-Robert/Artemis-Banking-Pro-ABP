@@ -1,45 +1,79 @@
+@model ArtemisBankingPro.WebApp.ViewModels.CashAdvanceViewModel
 @{
     ViewData["Title"] = "Avance de Efectivo";
 }
 
 <div class="container mt-4" style="max-width: 600px;">
     <h2>Avance de Efectivo</h2>
-    <p class="text-muted">Tarjeta No: @ViewBag.CardNumber</p>
-    <div class="alert alert-info">
-        <strong>Nota importante:</strong> Los avances de efectivo están sujetos a una comisión del <strong>6.25%</strong> sobre el monto solicitado, la cual será cargada de forma inmediata a la deuda de la tarjeta.
+    <p class="text-muted">Tarjeta No: @Model.CardNumber</p>
+    
+    <div class="alert alert-info border-0 shadow-sm">
+        <strong>Nota importante:</strong> Los avances de efectivo están sujetos a una comisión inmediata del <strong>6.25%</strong> sobre el monto solicitado.
     </div>
-
-    @if (TempData["ErrorMessage"] != null)
-    {
-        <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
-    }
 
     <div class="card shadow-sm border-0 mt-3">
         <div class="card-body p-4">
             <form asp-action="CashAdvance" method="post">
-                <input type="hidden" name="cardNumber" value="@ViewBag.CardNumber" />
+                @Html.AntiForgeryToken()
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+                <input type="hidden" asp-for="CardNumber" />
 
                 <div class="mb-3">
-                    <label class="form-label">Depositar en Cuenta de Ahorro</label>
-                    <select name="sourceAccountNumber" class="form-select" required>
+                    <label asp-for="SourceAccountNumber" class="form-label">Depositar en Cuenta de Ahorro</label>
+                    <select asp-for="SourceAccountNumber" class="form-select" required>
                         <option value="">Seleccione cuenta destino...</option>
                         @foreach (var acc in (IEnumerable<ArtemisBankingPro.Application.DTOs.Account.SavingsAccountListItemDto>)ViewBag.Accounts)
                         {
                             <option value="@acc.AccountNumber">@acc.AccountNumber - RD$ @acc.Balance.ToString("N2")</option>
                         }
                     </select>
+                    <span asp-validation-for="SourceAccountNumber" class="text-danger"></span>
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label">Monto del Avance (RD$)</label>
-                    <input name="amount" type="number" step="0.01" min="0.01" class="form-control" placeholder="Monto a avanzar" required />
+                    <label asp-for="Amount" class="form-label">Monto del Avance (RD$)</label>
+                    <input asp-for="Amount" id="advanceAmount" type="number" step="0.01" min="0.01" class="form-control" placeholder="Monto a avanzar" required />
+                    <span asp-validation-for="Amount" class="text-danger"></span>
+                </div>
+
+                <!-- Detalle de Cargos en Tiempo Real -->
+                <div class="card bg-light border-0 p-3 mb-3 d-none" id="calcDetails">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>Comisión de Avance (6.25%):</span>
+                        <span class="fw-bold text-danger" id="commissionVal">RD$ 0.00</span>
+                    </div>
+                    <div class="d-flex justify-content-between border-top pt-2">
+                        <span class="fw-bold">Total Cargo a Tarjeta:</span>
+                        <span class="fw-bold text-dark" id="totalVal">RD$ 0.00</span>
+                    </div>
                 </div>
 
                 <div class="d-flex justify-content-between mt-4">
                     <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
-                    <button type="submit" class="btn btn-warning text-dark">Procesar Avance</button>
+                    <button type="submit" class="btn btn-warning text-dark">Continuar</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        $(document).ready(function() {
+            $('#advanceAmount').on('input', function() {
+                var amount = parseFloat($(this).val());
+                if (!isNaN(amount) && amount > 0) {
+                    var commission = amount * 0.0625;
+                    var total = amount + commission;
+                    
+                    $('#commissionVal').text('RD$ ' + commission.toFixed(2));
+                    $('#totalVal').text('RD$ ' + total.toFixed(2));
+                    $('#calcDetails').removeClass('d-none');
+                } else {
+                    $('#calcDetails').addClass('d-none');
+                }
+            });
+        });
+    </script>
+}

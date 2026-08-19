@@ -1,6 +1,6 @@
-﻿@model IEnumerable<ArtemisBankingPro.Application.DTOs.Account.TransactionDto>
+@model IEnumerable<ArtemisBankingPro.Application.DTOs.Account.TransactionDto>
 @{
-    var account = (ArtemisBankingPro.Domain.Entities.SavingsAccount)ViewBag.Account;
+    var account = (ArtemisBankingPro.Application.DTOs.Account.SavingsAccountListItemDto)ViewBag.Account;
     ViewData["Title"] = "Historial de Cuenta";
 }
 

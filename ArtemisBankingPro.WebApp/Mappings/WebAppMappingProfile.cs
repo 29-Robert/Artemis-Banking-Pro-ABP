@@ -49,16 +49,26 @@ namespace ArtemisBankingPro.WebApp.Mappings
             CreateMap<CreateCommerceViewModel, CreateCommerceCommand>();
             CreateMap<UpdateCommerceViewModel, UpdateCommerceCommand>();
             CreateMap<CreateBeneficiaryViewModel, CreateBeneficiaryCommand>();
-            CreateMap<CreditCardPaymentViewModel, PayCreditCardCommand>()
+            CreateMap<CreditCardPaymentViewModel, PayCreditCardOwnAccountCommand>()
                 .ForMember(dest => dest.SourceAccountNumber, opt => opt.MapFrom(src => src.SourceAccountNumber))
                 .ForMember(dest => dest.CardNumber, opt => opt.MapFrom(src => src.CardNumber))
                 .ForMember(dest => dest.Amount, opt => opt.MapFrom(src => src.Amount))
-                .ForMember(dest => dest.CashierId, opt => opt.Ignore());
-            CreateMap<LoanPaymentViewModel, PayLoanCommand>()
+                .ForMember(dest => dest.UserId, opt => opt.Ignore());
+            CreateMap<LoanPaymentViewModel, PayLoanOwnAccountCommand>()
                 .ForMember(dest => dest.SourceAccountNumber, opt => opt.MapFrom(src => src.SourceAccountNumber))
                 .ForMember(dest => dest.LoanNumber, opt => opt.MapFrom(src => src.LoanNumber))
                 .ForMember(dest => dest.Amount, opt => opt.MapFrom(src => src.Amount))
-                .ForMember(dest => dest.CashierId, opt => opt.Ignore());
+                .ForMember(dest => dest.UserId, opt => opt.Ignore());
+
+            CreateMap<ArtemisBankingPro.Domain.Entities.SavingsAccount, ArtemisBankingPro.Application.DTOs.Account.SavingsAccountListItemDto>()
+                .ForMember(dest => dest.ClientFullName, opt => opt.MapFrom(src => src.User != null ? $"{src.User.FirstName} {src.User.LastName}" : string.Empty))
+                .ForMember(dest => dest.ClientCedula, opt => opt.MapFrom(src => src.User != null ? src.User.Cedula : string.Empty));
+
+            CreateMap<CashAdvanceViewModel, CashAdvanceCommand>()
+                .ForMember(dest => dest.SourceAccountNumber, opt => opt.MapFrom(src => src.SourceAccountNumber))
+                .ForMember(dest => dest.CardNumber, opt => opt.MapFrom(src => src.CardNumber))
+                .ForMember(dest => dest.Amount, opt => opt.MapFrom(src => src.Amount))
+                .ForMember(dest => dest.UserId, opt => opt.Ignore());
         }
     }
 }

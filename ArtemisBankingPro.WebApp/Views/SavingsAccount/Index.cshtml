@@ -1,4 +1,4 @@
-@model IEnumerable<ArtemisBankingPro.Domain.Entities.SavingsAccount>
+@model IEnumerable<ArtemisBankingPro.Application.DTOs.Account.SavingsAccountListItemDto>
 @{
     ViewData["Title"] = "Gestión de Cuentas de Ahorro";
 }
@@ -69,8 +69,8 @@
             {
                 <tr>
                     <td>@item.AccountNumber</td>
-                    <td>@(item.User != null ? $"{item.User.FirstName} {item.User.LastName}" : "N/A")</td>
-                    <td>@(item.User != null ? item.User.Cedula : "N/A")</td>
+                    <td>@item.ClientFullName</td>
+                    <td>@item.ClientCedula</td>
                     <td>RD$ @item.Balance.ToString("N2")</td>
                     <td>
                         <span class="badge @(item.Type == ArtemisBankingPro.Domain.Enums.AccountType.Principal ? "bg-primary" : "bg-info")">

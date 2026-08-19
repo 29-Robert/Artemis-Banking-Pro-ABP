@@ -1,4 +1,4 @@
-﻿using ArtemisBankingPro.Domain.Enums;
+using ArtemisBankingPro.Domain.Enums;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,6 +11,7 @@ namespace ArtemisBankingPro.Application.DTOs.Account
     {
         public string AccountNumber { get; set; }
         public string ClientFullName { get; set; }
+        public string ClientCedula { get; set; } = string.Empty;
         public AccountType Type { get; set; }
         public decimal Balance { get; set; }
         public AccountStatus Status { get; set; }

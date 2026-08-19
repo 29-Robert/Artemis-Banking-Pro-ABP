@@ -1,0 +1,62 @@
+@model ArtemisBankingPro.WebApp.ViewModels.CashAdvanceViewModel
+@{
+    ViewData["Title"] = "Confirmar Avance de Efectivo";
+}
+
+<div class="container mt-5" style="max-width: 600px;">
+    <div class="card border-warning shadow">
+        <div class="card-header bg-warning text-dark fw-bold">
+            <h4 class="mb-0 text-center">Confirmar Avance de Efectivo</h4>
+        </div>
+        <div class="card-body p-4">
+            <p class="text-center text-muted mb-4">Revise los cargos por avance de efectivo antes de confirmar la operación.</p>
+            
+            <div class="mb-3 border-bottom pb-2">
+                <span class="text-muted d-block small">Tarjeta de Crédito (Origen):</span>
+                <span class="fs-5 fw-bold text-dark">@Model.CardNumber</span>
+            </div>
+
+            <div class="mb-3 border-bottom pb-2">
+                <span class="text-muted d-block small">Cuenta Destino (Depósito):</span>
+                <span class="fs-5 fw-bold text-dark">@Model.SourceAccountNumber</span>
+            </div>
+
+            <div class="mb-3 border-bottom pb-2">
+                <span class="text-muted d-block small">Monto Solicitado:</span>
+                <span class="fs-5 fw-bold text-dark">RD$ @Model.Amount.ToString("N2")</span>
+            </div>
+
+            <div class="mb-3 border-bottom pb-2 text-danger">
+                <span class="text-muted d-block small">Comisión Inmediata de Avance (6.25%):</span>
+                <span class="fs-5 fw-bold">RD$ @(((decimal)ViewBag.Commission).ToString("N2"))</span>
+            </div>
+
+            <div class="mb-4 border-bottom pb-2">
+                <span class="text-muted d-block small">Total Cargo a Tarjeta:</span>
+                <span class="fs-3 fw-bold text-danger">RD$ @(((decimal)ViewBag.TotalCharge).ToString("N2"))</span>
+            </div>
+
+            <form asp-action="ExecuteCashAdvance" method="post" id="confirmForm">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="SourceAccountNumber" />
+                <input type="hidden" asp-for="CardNumber" />
+                <input type="hidden" asp-for="Amount" />
+
+                <div class="d-flex justify-content-between mt-4">
+                    <a asp-action="CashAdvance" asp-route-cardNumber="@Model.CardNumber" class="btn btn-outline-secondary px-4">Atrás</a>
+                    <button type="submit" id="btnConfirm" class="btn btn-warning text-dark px-4">Confirmar Avance</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            $('#confirmForm').on('submit', function() {
+                $('#btnConfirm').prop('disabled', true).text('Procesando...');
+            });
+        });
+    </script>
+}

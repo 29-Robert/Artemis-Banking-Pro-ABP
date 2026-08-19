@@ -30,34 +30,30 @@ builder.Services.AddInfrastructureLayer(builder.Configuration);
 builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 builder.Services.AddScoped(typeof(IGenericService<>), typeof(GenericService<>));
 
+// Repositorios
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<ISavingsAccountRepository, SavingsAccountRepository>();
+builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
 builder.Services.AddScoped<ILoanRepository, LoanRepository>();
 builder.Services.AddScoped<ICreditCardRepository, CreditCardRepository>();
 builder.Services.AddScoped<ILoanInstallmentRepository, LoanInstallmentRepository>();
 builder.Services.AddScoped<ICreditCardConsumptionRepository, CreditCardConsumptionRepository>();
+builder.Services.AddScoped<IBeneficiaryRepository, BeneficiaryRepository>();
+builder.Services.AddScoped<ICommerceRepository, CommerceRepository>();
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
-builder.Services.AddScoped<IUserRepository, UserRepository>();
-builder.Services.AddScoped<ISavingsAccountRepository, SavingsAccountRepository>();
-builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
+// Servicios
 builder.Services.AddScoped<ISavingsAccountService, SavingsAccountService>();
-
-builder.Services.AddScoped<ILoanService, LoanService>();
-builder.Services.AddScoped<ILoanService, LoanService>();
-builder.Services.AddScoped<IUserRepository, UserRepository>();
-builder.Services.AddScoped<ISavingsAccountRepository, SavingsAccountRepository>();
-builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
-builder.Services.AddScoped<ISavingsAccountService, SavingsAccountService>();
-
+builder.Services.AddScoped<ITransactionService, TransactionService>();
+builder.Services.AddScoped<ICashierService, CashierService>();
+builder.Services.AddScoped<IBeneficiaryService, BeneficiaryService>();
 builder.Services.AddScoped<ILoanService, LoanService>();
 builder.Services.AddScoped<ICreditCardService, CreditCardService>();
-builder.Services.AddScoped<ICommerceRepository, CommerceRepository>();
 builder.Services.AddScoped<ICommerceService, CommerceService>();
-builder.Services.AddScoped<ICashierService, CashierService>();
-builder.Services.AddScoped<IBeneficiaryRepository, BeneficiaryRepository>();
-builder.Services.AddScoped<IBeneficiaryService, BeneficiaryService>();
+builder.Services.AddScoped<IPaymentService, PaymentService>();
+
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserService, ArtemisBankingPro.WebApi.Services.CurrentUserService>();
-builder.Services.AddScoped<IPaymentService, PaymentService>();
-builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 
