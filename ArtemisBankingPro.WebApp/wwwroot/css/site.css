@@ -1,31 +1,149 @@
+/* ===== Artemis Banking Pro — Design System ===== */
+
+:root {
+  --abp-primary: #1a3a5c;
+  --abp-primary-light: #2a5a8c;
+  --abp-accent: #0d6efd;
+  --abp-success: #198754;
+  --abp-bg: #f4f6f9;
+  --abp-card-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  --abp-radius: 0.5rem;
+}
+
 html {
   font-size: 14px;
-}
-
-@media (min-width: 768px) {
-  html {
-    font-size: 16px;
-  }
-}
-
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
-}
-
-html {
   position: relative;
   min-height: 100%;
 }
 
+@media (min-width: 768px) {
+  html { font-size: 16px; }
+}
+
 body {
+  background-color: var(--abp-bg);
   margin-bottom: 60px;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
 }
 
-.form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
-  color: var(--bs-secondary-color);
-  text-align: end;
+/* Navbar */
+.navbar-abp {
+  background: linear-gradient(135deg, var(--abp-primary), var(--abp-primary-light)) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+.navbar-abp .navbar-brand,
+.navbar-abp .nav-link,
+.navbar-abp .navbar-text {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+.navbar-abp .nav-link:hover {
+  color: #fff !important;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: var(--abp-radius);
+}
+.navbar-abp .nav-link.active-link {
+  color: #fff !important;
+  font-weight: 600;
 }
 
-.form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
-  text-align: start;
+/* Cards */
+.card {
+  border: none;
+  border-radius: var(--abp-radius);
+  box-shadow: var(--abp-card-shadow);
+}
+.card-header {
+  border-radius: var(--abp-radius) var(--abp-radius) 0 0 !important;
+}
+
+/* Login & auth pages */
+.auth-wrapper {
+  min-height: 80vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.auth-card {
+  width: 100%;
+  max-width: 440px;
+}
+.auth-card .card-body {
+  padding: 2.5rem;
+}
+.auth-logo {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--abp-primary);
+  margin-bottom: 0.25rem;
+}
+.auth-subtitle {
+  font-size: 0.9rem;
+  color: #6c757d;
+  margin-bottom: 1.5rem;
+}
+
+/* Tables */
+.table-abp thead {
+  background-color: var(--abp-primary);
+  color: #fff;
+}
+.table-abp thead th {
+  font-weight: 600;
+  font-size: 0.875rem;
+  border: none;
+}
+.table-abp tbody tr:hover {
+  background-color: rgba(13, 110, 253, 0.04);
+}
+
+/* Badges */
+.badge-activo { background-color: var(--abp-success); }
+.badge-inactivo { background-color: #dc3545; }
+
+/* Dashboard cards */
+.stat-card {
+  border-left: 4px solid var(--abp-accent);
+  transition: transform 0.15s;
+}
+.stat-card:hover {
+  transform: translateY(-2px);
+}
+
+/* Focus states */
+.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, 
+.form-control:focus, .form-check-input:focus, .form-select:focus {
+  box-shadow: 0 0 0 0.15rem rgba(13, 110, 253, 0.25);
+}
+
+/* Footer */
+.footer {
+  background-color: #fff;
+  font-size: 0.85rem;
+}
+
+/* Page headers */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+.page-header h2 {
+  font-weight: 700;
+  color: var(--abp-primary);
+  margin: 0;
+}
+
+/* Pagination */
+.pagination .page-link {
+  color: var(--abp-primary);
+}
+.pagination .page-item.active .page-link {
+  background-color: var(--abp-primary);
+  border-color: var(--abp-primary);
+}
+
+/* Smooth transitions */
+.btn, .card, .badge, .nav-link {
+  transition: all 0.2s ease;
 }

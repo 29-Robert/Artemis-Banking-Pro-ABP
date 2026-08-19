@@ -20,22 +20,50 @@ namespace ArtemisBankingPro.WebApi.Middlewares
             _logger.LogError(
                 exception, "Ha ocurrido un error: {Message}", exception.Message);
 
-            var problemDetails = new ProblemDetails
+            var problemDetails = exception switch
             {
-                Status = StatusCodes.Status400BadRequest,
-                Title = "Error de validación o negocio",
-                Detail = exception.Message,
-                Type = "https://tools.ietf.org/html/rfc7807"
+                UnauthorizedAccessException => new ProblemDetails
+                {
+                    Status = StatusCodes.Status401Unauthorized,
+                    Title = "No autorizado",
+                    Detail = exception.Message
+                },
+                KeyNotFoundException => new ProblemDetails
+                {
+                    Status = StatusCodes.Status404NotFound,
+                    Title = "Recurso no encontrado",
+                    Detail = exception.Message
+                },
+                FluentValidation.ValidationException validationEx => new ProblemDetails
+                {
+                    Status = StatusCodes.Status400BadRequest,
+                    Title = "Error de validación",
+                    Detail = string.Join("; ", validationEx.Errors.Select(e => e.ErrorMessage))
+                },
+                InvalidOperationException => new ProblemDetails
+                {
+                    Status = StatusCodes.Status400BadRequest,
+                    Title = "Error de negocio",
+                    Detail = exception.Message
+                },
+                ArgumentException => new ProblemDetails
+                {
+                    Status = StatusCodes.Status400BadRequest,
+                    Title = "Parámetros inválidos",
+                    Detail = exception.Message
+                },
+                _ => new ProblemDetails
+                {
+                    Status = StatusCodes.Status500InternalServerError,
+                    Title = "Error interno del servidor",
+                    Detail = "Ha ocurrido un error inesperado. Intente nuevamente más tarde."
+                }
             };
 
-            // Aquí podemos agregar lógica para retornar StatusCodes.Status404NotFound si la excepción es de un tipo específico de NotFound
-            if (exception.Message.Contains("no encontrado", StringComparison.OrdinalIgnoreCase))
-            {
-                problemDetails.Status = StatusCodes.Status404NotFound;
-                problemDetails.Title = "Recurso no encontrado";
-            }
+            problemDetails.Type = "https://tools.ietf.org/html/rfc7807";
+            problemDetails.Extensions["traceId"] = httpContext.TraceIdentifier;
 
-            httpContext.Response.StatusCode = problemDetails.Status.Value;
+            httpContext.Response.StatusCode = problemDetails.Status!.Value;
 
             await httpContext.Response
                 .WriteAsJsonAsync(problemDetails, cancellationToken);
