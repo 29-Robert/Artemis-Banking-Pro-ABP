@@ -1,0 +1,83 @@
+﻿@using ArtemisBankingPro.Application.DTOs.CreditCard
+@model CreditCardResponseDto
+
+@{
+    ViewData["Title"] = "Detalle de Tarjeta";
+}
+
+<div class="container mt-4 mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Detalle de Tarjeta</h2>
+        <a asp-action="Index" class="btn btn-outline-secondary">Volver atrás</a>
+    </div>
+
+    <div class="card shadow border-0 mb-4">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <div class="text-muted small">Número de tarjeta</div>
+                    <div class="fw-bold"><code>@Model.MaskedCardNumber</code></div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-muted small">Cliente</div>
+                    <div class="fw-bold">@Model.ClientFullName</div>
+                </div>
+                <div class="col-md-2">
+                    <div class="text-muted small">Límite de crédito</div>
+                    <div class="fw-bold">RD$ @Model.CreditLimit.ToString("N2")</div>
+                </div>
+                <div class="col-md-2">
+                    <div class="text-muted small">Deuda actual</div>
+                    <div class="fw-bold">RD$ @Model.CurrentDebt.ToString("N2")</div>
+                </div>
+                <div class="col-md-2">
+                    <div class="text-muted small">Estado</div>
+                    @{
+                        var badgeClass = Model.Status == "Activa" ? "bg-success" : "bg-secondary";
+                    }
+                    <span class="badge @badgeClass">@Model.Status</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h4 class="mb-3">Consumos</h4>
+    <div class="card shadow border-0">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Comercio</th>
+                            <th>Monto</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Consumptions == null || !Model.Consumptions.Any())
+                        {
+                            <tr>
+                                <td colspan="4" class="text-center text-muted py-4">Esta tarjeta no tiene consumos registrados.</td>
+                            </tr>
+                        }
+                        @foreach (var consumption in Model.Consumptions ?? new List<CreditCardConsumptionDto>())
+                        {
+                            <tr>
+                                <td>@consumption.Date.ToString("dd/MM/yyyy hh:mm tt")</td>
+                                <td>@consumption.CommerceName</td>
+                                <td>RD$ @consumption.Amount.ToString("N2")</td>
+                                <td>
+                                    @{
+                                        var consumptionBadge = consumption.Status == "APROBADO" ? "bg-success" : "bg-danger";
+                                    }
+                                    <span class="badge @consumptionBadge">@consumption.Status</span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

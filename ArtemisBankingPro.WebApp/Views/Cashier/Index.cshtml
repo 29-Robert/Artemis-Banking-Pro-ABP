@@ -1,0 +1,115 @@
+@model ArtemisBankingPro.Application.DTOs.Cashier.CajeroHomeIndicatorsResponseDto
+
+@{
+    ViewData["Title"] = "Panel del Cajero";
+}
+
+<div class="container mt-4 mb-5">
+    <div class="mb-4">
+        <h2 class="fw-bold">Panel del Cajero</h2>
+        <p class="text-muted mb-0">Resumen de operaciones del día de hoy</p>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["WarningMessage"] != null)
+    {
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            ⚠️ @TempData["WarningMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @* Indicadores del día *@
+    <div class="row g-4 mb-5">
+        <div class="col-sm-6 col-lg-3">
+            <div class="card border-0 shadow text-center h-100">
+                <div class="card-body py-4">
+                    <div class="display-6 fw-bold text-primary">@Model.TotalTransactionsToday</div>
+                    <div class="text-muted mt-1">Transacciones Hoy</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="card border-0 shadow text-center h-100">
+                <div class="card-body py-4">
+                    <div class="display-6 fw-bold text-success">@Model.DepositsToday</div>
+                    <div class="text-muted mt-1">Depósitos Hoy</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="card border-0 shadow text-center h-100">
+                <div class="card-body py-4">
+                    <div class="display-6 fw-bold text-warning">@Model.WithdrawalsToday</div>
+                    <div class="text-muted mt-1">Retiros Hoy</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="card border-0 shadow text-center h-100">
+                <div class="card-body py-4">
+                    <div class="display-6 fw-bold text-info">@Model.PaymentsToday</div>
+                    <div class="text-muted mt-1">Pagos Hoy</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* Operaciones disponibles *@
+    <h5 class="fw-semibold mb-3">Operaciones Disponibles</h5>
+    <div class="row g-3">
+        <div class="col-sm-6 col-md-4">
+            <a asp-action="Deposit" class="card border-0 shadow text-decoration-none h-100 d-flex flex-column align-items-center justify-content-center p-4 text-center"
+               style="min-height:140px; transition: transform .15s;">
+                <div class="fs-2 mb-2">💰</div>
+                <div class="fw-semibold text-dark">Depósito</div>
+                <small class="text-muted">Acreditar fondos a una cuenta</small>
+            </a>
+        </div>
+        <div class="col-sm-6 col-md-4">
+            <a asp-action="Withdrawal" class="card border-0 shadow text-decoration-none h-100 d-flex flex-column align-items-center justify-content-center p-4 text-center"
+               style="min-height:140px; transition: transform .15s;">
+                <div class="fs-2 mb-2">🏧</div>
+                <div class="fw-semibold text-dark">Retiro</div>
+                <small class="text-muted">Retirar fondos de una cuenta</small>
+            </a>
+        </div>
+        <div class="col-sm-6 col-md-4">
+            <a asp-action="CreditCardPayment" class="card border-0 shadow text-decoration-none h-100 d-flex flex-column align-items-center justify-content-center p-4 text-center"
+               style="min-height:140px; transition: transform .15s;">
+                <div class="fs-2 mb-2">💳</div>
+                <div class="fw-semibold text-dark">Pago Tarjeta</div>
+                <small class="text-muted">Abonar a tarjeta de crédito</small>
+            </a>
+        </div>
+        <div class="col-sm-6 col-md-4">
+            <a asp-action="LoanPayment" class="card border-0 shadow text-decoration-none h-100 d-flex flex-column align-items-center justify-content-center p-4 text-center"
+               style="min-height:140px; transition: transform .15s;">
+                <div class="fs-2 mb-2">📋</div>
+                <div class="fw-semibold text-dark">Pago Préstamo</div>
+                <small class="text-muted">Abonar cuotas de préstamo</small>
+            </a>
+        </div>
+        <div class="col-sm-6 col-md-4">
+            <a asp-action="ThirdPartyTransfer" class="card border-0 shadow text-decoration-none h-100 d-flex flex-column align-items-center justify-content-center p-4 text-center"
+               style="min-height:140px; transition: transform .15s;">
+                <div class="fs-2 mb-2">🔄</div>
+                <div class="fw-semibold text-dark">Transferencia</div>
+                <small class="text-muted">Transferir entre cuentas</small>
+            </a>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,42 @@
+﻿@model ArtemisBankingPro.WebApp.ViewModels.EditCreditLimitViewModel
+
+@{
+    ViewData["Title"] = "Modificar Límite de Crédito";
+}
+
+<div class="container mt-4 mb-5">
+    <h2 class="mb-4">Modificar Límite de Crédito</h2>
+
+    <div class="card shadow border-0" style="max-width: 500px;">
+        <div class="card-body">
+            <form asp-action="EditLimit" asp-route-id="@Model.CardId" method="post">
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger" style="display:none"></div>
+
+                <input type="hidden" asp-for="CardId" />
+
+                <div class="mb-3">
+                    <label class="form-label">Tarjeta</label>
+                    <input type="text" class="form-control" value="@Model.MaskedCardNumber" disabled />
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="NewCreditLimit" class="form-label"></label>
+                    <div class="input-group">
+                        <span class="input-group-text">RD$</span>
+                        <input asp-for="NewCreditLimit" class="form-control" step="0.01" min="0.01" />
+                    </div>
+                    <span asp-validation-for="NewCreditLimit" class="text-danger"></span>
+                </div>
+
+                <div class="d-flex justify-content-between mt-4">
+                    <a asp-action="Index" class="btn btn-outline-secondary">Volver atrás</a>
+                    <button type="submit" class="btn btn-warning">Guardar cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

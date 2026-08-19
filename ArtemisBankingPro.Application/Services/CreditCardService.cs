@@ -17,6 +17,7 @@ namespace ArtemisBankingPro.Application.Services
         private readonly ICreditCardRepository _creditCardRepository;
         private readonly IGenericRepository<User> _userRepository;
         private readonly IEmailService _emailService;
+        private readonly ILoanRepository _loanRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly ILogger<CreditCardService> _logger;
@@ -24,6 +25,7 @@ namespace ArtemisBankingPro.Application.Services
         public CreditCardService(
             ICreditCardRepository creditCardRepository,
             IGenericRepository<User> userRepository,
+            ILoanRepository loanRepository,
             IEmailService emailService,
             IUnitOfWork unitOfWork,
             IMapper mapper,
@@ -32,6 +34,7 @@ namespace ArtemisBankingPro.Application.Services
             _creditCardRepository = creditCardRepository;
             _userRepository = userRepository;
             _emailService = emailService;
+            _loanRepository = loanRepository;
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _logger = logger;
@@ -227,6 +230,53 @@ namespace ArtemisBankingPro.Application.Services
             }
 
             _logger.LogInformation("Tarjeta de crédito CANCELADA: Tarjeta ID: {CardId}, Tarjeta: {CardNo}", cardId, card.CardNumber.MaskCardNumber());
+        }
+
+        public async Task<EligibleClientsResponseDto> GetEligibleClientsAsync(string? cedula, int pageNumber, int pageSize)
+        {
+            var allUsers = await _userRepository.GetAllAsync();
+
+            var candidates = allUsers
+                .Where(u => u.IsActive && u.Role?.Name == "Cliente")
+                .Where(u => string.IsNullOrWhiteSpace(cedula) || u.Cedula.Contains(cedula))
+                .ToList();
+
+            var eligible = new List<EligibleClientDto>();
+            foreach (var user in candidates)
+            {
+                var loanDebt = await _loanRepository.GetTotalActiveDebtByClientAsync(user.Id);
+                var cardDebt = await _creditCardRepository.GetTotalActiveDebtByClientAsync(user.Id);
+
+                eligible.Add(new EligibleClientDto
+                {
+                    Id = user.Id.ToString(),
+                    Cedula = user.Cedula,
+                    FullName = $"{user.FirstName} {user.LastName}",
+                    Email = user.Email,
+                    TotalDebt = loanDebt + cardDebt
+                });
+            }
+
+            var totalCount = eligible.Count;
+            var paged = eligible.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToList();
+
+            return new EligibleClientsResponseDto
+            {
+                SystemAverageDebt = await CalculateSystemAverageDebtAsync(),
+                Clients = new PagedResult<EligibleClientDto> { Items = paged, PageNumber = pageNumber, PageSize = pageSize, TotalCount = totalCount }
+            };
+        }
+
+        private async Task<decimal> CalculateSystemAverageDebtAsync()
+        {
+            var allUsers = await _userRepository.GetAllAsync();
+            var activeClients = allUsers.Count(u => u.IsActive && u.Role?.Name == "Cliente");
+            if (activeClients == 0) return 0m;
+
+            var totalLoanDebt = await _loanRepository.GetTotalActiveDebtSystemWideAsync();
+            var totalCardDebt = await _creditCardRepository.GetTotalActiveDebtSystemWideAsync();
+
+            return (totalLoanDebt + totalCardDebt) / activeClients;
         }
 
         // Helpers privados
