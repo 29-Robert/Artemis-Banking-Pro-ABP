@@ -4,6 +4,7 @@ using ArtemisBankingPro.Persistence.Contexts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ArtemisBankingPro.Persistence.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260819040502_SeedUsersFix")]
+    partial class SeedUsersFix
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -561,7 +564,7 @@ namespace ArtemisBankingPro.Persistence.Migrations
                             FirstName = "Admin",
                             IsActive = true,
                             LastName = "Defecto",
-                            PasswordHash = "$2a$11$N9V2/U9qL5/7T.E8W5A29uT6l4G8B0rZ/Q/e1v0sD9t5R3N0Q9K8W",
+                            PasswordHash = "$2a$11$raOHSgJdzeW1Npb/XugJlOJGGQb9zq.UE42.RJaB3rANcCtV0j1g.",
                             RoleId = 1,
                             Username = "admin"
                         },
@@ -574,7 +577,7 @@ namespace ArtemisBankingPro.Persistence.Migrations
                             FirstName = "Cajero",
                             IsActive = true,
                             LastName = "Defecto",
-                            PasswordHash = "$2a$11$N9V2/U9qL5/7T.E8W5A29uT6l4G8B0rZ/Q/e1v0sD9t5R3N0Q9K8W",
+                            PasswordHash = "$2a$11$raOHSgJdzeW1Npb/XugJlOJGGQb9zq.UE42.RJaB3rANcCtV0j1g.",
                             RoleId = 2,
                             Username = "cajero"
                         },
@@ -587,7 +590,7 @@ namespace ArtemisBankingPro.Persistence.Migrations
                             FirstName = "Cliente",
                             IsActive = true,
                             LastName = "Defecto",
-                            PasswordHash = "$2a$11$N9V2/U9qL5/7T.E8W5A29uT6l4G8B0rZ/Q/e1v0sD9t5R3N0Q9K8W",
+                            PasswordHash = "$2a$11$raOHSgJdzeW1Npb/XugJlOJGGQb9zq.UE42.RJaB3rANcCtV0j1g.",
                             RoleId = 3,
                             Username = "cliente"
                         },
@@ -600,7 +603,7 @@ namespace ArtemisBankingPro.Persistence.Migrations
                             FirstName = "Comercio",
                             IsActive = true,
                             LastName = "Defecto",
-                            PasswordHash = "$2a$11$N9V2/U9qL5/7T.E8W5A29uT6l4G8B0rZ/Q/e1v0sD9t5R3N0Q9K8W",
+                            PasswordHash = "$2a$11$raOHSgJdzeW1Npb/XugJlOJGGQb9zq.UE42.RJaB3rANcCtV0j1g.",
                             RoleId = 4,
                             Username = "comercio"
                         });
