@@ -27,6 +27,15 @@ namespace ArtemisBankingPro.Application.Features.Users.Commands.CreateUser
                 throw new Exception("Ya existe un usuario con ese nombre de usuario, correo o cédula.");
             }
 
+            if (request.RoleId == 4 && request.CommerceId.HasValue)
+            {
+                var commerceHasUser = users.Any(u => u.RoleId == 4 && u.CommerceId == request.CommerceId.Value);
+                if (commerceHasUser)
+                {
+                    throw new Exception("El comercio seleccionado ya tiene un usuario asociado. Solo se permite un usuario por comercio.");
+                }
+            }
+
             var user = mapper.Map<User>(request);
             user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
             user.IsActive = false;

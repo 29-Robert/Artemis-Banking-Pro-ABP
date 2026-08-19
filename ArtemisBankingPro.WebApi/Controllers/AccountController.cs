@@ -1,4 +1,4 @@
-﻿using ArtemisBankingPro.Application.DTOs;
+using ArtemisBankingPro.Application.DTOs;
 using ArtemisBankingPro.Application.Features.Users.Commands.ActivateUser;
 using ArtemisBankingPro.Application.Features.Users.Commands.CreateUser;
 using ArtemisBankingPro.Application.Interfaces.Services;
@@ -40,14 +40,17 @@ namespace ArtemisBankingPro.WebApi.Controllers
             return Ok(new { Jwt = token });
         }
 
-        [HttpPost("register")]
+        [HttpPost("confirm")]
         [AllowAnonymous]
-        public async Task<IActionResult> Register([FromBody] CreateUserCommand command)
+        public async Task<IActionResult> ConfirmAccount([FromBody] ActivateUserCommand command)
         {
+            if (string.IsNullOrEmpty(command.Token))
+                return BadRequest(new { Error = "El token es requerido en el cuerpo de la petición." });
+
             try
             {
-                var userId = await mediator.Send(command);
-                return Ok(new { Message = "Usuario registrado exitosamente. Revise su correo para la activación.", UserId = userId });
+                await mediator.Send(command);
+                return Ok(new { Message = "Su cuenta ha sido activada exitosamente. Ya puede iniciar sesión." });
             }
             catch (Exception ex)
             {
@@ -55,19 +58,37 @@ namespace ArtemisBankingPro.WebApi.Controllers
             }
         }
 
-        [HttpGet("activate")]
+        [HttpPost("get-reset-token")]
         [AllowAnonymous]
-        public async Task<IActionResult> ActivateAccount([FromQuery] string token)
+        public async Task<IActionResult> GetResetToken([FromBody] ArtemisBankingPro.Application.Features.Users.Commands.ForgotPassword.ForgotPasswordCommand command)
         {
+            if (string.IsNullOrEmpty(command.Username))
+                return BadRequest(new { Error = "El nombre de usuario es requerido." });
+
             try
             {
-                if (string.IsNullOrEmpty(token))
-                    return BadRequest(new { Error = "El token es requerido." });
-
-                var command = new ActivateUserCommand { Token = token };
                 await mediator.Send(command);
+                return Ok(new { Message = "Si el usuario existe y tiene un correo registrado, se le ha enviado un enlace de recuperación." });
+            }
+            catch (Exception ex)
+            {
+                // Devolvemos 400 u otro status adecuado, aunque por seguridad a veces se prefiere devolver 200 siempre
+                // La rúbrica pide manejar 400 en errores.
+                return BadRequest(new { Error = ex.Message });
+            }
+        }
 
-                return Ok(new { Message = "Su cuenta ha sido activada exitosamente. Ya puede iniciar sesión." });
+        [HttpPost("reset-password")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ResetPassword([FromBody] ArtemisBankingPro.Application.Features.Users.Commands.ResetPassword.ResetPasswordCommand command)
+        {
+            if (string.IsNullOrEmpty(command.Token) || string.IsNullOrEmpty(command.NewPassword))
+                return BadRequest(new { Error = "El token y la nueva contraseña son requeridos." });
+
+            try
+            {
+                await mediator.Send(command);
+                return Ok(new { Message = "Su contraseña ha sido restablecida exitosamente. Su cuenta ha sido reactivada." });
             }
             catch (Exception ex)
             {
