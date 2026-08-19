@@ -107,6 +107,9 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
+builder.Services.AddExceptionHandler<ArtemisBankingPro.WebApi.Middlewares.GlobalExceptionHandler>();
+builder.Services.AddProblemDetails();
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -116,10 +119,10 @@ if (app.Environment.IsDevelopment())
 }
 else
 {
-    app.UseExceptionHandler("/error");
     app.UseHsts();
 }
 
+app.UseExceptionHandler(); // Usar el handler configurado
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
