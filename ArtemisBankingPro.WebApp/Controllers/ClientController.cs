@@ -47,7 +47,8 @@ namespace ArtemisBankingPro.WebApp.Controllers
                 PageSize = pageSize
             });
 
-            ViewBag.Account = account;
+            var accountDto = mapper.Map<Application.DTOs.Account.SavingsAccountListItemDto>(account);
+            ViewBag.Account = accountDto;
             ViewBag.CurrentPage = page;
             ViewBag.PageSize = pageSize;
             return View(history);
@@ -78,11 +79,35 @@ namespace ArtemisBankingPro.WebApp.Controllers
         [HttpPost]
         public async Task<IActionResult> TransferOwn(OwnAccountTransferViewModel model)
         {
+            if (model.SourceAccountNumber == model.DestinationAccountNumber)
+            {
+                ModelState.AddModelError(string.Empty, "La cuenta de origen y destino no pueden ser la misma.");
+            }
+
             if (!ModelState.IsValid)
             {
                 var data = await mediator.Send(new GetClientHomeDataQuery { ClientId = GetCurrentUserId() });
                 ViewBag.Accounts = data.Accounts;
                 return View(model);
+            }
+
+            return RedirectToAction("ConfirmTransferOwn", model);
+        }
+
+        [HttpGet]
+        public IActionResult ConfirmTransferOwn(OwnAccountTransferViewModel model)
+        {
+            return View(model);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ExecuteTransferOwn(OwnAccountTransferViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                var data = await mediator.Send(new GetClientHomeDataQuery { ClientId = GetCurrentUserId() });
+                ViewBag.Accounts = data.Accounts;
+                return View("TransferOwn", model);
             }
 
             try
@@ -105,7 +130,7 @@ namespace ArtemisBankingPro.WebApp.Controllers
 
             var homeData = await mediator.Send(new GetClientHomeDataQuery { ClientId = GetCurrentUserId() });
             ViewBag.Accounts = homeData.Accounts;
-            return View(model);
+            return View("TransferOwn", model);
         }
 
         [HttpGet]
@@ -126,9 +151,29 @@ namespace ArtemisBankingPro.WebApp.Controllers
                 return View(model);
             }
 
+            return RedirectToAction("ConfirmTransferExpress", model);
+        }
+
+        [HttpGet]
+        public IActionResult ConfirmTransferExpress(ExpressTransactionViewModel model)
+        {
+            return View(model);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ExecuteTransferExpress(ExpressTransactionViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                var data = await mediator.Send(new GetClientHomeDataQuery { ClientId = GetCurrentUserId() });
+                ViewBag.Accounts = data.Accounts;
+                return View("TransferExpress", model);
+            }
+
             try
             {
                 var command = mapper.Map<TransferCommand>(model);
+                command.ClientId = GetCurrentUserId();
                 await mediator.Send(command);
                 TempData["SuccessMessage"] = "Transferencia Express realizada con éxito.";
                 return RedirectToAction("Index");
@@ -140,7 +185,7 @@ namespace ArtemisBankingPro.WebApp.Controllers
 
             var homeData = await mediator.Send(new GetClientHomeDataQuery { ClientId = GetCurrentUserId() });
             ViewBag.Accounts = homeData.Accounts;
-            return View(model);
+            return View("TransferExpress", model);
         }
 
         public async Task<IActionResult> Beneficiaries()
@@ -213,12 +258,69 @@ namespace ArtemisBankingPro.WebApp.Controllers
                 return View(model);
             }
 
+            return RedirectToAction("ConfirmTransferBeneficiary", model);
+        }
+
+        [HttpGet]
+        public IActionResult ConfirmTransferBeneficiary(ExpressTransactionViewModel model)
+        {
+            return View(model);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ExecuteTransferBeneficiary(ExpressTransactionViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                var data = await mediator.Send(new GetClientHomeDataQuery { ClientId = GetCurrentUserId() });
+                ViewBag.Accounts = data.Accounts;
+                return View("TransferBeneficiary", model);
+            }
+
             try
             {
                 var command = mapper.Map<TransferCommand>(model);
                 command.IsBeneficiary = true;
+                command.ClientId = GetCurrentUserId();
                 await mediator.Send(command);
                 TempData["SuccessMessage"] = "Transferencia a beneficiario realizada con éxito.";
+                return RedirectToAction("Index");
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError(string.Empty, ex.Message);
+            }
+
+            var homeData = await mediator.Send(new GetClientHomeDataQuery { ClientId = GetCurrentUserId() });
+            ViewBag.Accounts = homeData.Accounts;
+            return View("TransferBeneficiary", model);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> PayCreditCard(string cardNumber)
+        {
+            var data = await mediator.Send(new GetClientHomeDataQuery { ClientId = GetCurrentUserId() });
+            ViewBag.Accounts = data.Accounts;
+            var model = new CreditCardPaymentViewModel { CardNumber = cardNumber };
+            return View(model);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> PayCreditCard(CreditCardPaymentViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                var data = await mediator.Send(new GetClientHomeDataQuery { ClientId = GetCurrentUserId() });
+                ViewBag.Accounts = data.Accounts;
+                return View(model);
+            }
+
+            try
+            {
+                var command = mapper.Map<PayCreditCardOwnAccountCommand>(model);
+                command.UserId = GetCurrentUserId();
+                await mediator.Send(command);
+                TempData["SuccessMessage"] = "Pago de tarjeta realizado con éxito.";
                 return RedirectToAction("Index");
             }
             catch (Exception ex)
@@ -232,67 +334,40 @@ namespace ArtemisBankingPro.WebApp.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> PayCreditCard(string cardNumber)
-        {
-            var data = await mediator.Send(new GetClientHomeDataQuery { ClientId = GetCurrentUserId() });
-            ViewBag.Accounts = data.Accounts;
-            ViewBag.CardNumber = cardNumber;
-            return View();
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> PayCreditCard(string sourceAccountNumber, string cardNumber, decimal amount)
-        {
-            try
-            {
-                var command = new PayCreditCardOwnAccountCommand
-                {
-                    SourceAccountNumber = sourceAccountNumber,
-                    CardNumber = cardNumber,
-                    Amount = amount,
-                    UserId = GetCurrentUserId()
-                };
-                await mediator.Send(command);
-                TempData["SuccessMessage"] = "Pago de tarjeta realizado con éxito.";
-                return RedirectToAction("Index");
-            }
-            catch (Exception ex)
-            {
-                TempData["ErrorMessage"] = ex.Message;
-                return RedirectToAction("PayCreditCard", new { cardNumber });
-            }
-        }
-
-        [HttpGet]
         public async Task<IActionResult> PayLoan(string loanNumber)
         {
             var data = await mediator.Send(new GetClientHomeDataQuery { ClientId = GetCurrentUserId() });
             ViewBag.Accounts = data.Accounts;
-            ViewBag.LoanNumber = loanNumber;
-            return View();
+            var model = new LoanPaymentViewModel { LoanNumber = loanNumber };
+            return View(model);
         }
 
         [HttpPost]
-        public async Task<IActionResult> PayLoan(string sourceAccountNumber, string loanNumber, decimal amount)
+        public async Task<IActionResult> PayLoan(LoanPaymentViewModel model)
         {
+            if (!ModelState.IsValid)
+            {
+                var data = await mediator.Send(new GetClientHomeDataQuery { ClientId = GetCurrentUserId() });
+                ViewBag.Accounts = data.Accounts;
+                return View(model);
+            }
+
             try
             {
-                var command = new PayLoanOwnAccountCommand
-                {
-                    SourceAccountNumber = sourceAccountNumber,
-                    LoanNumber = loanNumber,
-                    Amount = amount,
-                    UserId = GetCurrentUserId()
-                };
+                var command = mapper.Map<PayLoanOwnAccountCommand>(model);
+                command.UserId = GetCurrentUserId();
                 await mediator.Send(command);
                 TempData["SuccessMessage"] = "Pago de préstamo realizado con éxito.";
                 return RedirectToAction("Index");
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = ex.Message;
-                return RedirectToAction("PayLoan", new { loanNumber });
+                ModelState.AddModelError(string.Empty, ex.Message);
             }
+
+            var homeData = await mediator.Send(new GetClientHomeDataQuery { ClientId = GetCurrentUserId() });
+            ViewBag.Accounts = homeData.Accounts;
+            return View(model);
         }
 
         [HttpGet]
@@ -300,31 +375,57 @@ namespace ArtemisBankingPro.WebApp.Controllers
         {
             var data = await mediator.Send(new GetClientHomeDataQuery { ClientId = GetCurrentUserId() });
             ViewBag.Accounts = data.Accounts;
-            ViewBag.CardNumber = cardNumber;
-            return View();
+            var model = new CashAdvanceViewModel { CardNumber = cardNumber };
+            return View(model);
         }
 
         [HttpPost]
-        public async Task<IActionResult> CashAdvance(string sourceAccountNumber, string cardNumber, decimal amount)
+        public async Task<IActionResult> CashAdvance(CashAdvanceViewModel model)
         {
+            if (!ModelState.IsValid)
+            {
+                var data = await mediator.Send(new GetClientHomeDataQuery { ClientId = GetCurrentUserId() });
+                ViewBag.Accounts = data.Accounts;
+                return View(model);
+            }
+
+            return RedirectToAction("ConfirmCashAdvance", model);
+        }
+
+        [HttpGet]
+        public IActionResult ConfirmCashAdvance(CashAdvanceViewModel model)
+        {
+            ViewBag.Commission = model.Amount * 0.0625m;
+            ViewBag.TotalCharge = model.Amount + (model.Amount * 0.0625m);
+            return View(model);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ExecuteCashAdvance(CashAdvanceViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                var data = await mediator.Send(new GetClientHomeDataQuery { ClientId = GetCurrentUserId() });
+                ViewBag.Accounts = data.Accounts;
+                return View("CashAdvance", model);
+            }
+
             try
             {
-                var command = new CashAdvanceCommand
-                {
-                    SourceAccountNumber = sourceAccountNumber,
-                    CardNumber = cardNumber,
-                    Amount = amount,
-                    UserId = GetCurrentUserId()
-                };
+                var command = mapper.Map<CashAdvanceCommand>(model);
+                command.UserId = GetCurrentUserId();
                 await mediator.Send(command);
                 TempData["SuccessMessage"] = "Avance de efectivo procesado con éxito.";
                 return RedirectToAction("Index");
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = ex.Message;
-                return RedirectToAction("CashAdvance", new { cardNumber });
+                ModelState.AddModelError(string.Empty, ex.Message);
             }
+
+            var homeData = await mediator.Send(new GetClientHomeDataQuery { ClientId = GetCurrentUserId() });
+            ViewBag.Accounts = homeData.Accounts;
+            return View("CashAdvance", model);
         }
     }
 }

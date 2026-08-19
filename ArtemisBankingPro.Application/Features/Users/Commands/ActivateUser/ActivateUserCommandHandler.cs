@@ -1,4 +1,4 @@
-﻿using ArtemisBankingPro.Domain.Entities;
+using ArtemisBankingPro.Domain.Entities;
 using ArtemisBankingPro.Domain.Interfaces.Repositories;
 using MediatR;
 
@@ -34,6 +34,9 @@ namespace ArtemisBankingPro.Application.Features.Users.Commands.ActivateUser
 
             validToken.IsUsed = true;
             await tokenRepository.UpdateAsync(validToken);
+
+            await userRepository.SaveChangesAsync();
+            await tokenRepository.SaveChangesAsync();
 
             return true;
         }

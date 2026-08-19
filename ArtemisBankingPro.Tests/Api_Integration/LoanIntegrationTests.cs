@@ -1,4 +1,4 @@
-﻿using ArtemisBankingPro.Application.Common;
+using ArtemisBankingPro.Application.Common;
 using ArtemisBankingPro.Application.DTOs.Loan;
 using ArtemisBankingPro.Application.Interfaces.Services;
 using ArtemisBankingPro.WebApi;
@@ -152,7 +152,7 @@ namespace ArtemisBankingPro.Tests.Api_Integration
             var response = await client.PatchAsJsonAsync("/api/loan/1/rate", request);
 
             // Assert
-            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
         }
     }
 }

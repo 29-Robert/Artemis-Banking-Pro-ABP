@@ -2,7 +2,7 @@ using ArtemisBankingPro.Application.Features.Users.Commands.ActivateUser;
 using ArtemisBankingPro.Application.Features.Users.Commands.ForgotPassword;
 using ArtemisBankingPro.Application.Features.Users.Commands.ResetPassword;
 using ArtemisBankingPro.Application.Interfaces.Repositories;
-using ArtemisBankingPro.Domain.Entities;
+using ArtemisBankingPro.Domain.Enums;
 using ArtemisBankingPro.WebApp.ViewModels;
 using MediatR;
 using Microsoft.AspNetCore.Authentication;
@@ -51,7 +51,7 @@ namespace ArtemisBankingPro.WebApp.Controllers
                 return View(model);
             }
 
-            if (user.RoleId == (int)ArtemisBankingPro.Domain.Enums.Roles.Comercio)
+            if (user.RoleId == (int)Roles.Comercio)
             {
                 ModelState.AddModelError(string.Empty, "Este usuario no tiene permisos para acceder a la aplicación web.");
                 return View(model);

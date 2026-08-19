@@ -65,6 +65,9 @@ namespace ArtemisBankingPro.Application.Mappings
                 .IncludeBase<CreditCard, CreditCardResponseDto>()
                 .ForMember(d => d.Cvc, o => o.Ignore());
 
+            CreateMap<CreditCardConsumption, CreditCardConsumptionDto>()
+                .ForMember(d => d.Date, o => o.MapFrom(s => s.TransactionDate));
+
             // COMMERCE
             CreateMap<Commerce, CommerceListItemDto>();
             CreateMap<Commerce, CommerceDetailDto>();

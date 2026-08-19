@@ -1,4 +1,4 @@
-@model IEnumerable<ArtemisBankingPro.Domain.Entities.SavingsAccount>
+@model IEnumerable<ArtemisBankingPro.Application.DTOs.Account.SavingsAccountListItemDto>
 @{
     ViewData["Title"] = "Gestión de Cuentas de Ahorro";
 }
@@ -69,22 +69,22 @@
             {
                 <tr>
                     <td>@item.AccountNumber</td>
-                    <td>@(item.User != null ? $"{item.User.FirstName} {item.User.LastName}" : "N/A")</td>
-                    <td>@(item.User != null ? item.User.Cedula : "N/A")</td>
+                    <td>@item.ClientFullName</td>
+                    <td>@item.ClientCedula</td>
                     <td>RD$ @item.Balance.ToString("N2")</td>
                     <td>
-                        <span class="badge @(item.Type == ArtemisBankingPro.Domain.Enums.AccountType.Principal ? "bg-primary" : "bg-info")">
+                        <span class="badge @(item.Type == AccountType.Principal ? "bg-primary" : "bg-info")">
                             @item.Type
                         </span>
                     </td>
                     <td>
-                        <span class="badge @(item.Status == ArtemisBankingPro.Domain.Enums.AccountStatus.Activa ? "bg-success" : "bg-danger")">
+                        <span class="badge @(item.Status == AccountStatus.Activa ? "bg-success" : "bg-danger")">
                             @item.Status
                         </span>
                     </td>
                     <td>
                         <a asp-action="Details" asp-route-accountNumber="@item.AccountNumber" class="btn btn-sm btn-outline-secondary">Ver Historial</a>
-                        @if (item.Type == ArtemisBankingPro.Domain.Enums.AccountType.Secundaria && item.Status == ArtemisBankingPro.Domain.Enums.AccountStatus.Activa)
+                        @if (item.Type == AccountType.Secundaria && item.Status == AccountStatus.Activa)
                         {
                             <a asp-action="CancelConfirm" asp-route-accountNumber="@item.AccountNumber" class="btn btn-sm btn-danger">Cancelar</a>
                         }
