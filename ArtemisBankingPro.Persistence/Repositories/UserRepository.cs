@@ -1,4 +1,4 @@
-﻿using ArtemisBankingPro.Application.Interfaces.Repositories;
+using ArtemisBankingPro.Application.Interfaces.Repositories;
 using ArtemisBankingPro.Domain.Entities;
 using ArtemisBankingPro.Persistence.Contexts;
 using Microsoft.EntityFrameworkCore;
@@ -20,6 +20,13 @@ namespace ArtemisBankingPro.Persistence.Repositories
             return await _dbContext.Users
                 .Include(u => u.Role)
                 .FirstOrDefaultAsync(u => u.Id == id);
+        }
+
+        public async Task<User?> GetByUsernameAsync(string username)
+        {
+            return await _dbContext.Users
+                .Include(u => u.Role)
+                .FirstOrDefaultAsync(u => u.Username == username);
         }
     }
 }

@@ -28,7 +28,7 @@
             </div>
         }
 
-        @if (User.IsInRole("Cliente") || User.IsInRole("Comercio"))
+        @if (User.IsInRole("Cliente"))
         {
             <div class="col-md-5 mb-4">
                 <div class="card shadow border-0 h-100">
@@ -39,50 +39,6 @@
                         <h4 class="card-title fw-bold">Mis Productos</h4>
                         <p class="card-text text-muted mb-4">Consulta el balance de tus cuentas de ahorro y realiza transferencias a terceros.</p>
                         <a asp-controller="Client" asp-action="Index" class="btn btn-success w-100">Ver mis cuentas y productos</a>
-                    </div>
-                </div>
-            </div>
-        }
-    ViewData["Title"] = "Inicio";
-}
-
-<div class="container mt-5">
-    <div class="row">
-        <div class="col-12 text-center mb-5">
-            <h1 class="display-4 fw-bold">Artemis Banking Pro</h1>
-            <p class="lead text-muted">Hola, @User.Identity?.Name. ¡Qué bueno tenerte en el sistema!</p>
-        </div>
-    </div>
-
-    <div class="row justify-content-center">
-
-        @if (User.IsInRole("Administrador"))
-        {
-            <div class="col-md-5 mb-4">
-                <div class="card shadow border-0 h-100">
-                    <div class="card-body text-center p-4">
-                        <div class="mb-3">
-                            <i class="fs-1 text-primary">⚙️</i>
-                        </div>
-                        <h4 class="card-title fw-bold">Panel de Control</h4>
-                        <p class="card-text text-muted mb-4">Gestiona los usuarios, clientes y comercios registrados en el sistema, y administra sus accesos.</p>
-                        <a asp-controller="Admin" asp-action="Index" class="btn btn-primary w-100">Ir a Gestión de Usuarios</a>
-                    </div>
-                </div>
-            </div>
-        }
-
-        @if (User.IsInRole("Cliente") || User.IsInRole("Comercio"))
-        {
-            <div class="col-md-5 mb-4">
-                <div class="card shadow border-0 h-100">
-                    <div class="card-body text-center p-4">
-                        <div class="mb-3">
-                            <i class="fs-1 text-success">💰</i>
-                        </div>
-                        <h4 class="card-title fw-bold">Mis Productos</h4>
-                        <p class="card-text text-muted mb-4">Consulta el balance de tus cuentas de ahorro y realiza transferencias a terceros.</p>
-                        <button class="btn btn-success w-100" disabled>Ver mis cuentas (Próximamente)</button>
                     </div>
                 </div>
             </div>
@@ -98,7 +54,7 @@
                         </div>
                         <h4 class="card-title fw-bold">Operaciones de Caja</h4>
                         <p class="card-text text-muted mb-4">Realiza depósitos, retiros en efectivo y cobro de servicios para los clientes.</p>
-                        <button class="btn btn-warning w-100 text-dark" disabled>Ir a Caja (Próximamente)</button>
+                        <a asp-controller="Cashier" asp-action="Index" class="btn btn-warning w-100 text-dark">Ir a Caja</a>
                     </div>
                 </div>
             </div>
