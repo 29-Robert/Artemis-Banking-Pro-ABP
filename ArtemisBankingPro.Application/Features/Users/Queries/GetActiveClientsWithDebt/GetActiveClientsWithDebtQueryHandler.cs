@@ -18,7 +18,7 @@ namespace ArtemisBankingPro.Application.Features.Users.Queries
         public async Task<IEnumerable<ClientDebtDto>> Handle(GetActiveClientsWithDebtQuery request, CancellationToken cancellationToken)
         {
             var allUsers = await userRepository.GetAllAsync();
-            var activeClients = allUsers.Where(u => u.RoleId == 3 && u.IsActive).ToList();
+            var activeClients = allUsers.Where(u => u.RoleId == (int)ArtemisBankingPro.Domain.Enums.Roles.Cliente && u.IsActive).ToList();
 
             if (!string.IsNullOrWhiteSpace(request.SearchCedula))
             {

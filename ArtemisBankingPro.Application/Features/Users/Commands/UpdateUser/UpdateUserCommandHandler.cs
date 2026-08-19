@@ -1,4 +1,4 @@
-﻿using ArtemisBankingPro.Application.Interfaces.Services;
+using ArtemisBankingPro.Application.Interfaces.Services;
 using ArtemisBankingPro.Domain.Entities;
 using ArtemisBankingPro.Domain.Interfaces.Repositories;
 using MediatR;
@@ -25,7 +25,7 @@ namespace ArtemisBankingPro.Application.Features.Users.Commands.UpdateUser
 
             await userRepository.SaveChangesAsync();
 
-            if (request.AdditionalAmount > 0 && user.RoleId == 3)
+            if (request.AdditionalAmount > 0 && user.RoleId == (int)ArtemisBankingPro.Domain.Enums.Roles.Cliente)
             {
                 await savingsAccountService.CreditToMainAsync(user.Id.ToString(), request.AdditionalAmount);
             }

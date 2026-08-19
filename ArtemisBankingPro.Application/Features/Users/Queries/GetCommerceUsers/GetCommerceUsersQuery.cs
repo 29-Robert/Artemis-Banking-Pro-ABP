@@ -21,7 +21,7 @@ namespace ArtemisBankingPro.Application.Features.Users.Queries.GetCommerceUsers
         {
             var users = await userRepository.GetAllAsync();
 
-            var query = users.Where(u => u.RoleId == 4).AsQueryable();
+            var query = users.Where(u => u.RoleId == (int)ArtemisBankingPro.Domain.Enums.Roles.Comercio).AsQueryable();
 
             query = query.OrderByDescending(u => u.CreatedAt);
 
