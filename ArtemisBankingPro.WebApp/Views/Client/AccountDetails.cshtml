@@ -1,6 +1,6 @@
-@model IEnumerable<ArtemisBankingPro.Application.DTOs.Account.TransactionDto>
+@model IEnumerable<TransactionDto>
 @{
-    var account = (ArtemisBankingPro.Domain.Entities.SavingsAccount)ViewBag.Account;
+    var account = (SavingsAccountListItemDto)ViewBag.Account;
     ViewData["Title"] = "Detalle de Cuenta";
 }
 
@@ -47,16 +47,16 @@
                         <td>@t.Date.ToString("dd/MM/yyyy HH:mm:ss")</td>
                         <td>@t.Description</td>
                         <td>
-                            <span class="badge @(t.Type == ArtemisBankingPro.Domain.Enums.TransactionType.Credito ? "bg-success" : "bg-danger")">
-                                @(t.Type == ArtemisBankingPro.Domain.Enums.TransactionType.Credito ? "CRÉDITO" : "DÉBITO")
+                            <span class="badge @(t.Type == TransactionType.Credito ? "bg-success" : "bg-danger")">
+                                @(t.Type == TransactionType.Credito ? "CRÉDITO" : "DÉBITO")
                             </span>
                         </td>
                         <td>@t.Origin</td>
                         <td>@t.Beneficiary</td>
-                        <td class="fw-bold @(t.Type == ArtemisBankingPro.Domain.Enums.TransactionType.Credito ? "text-success" : "text-danger")">
-                            @(t.Type == ArtemisBankingPro.Domain.Enums.TransactionType.Credito ? "+" : "-") RD$ @t.Amount.ToString("N2")
+                        <td class="fw-bold @(t.Type == TransactionType.Credito ? "text-success" : "text-danger")">
+                            @(t.Type == TransactionType.Credito ? "+" : "-") RD$ @t.Amount.ToString("N2")
                         </td>
-                        <td>@(t.Status == ArtemisBankingPro.Domain.Enums.TransactionStatus.Aprobada ? "APROBADA" : "RECHAZADA")</td>
+                        <td>@(t.Status == TransactionStatus.Aprobada ? "APROBADA" : "RECHAZADA")</td>
                     </tr>
                 }
             }

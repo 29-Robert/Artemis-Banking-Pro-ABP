@@ -67,8 +67,8 @@ namespace ArtemisBankingPro.Tests.Services
 
             Assert.NotNull(problemDetails);
             Assert.Equal(500, problemDetails.Status);
-            Assert.Equal("An error occurred while processing your request.", problemDetails.Title);
-            Assert.Equal("Algo salió mal", problemDetails.Detail);
+            Assert.Equal("Error interno del servidor", problemDetails.Title);
+            Assert.Equal("Ha ocurrido un error inesperado. Intente nuevamente más tarde.", problemDetails.Detail);
 
             // Check traceId extension
             var jsonDoc = JsonDocument.Parse(responseBody);

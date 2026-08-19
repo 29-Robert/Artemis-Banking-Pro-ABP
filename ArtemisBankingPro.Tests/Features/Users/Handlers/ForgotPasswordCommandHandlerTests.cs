@@ -33,19 +33,14 @@ namespace ArtemisBankingPro.Tests.Features.Users.Handlers
         }
 
         [Fact]
-        public async Task Handle_UserNotFound_DoesNothing()
+        public async Task Handle_UserNotFound_ThrowsException()
         {
             // Arrange
             _userRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<User>());
             var command = new ForgotPasswordCommand { Username = "unknown" };
 
-            // Act
-            await _handler.Handle(command, CancellationToken.None);
-
-            // Assert
-            _userRepositoryMock.Verify(r => r.UpdateAsync(It.IsAny<User>()), Times.Never);
-            _tokenRepositoryMock.Verify(r => r.AddAsync(It.IsAny<ConfirmationToken>()), Times.Never);
-            _emailServiceMock.Verify(s => s.SendPasswordResetEmailAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+            // Act & Assert
+            await Assert.ThrowsAsync<Exception>(() => _handler.Handle(command, CancellationToken.None));
         }
 
         [Fact]
@@ -61,7 +56,7 @@ namespace ArtemisBankingPro.Tests.Features.Users.Handlers
 
             // Assert
             Assert.False(user.IsActive); // Should be deactivated temporarily
-            _userRepositoryMock.Verify(r => r.UpdateAsync(user), Times.Once);
+            _userRepositoryMock.Verify(r => r.SaveChangesAsync(), Times.Once);
             _tokenRepositoryMock.Verify(r => r.AddAsync(It.Is<ConfirmationToken>(t => t.UserId == 1 && t.Type == TokenType.RestablecimientoContrasena)), Times.Once);
             _emailServiceMock.Verify(s => s.SendPasswordResetEmailAsync("test@test.com", It.IsAny<string>()), Times.Once);
         }

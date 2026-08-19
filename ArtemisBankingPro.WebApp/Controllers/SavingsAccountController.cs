@@ -1,6 +1,7 @@
 using ArtemisBankingPro.Application.Features.Accounts.Commands;
 using ArtemisBankingPro.Application.Features.Accounts.Queries;
 using ArtemisBankingPro.Application.Features.Users.Queries;
+using ArtemisBankingPro.Application.DTOs.Account;
 using ArtemisBankingPro.Domain.Entities;
 using ArtemisBankingPro.Domain.Enums;
 using ArtemisBankingPro.WebApp.ViewModels;
@@ -36,11 +37,11 @@ namespace ArtemisBankingPro.WebApp.Controllers
                     ViewBag.TypeFilter = type;
                     ViewBag.CedulaFilter = cedula;
                     ViewBag.TotalPages = 0;
-                    return View(new List<SavingsAccount>());
+                    return View(new List<SavingsAccountListItemDto>());
                 }
             }
 
-            var resultObj = await mediator.Send(new GetAccountsQuery
+            var result = await mediator.Send(new GetAccountsQuery
             {
                 Page = page,
                 PageSize = pageSize,
@@ -48,22 +49,23 @@ namespace ArtemisBankingPro.WebApp.Controllers
                 Type = type,
                 Cedula = cedula
             });
-            var data = (dynamic)resultObj;
 
-            if (!string.IsNullOrWhiteSpace(cedula) && data.TotalCount == 0)
+            if (!string.IsNullOrWhiteSpace(cedula) && result.TotalCount == 0)
             {
                 ViewBag.Message = "Este cliente no tiene cuentas de ahorro registradas.";
             }
 
             ViewBag.CurrentPage = page;
-            ViewBag.TotalCount = data.TotalCount;
+            ViewBag.TotalCount = result.TotalCount;
             ViewBag.PageSize = pageSize;
             ViewBag.StatusFilter = status;
             ViewBag.TypeFilter = type;
             ViewBag.CedulaFilter = cedula;
-            ViewBag.TotalPages = (int)Math.Ceiling((double)data.TotalCount / pageSize);
+            ViewBag.TotalPages = (int)Math.Ceiling((double)result.TotalCount / pageSize);
 
-            return View(data.Data);
+            var accounts = result.Data;
+            var dtos = mapper.Map<IEnumerable<SavingsAccountListItemDto>>(accounts);
+            return View(dtos);
         }
 
         [HttpGet]
@@ -159,7 +161,8 @@ namespace ArtemisBankingPro.WebApp.Controllers
                 PageSize = pageSize
             });
 
-            ViewBag.Account = account;
+            var accountDto = mapper.Map<SavingsAccountListItemDto>(account);
+            ViewBag.Account = accountDto;
             ViewBag.CurrentPage = page;
             ViewBag.PageSize = pageSize;
 
@@ -172,7 +175,8 @@ namespace ArtemisBankingPro.WebApp.Controllers
             var account = await mediator.Send(new GetAccountByAccountNumberQuery { AccountNumber = accountNumber });
             if (account == null) return NotFound();
 
-            return View(account);
+            var accountDto = mapper.Map<SavingsAccountListItemDto>(account);
+            return View(accountDto);
         }
 
         [HttpPost]

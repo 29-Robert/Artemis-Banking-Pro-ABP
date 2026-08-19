@@ -1,35 +1,35 @@
+@model ArtemisBankingPro.WebApp.ViewModels.CreditCardPaymentViewModel
 @{
     ViewData["Title"] = "Pagar Tarjeta de Crédito";
 }
 
 <div class="container mt-4" style="max-width: 600px;">
     <h2>Pagar Tarjeta de Crédito</h2>
-    <p class="text-muted">Tarjeta No: @ViewBag.CardNumber</p>
-
-    @if (TempData["ErrorMessage"] != null)
-    {
-        <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
-    }
+    <p class="text-muted">Tarjeta No: @Model.CardNumber</p>
 
     <div class="card shadow-sm border-0 mt-3">
         <div class="card-body p-4">
             <form asp-action="PayCreditCard" method="post">
-                <input type="hidden" name="cardNumber" value="@ViewBag.CardNumber" />
+                @Html.AntiForgeryToken()
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+                <input type="hidden" asp-for="CardNumber" />
 
                 <div class="mb-3">
-                    <label class="form-label">Pagar Desde Cuenta de Ahorro</label>
-                    <select name="sourceAccountNumber" class="form-select" required>
+                    <label asp-for="SourceAccountNumber" class="form-label">Pagar Desde Cuenta de Ahorro</label>
+                    <select asp-for="SourceAccountNumber" class="form-select" required>
                         <option value="">Seleccione cuenta origen...</option>
                         @foreach (var acc in (IEnumerable<ArtemisBankingPro.Application.DTOs.Account.SavingsAccountListItemDto>)ViewBag.Accounts)
                         {
                             <option value="@acc.AccountNumber">@acc.AccountNumber - RD$ @acc.Balance.ToString("N2")</option>
                         }
                     </select>
+                    <span asp-validation-for="SourceAccountNumber" class="text-danger"></span>
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label">Monto a Pagar (RD$)</label>
-                    <input name="amount" type="number" step="0.01" min="0.01" class="form-control" placeholder="Monto del pago" required />
+                    <label asp-for="Amount" class="form-label">Monto a Pagar (RD$)</label>
+                    <input asp-for="Amount" type="number" step="0.01" min="0.01" class="form-control" placeholder="Monto del pago" required />
+                    <span asp-validation-for="Amount" class="text-danger"></span>
                 </div>
 
                 <div class="d-flex justify-content-between mt-4">
@@ -40,3 +40,7 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

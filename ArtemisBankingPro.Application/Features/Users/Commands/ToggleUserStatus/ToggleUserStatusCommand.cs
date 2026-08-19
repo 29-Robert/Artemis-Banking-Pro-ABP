@@ -1,4 +1,4 @@
-﻿using ArtemisBankingPro.Domain.Entities;
+using ArtemisBankingPro.Domain.Entities;
 using ArtemisBankingPro.Domain.Interfaces.Repositories;
 using MediatR;
 
@@ -20,6 +20,7 @@ namespace ArtemisBankingPro.Application.Features.Users.Commands.ToggleUserStatus
 
             user.IsActive = !user.IsActive;
             await userRepository.UpdateAsync(user);
+            await userRepository.SaveChangesAsync();
 
             return user.IsActive;
         }

@@ -34,7 +34,7 @@
                     @foreach (var acc in Model.Accounts)
                     {
                         <tr>
-                            <td class="ps-3 fw-bold">@acc.AccountNumber @(acc.Type == ArtemisBankingPro.Domain.Enums.AccountType.Principal ? "(Principal)" : "")</td>
+                            <td class="ps-3 fw-bold">@acc.AccountNumber @(acc.Type == AccountType.Principal ? "(Principal)" : "")</td>
                             <td>@acc.Type</td>
                             <td class="fw-bold">RD$ @acc.Balance.ToString("N2")</td>
                             <td class="text-end pe-3">

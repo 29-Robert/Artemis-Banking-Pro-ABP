@@ -1,0 +1,52 @@
+@model ArtemisBankingPro.WebApp.ViewModels.ExpressTransactionViewModel
+@{
+    ViewData["Title"] = "Confirmar Transferencia Express";
+}
+
+<div class="container mt-5" style="max-width: 600px;">
+    <div class="card border-primary shadow">
+        <div class="card-header bg-primary text-white fw-bold">
+            <h4 class="mb-0 text-center">Confirmación de Transferencia Express</h4>
+        </div>
+        <div class="card-body p-4">
+            <p class="text-center text-muted mb-4">Por favor, revise los detalles de la transferencia rápida antes de continuar.</p>
+            
+            <div class="mb-3 border-bottom pb-2">
+                <span class="text-muted d-block small">Cuenta Origen:</span>
+                <span class="fs-5 fw-bold text-dark">@Model.SourceAccountNumber</span>
+            </div>
+
+            <div class="mb-3 border-bottom pb-2">
+                <span class="text-muted d-block small">Cuenta Destino:</span>
+                <span class="fs-5 fw-bold text-dark">@Model.DestinationAccountNumber</span>
+            </div>
+
+            <div class="mb-4 border-bottom pb-2">
+                <span class="text-muted d-block small">Monto a Enviar:</span>
+                <span class="fs-3 fw-bold text-success">RD$ @Model.Amount.ToString("N2")</span>
+            </div>
+
+            <form asp-action="ExecuteTransferExpress" method="post" id="confirmForm">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="SourceAccountNumber" />
+                <input type="hidden" asp-for="DestinationAccountNumber" />
+                <input type="hidden" asp-for="Amount" />
+
+                <div class="d-flex justify-content-between mt-4">
+                    <a asp-action="TransferExpress" class="btn btn-outline-secondary px-4">Atrás</a>
+                    <button type="submit" id="btnConfirm" class="btn btn-success px-4">Confirmar y Enviar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            $('#confirmForm').on('submit', function() {
+                $('#btnConfirm').prop('disabled', true).text('Procesando...');
+            });
+        });
+    </script>
+}
