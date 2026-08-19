@@ -24,6 +24,7 @@ namespace ArtemisBankingPro.Tests.Repositories
         {
             // Arrange
             using var context = new ApplicationDbContext(_options);
+            context.Database.EnsureCreated();
             var repository = new UserRepository(context);
             var user = new User { FirstName = "John", LastName = "Doe", Username = "jdoe", Email = "jdoe@test.com", Cedula = "123", IsActive = true, RoleId = 1 };
 
@@ -42,6 +43,7 @@ namespace ArtemisBankingPro.Tests.Repositories
         {
             // Arrange
             using var context = new ApplicationDbContext(_options);
+            context.Database.EnsureCreated();
             var user = new User { FirstName = "Jane", LastName = "Doe", Username = "janed", Email = "jane@test.com", Cedula = "456", IsActive = true, RoleId = 1 };
             context.Users.Add(user);
             await context.SaveChangesAsync();
@@ -61,6 +63,7 @@ namespace ArtemisBankingPro.Tests.Repositories
         {
             // Arrange
             using var context = new ApplicationDbContext(_options);
+            context.Database.EnsureCreated();
             var user = new User { FirstName = "Mark", LastName = "Smith", Username = "marks", Email = "mark@test.com", Cedula = "789", IsActive = true, RoleId = 1 };
             context.Users.Add(user);
             await context.SaveChangesAsync();
