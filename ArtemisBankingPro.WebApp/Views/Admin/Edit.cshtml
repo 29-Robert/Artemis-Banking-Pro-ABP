@@ -1,94 +1,94 @@
-﻿@model ArtemisBankingPro.WebApp.ViewModels.SaveUserViewModel
+@model ArtemisBankingPro.WebApp.ViewModels.SaveUserViewModel
 
 @{
     ViewData["Title"] = "Editar Usuario";
 }
 
-<div class="container mt-4">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card shadow-sm">
-                <div class="card-header bg-warning text-dark">
-                    <h4 class="mb-0">Editar Usuario: @Model.Username</h4>
-                </div>
-                <div class="card-body">
-                    <form asp-action="Edit" method="post">
-                        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-                        <input type="hidden" asp-for="Id" />
-                        <input type="hidden" asp-for="RoleId" /> 
+<div class="page-header">
+    <h2>Editar Usuario: @Model.Username</h2>
+    <a asp-action="Index" class="btn btn-outline-secondary">← Volver</a>
+</div>
 
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label asp-for="FirstName" class="form-label">Nombre</label>
-                                <input asp-for="FirstName" class="form-control" />
-                                <span asp-validation-for="FirstName" class="text-danger"></span>
-                            </div>
-                            <div class="col-md-6">
-                                <label asp-for="LastName" class="form-label">Apellido</label>
-                                <input asp-for="LastName" class="form-control" />
-                                <span asp-validation-for="LastName" class="text-danger"></span>
-                            </div>
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body p-4">
+                <form asp-action="Edit" method="post">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger" style="display: @(ViewData.ModelState.ErrorCount > 0 ? "block" : "none");"></div>
+                    <input type="hidden" asp-for="Id" />
+                    <input type="hidden" asp-for="RoleId" /> 
+
+                    <h6 class="fw-bold mb-3" style="color: var(--abp-primary);">Datos Personales</h6>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label asp-for="FirstName" class="form-label fw-semibold">Nombre</label>
+                            <input asp-for="FirstName" class="form-control" />
+                            <span asp-validation-for="FirstName" class="text-danger small"></span>
                         </div>
-
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label asp-for="Cedula" class="form-label">Cédula</label>
-                                <input asp-for="Cedula" class="form-control" />
-                                <span asp-validation-for="Cedula" class="text-danger"></span>
-                            </div>
-                            <div class="col-md-6">
-                                <label asp-for="Email" class="form-label">Correo Electrónico</label>
-                                <input asp-for="Email" type="email" class="form-control" />
-                                <span asp-validation-for="Email" class="text-danger"></span>
-                            </div>
+                        <div class="col-md-6">
+                            <label asp-for="LastName" class="form-label fw-semibold">Apellido</label>
+                            <input asp-for="LastName" class="form-control" />
+                            <span asp-validation-for="LastName" class="text-danger small"></span>
                         </div>
+                    </div>
 
-                        <div class="mb-3">
-                            <label asp-for="Username" class="form-label">Nombre de Usuario</label>
-                            <input asp-for="Username" class="form-control" />
-                            <span asp-validation-for="Username" class="text-danger"></span>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label asp-for="Cedula" class="form-label fw-semibold">Cédula</label>
+                            <input asp-for="Cedula" class="form-control" />
+                            <span asp-validation-for="Cedula" class="text-danger small"></span>
                         </div>
+                        <div class="col-md-6">
+                            <label asp-for="Email" class="form-label fw-semibold">Correo Electrónico</label>
+                            <input asp-for="Email" type="email" class="form-control" />
+                            <span asp-validation-for="Email" class="text-danger small"></span>
+                        </div>
+                    </div>
 
+                    <div class="mb-3">
+                        <label asp-for="Username" class="form-label fw-semibold">Nombre de Usuario</label>
+                        <input asp-for="Username" class="form-control" />
+                        <span asp-validation-for="Username" class="text-danger small"></span>
+                    </div>
+
+                    <hr />
+                    <h6 class="fw-bold mb-3 text-muted">Cambio de Contraseña (Opcional)</h6>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label asp-for="Password" class="form-label fw-semibold">Nueva Contraseña</label>
+                            <input asp-for="Password" type="password" class="form-control" placeholder="Dejar en blanco para no cambiar" />
+                            <span asp-validation-for="Password" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="ConfirmPassword" class="form-label fw-semibold">Confirmar Contraseña</label>
+                            <input asp-for="ConfirmPassword" type="password" class="form-control" />
+                            <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    @if (Model.RoleId == 3)
+                    {
                         <hr />
-                        <h6 class="text-muted">Cambio de Contraseña (Opcional)</h6>
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label asp-for="Password" class="form-label">Nueva Contraseña</label>
-                                <input asp-for="Password" type="password" class="form-control" placeholder="Dejar en blanco para no cambiar" />
-                                <span asp-validation-for="Password" class="text-danger"></span>
-                            </div>
-                            <div class="col-md-6">
-                                <label asp-for="ConfirmPassword" class="form-label">Confirmar Contraseña</label>
-                                <input asp-for="ConfirmPassword" type="password" class="form-control" />
-                                <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
-                            </div>
+                        <h6 class="fw-bold mb-3" style="color: var(--abp-success);">Gestión Administrativa de Balance</h6>
+                        <div class="mb-3">
+                            <label asp-for="AdditionalAmount" class="form-label fw-semibold">Monto Adicional a Abonar (RD$)</label>
+                            <input asp-for="AdditionalAmount" type="number" step="0.01" class="form-control" value="0" />
+                            <small class="form-text text-muted">Este monto se acreditará a la cuenta de ahorro principal del cliente.</small>
+                            <span asp-validation-for="AdditionalAmount" class="text-danger small"></span>
                         </div>
+                    }
 
-                        @if (Model.RoleId == 3)
-                        {
-                            <hr />
-                            <h6 class="text-success">Gestión Administrativa de Balance</h6>
-                            <div class="mb-3">
-                                <label asp-for="AdditionalAmount" class="form-label">Monto Adicional a Abonar (RD$)</label>
-                                <input asp-for="AdditionalAmount" type="number" step="0.01" class="form-control" value="0" />
-                                <small class="form-text text-muted">Este monto se acreditará a la cuenta de ahorro principal del cliente.</small>
-                                <span asp-validation-for="AdditionalAmount" class="text-danger"></span>
-                            </div>
-                        }
-
-                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
-                            <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
-                            <button type="submit" class="btn btn-warning">Actualizar Usuario</button>
-                        </div>
-                    </form>
-                </div>
+                    <hr />
+                    <div class="d-flex justify-content-end gap-2 mt-3">
+                        <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+                        <button type="submit" class="btn btn-primary">Actualizar Usuario</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
 </div>
 
 @section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
+    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
 }
