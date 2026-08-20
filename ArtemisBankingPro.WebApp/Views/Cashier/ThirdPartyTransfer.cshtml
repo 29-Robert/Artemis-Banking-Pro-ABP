@@ -13,22 +13,30 @@
 
     <div class="card shadow border-0">
         <div class="card-body p-4">
-            <form asp-action="ThirdPartyTransfer" method="post">
+            <form asp-action="ThirdPartyTransfer" method="post" id="transferForm">
                 <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
 
                 <div class="mb-3">
                     <label asp-for="SourceAccountNumber" class="form-label fw-semibold"></label>
-                    <input asp-for="SourceAccountNumber" class="form-control"
-                           placeholder="Número de cuenta de origen" />
+                    <div class="input-group">
+                        <input asp-for="SourceAccountNumber" id="sourceAccountInput" class="form-control"
+                               placeholder="Número de cuenta de origen" autocomplete="off" />
+                        <button type="button" id="verifySourceBtn" class="btn btn-outline-primary">Verificar</button>
+                    </div>
                     <span asp-validation-for="SourceAccountNumber" class="text-danger small"></span>
                 </div>
+                <div id="sourcePreviewBox" class="mb-3 p-3 rounded d-none"></div>
 
                 <div class="mb-3">
                     <label asp-for="DestinationAccountNumber" class="form-label fw-semibold"></label>
-                    <input asp-for="DestinationAccountNumber" class="form-control"
-                           placeholder="Número de cuenta de destino" />
+                    <div class="input-group">
+                        <input asp-for="DestinationAccountNumber" id="destAccountInput" class="form-control"
+                               placeholder="Número de cuenta de destino" autocomplete="off" />
+                        <button type="button" id="verifyDestBtn" class="btn btn-outline-primary">Verificar</button>
+                    </div>
                     <span asp-validation-for="DestinationAccountNumber" class="text-danger small"></span>
                 </div>
+                <div id="destPreviewBox" class="mb-3 p-3 rounded d-none"></div>
 
                 <div class="mb-4">
                     <label asp-for="Amount" class="form-label fw-semibold"></label>
@@ -41,7 +49,9 @@
                 </div>
 
                 <div class="d-flex gap-2">
-                    <button type="submit" class="btn btn-primary px-4 fw-semibold">Realizar Transferencia</button>
+                    <button type="submit" id="submitBtn" class="btn btn-primary px-4 fw-semibold" disabled>
+                        Realizar Transferencia
+                    </button>
                     <a asp-action="Index" class="btn btn-outline-secondary px-4">Cancelar</a>
                 </div>
             </form>
@@ -50,5 +60,141 @@
 </div>
 
 @section Scripts {
-    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+        (function () {
+            const sourceInput = document.getElementById('sourceAccountInput');
+            const verifySourceBtn = document.getElementById('verifySourceBtn');
+            const sourcePreviewBox = document.getElementById('sourcePreviewBox');
+
+            const destInput = document.getElementById('destAccountInput');
+            const verifyDestBtn = document.getElementById('verifyDestBtn');
+            const destPreviewBox = document.getElementById('destPreviewBox');
+
+            const submitBtn = document.getElementById('submitBtn');
+
+            let sourceVerified = false;
+            let destVerified = false;
+
+            function updateSubmitState() {
+                submitBtn.disabled = !(sourceVerified && destVerified);
+            }
+
+            function resetSourcePreview() {
+                sourcePreviewBox.classList.add('d-none');
+                sourcePreviewBox.innerHTML = '';
+                sourceVerified = false;
+                updateSubmitState();
+            }
+
+            function resetDestPreview() {
+                destPreviewBox.classList.add('d-none');
+                destPreviewBox.innerHTML = '';
+                destVerified = false;
+                updateSubmitState();
+            }
+
+            sourceInput.addEventListener('input', resetSourcePreview);
+            destInput.addEventListener('input', resetDestPreview);
+
+            async function verifyAccount(accountNumber) {
+                const response = await fetch(`/Cashier/PreviewAccount?accountNumber=${encodeURIComponent(accountNumber)}`);
+                return await response.json();
+            }
+
+            verifySourceBtn.addEventListener('click', async function () {
+                const accountNumber = sourceInput.value.trim();
+                if (!accountNumber) { resetSourcePreview(); return; }
+
+                // Evita verificar si es igual a la cuenta destino ya verificada
+                if (accountNumber === destInput.value.trim()) {
+                    sourcePreviewBox.className = 'mb-3 p-3 rounded border border-danger bg-danger-subtle';
+                    sourcePreviewBox.innerHTML = `<p class="mb-0 text-danger">La cuenta de origen no puede ser igual a la de destino.</p>`;
+                    sourcePreviewBox.classList.remove('d-none');
+                    sourceVerified = false;
+                    updateSubmitState();
+                    return;
+                }
+
+                verifySourceBtn.disabled = true;
+                verifySourceBtn.textContent = 'Verificando...';
+
+                try {
+                    const data = await verifyAccount(accountNumber);
+                    if (data.success) {
+                        const isActive = data.status === 'Activa';
+                        sourcePreviewBox.className = `mb-3 p-3 rounded border ${isActive ? 'border-success bg-success-subtle' : 'border-danger bg-danger-subtle'}`;
+                        sourcePreviewBox.innerHTML = `
+                            <p class="mb-1"><strong>Titular:</strong> ${data.holderName}</p>
+                            <p class="mb-0"><strong>Estado de la cuenta:</strong> ${data.status}</p>
+                        `;
+                        sourcePreviewBox.classList.remove('d-none');
+                        sourceVerified = isActive;
+                    } else {
+                        sourcePreviewBox.className = 'mb-3 p-3 rounded border border-danger bg-danger-subtle';
+                        sourcePreviewBox.innerHTML = `<p class="mb-0 text-danger">${data.message}</p>`;
+                        sourcePreviewBox.classList.remove('d-none');
+                        sourceVerified = false;
+                    }
+                } catch (err) {
+                    sourcePreviewBox.className = 'mb-3 p-3 rounded border border-danger bg-danger-subtle';
+                    sourcePreviewBox.innerHTML = `<p class="mb-0 text-danger">No fue posible verificar la cuenta.</p>`;
+                    sourcePreviewBox.classList.remove('d-none');
+                    sourceVerified = false;
+                } finally {
+                    verifySourceBtn.disabled = false;
+                    verifySourceBtn.textContent = 'Verificar';
+                    updateSubmitState();
+                }
+            });
+
+            verifyDestBtn.addEventListener('click', async function () {
+                const accountNumber = destInput.value.trim();
+                if (!accountNumber) { resetDestPreview(); return; }
+
+                if (accountNumber === sourceInput.value.trim()) {
+                    destPreviewBox.className = 'mb-3 p-3 rounded border border-danger bg-danger-subtle';
+                    destPreviewBox.innerHTML = `<p class="mb-0 text-danger">La cuenta de destino no puede ser igual a la de origen.</p>`;
+                    destPreviewBox.classList.remove('d-none');
+                    destVerified = false;
+                    updateSubmitState();
+                    return;
+                }
+
+                verifyDestBtn.disabled = true;
+                verifyDestBtn.textContent = 'Verificando...';
+
+                try {
+                    const data = await verifyAccount(accountNumber);
+                    if (data.success) {
+                        const isActive = data.status === 'Activa';
+                        destPreviewBox.className = `mb-3 p-3 rounded border ${isActive ? 'border-success bg-success-subtle' : 'border-danger bg-danger-subtle'}`;
+                        destPreviewBox.innerHTML = `
+                            <p class="mb-1"><strong>Titular:</strong> ${data.holderName}</p>
+                            <p class="mb-0"><strong>Estado de la cuenta:</strong> ${data.status}</p>
+                        `;
+                        destPreviewBox.classList.remove('d-none');
+                        destVerified = isActive;
+                    } else {
+                        destPreviewBox.className = 'mb-3 p-3 rounded border border-danger bg-danger-subtle';
+                        destPreviewBox.innerHTML = `<p class="mb-0 text-danger">${data.message}</p>`;
+                        destPreviewBox.classList.remove('d-none');
+                        destVerified = false;
+                    }
+                } catch (err) {
+                    destPreviewBox.className = 'mb-3 p-3 rounded border border-danger bg-danger-subtle';
+                    destPreviewBox.innerHTML = `<p class="mb-0 text-danger">No fue posible verificar la cuenta.</p>`;
+                    destPreviewBox.classList.remove('d-none');
+                    destVerified = false;
+                } finally {
+                    verifyDestBtn.disabled = false;
+                    verifyDestBtn.textContent = 'Verificar';
+                    updateSubmitState();
+                }
+            });
+        })();
+    </script>
 }

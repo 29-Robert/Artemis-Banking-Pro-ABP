@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using ArtemisBankingPro.Domain.Enums;
 
 namespace ArtemisBankingPro.Persistence.Repositories
 {
@@ -46,6 +47,13 @@ namespace ArtemisBankingPro.Persistence.Repositories
                     t.CreatedAt.Date == date.Date)
                 .ToListAsync();
             }
+        public async Task<IReadOnlyList<Transaction>> GetAllApprovedAsync()
+        {
+            return await _dbContext.Transactions
+                .Where(t => t.Status == TransactionStatus.Aprobada)
+                .ToListAsync();
+        }
+
     }
     
 }
