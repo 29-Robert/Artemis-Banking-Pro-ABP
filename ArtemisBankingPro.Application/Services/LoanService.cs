@@ -60,7 +60,7 @@ namespace ArtemisBankingPro.Application.Services
             if (!string.IsNullOrWhiteSpace(cedula) && totalCount == 0)
             {
                 var clientExists = (await _userRepository.GetAllAsync())
-                    .Any(u => u.Cedula == cedula && u.Role?.Name == "Cliente");
+                    .Any(u => u.Cedula == cedula && u.RoleId == (int)ArtemisBankingPro.Domain.Enums.Roles.Cliente);
 
                 if (!clientExists)
                     throw new KeyNotFoundException("No existe un cliente registrado con esta cédula.");
@@ -447,7 +447,7 @@ namespace ArtemisBankingPro.Application.Services
         private async Task<decimal> CalculateSystemAverageDebtAsync()
         {
             var allUsers = await _userRepository.GetAllAsync();
-            var activeClients = allUsers.Count(u => u.IsActive && u.Role?.Name == "Cliente");
+            var activeClients = allUsers.Count(u => u.IsActive && u.RoleId == (int)ArtemisBankingPro.Domain.Enums.Roles.Cliente);
             if (activeClients == 0) return 0m;
 
             var totalLoanDebt = await _loanRepository.GetTotalActiveDebtSystemWideAsync();
