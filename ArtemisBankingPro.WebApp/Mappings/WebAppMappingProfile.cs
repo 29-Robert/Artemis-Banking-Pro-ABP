@@ -1,9 +1,10 @@
+using ArtemisBankingPro.Application.DTOs.Account;
 using ArtemisBankingPro.Application.Features.Accounts.Commands;
 using ArtemisBankingPro.Application.Features.Commerces.Commands;
-using ArtemisBankingPro.WebApp.ViewModels;
-using ArtemisBankingPro.WebApp.Models;
+using ArtemisBankingPro.Application.Features.CreditCard.Commands;
 using ArtemisBankingPro.Domain.Entities;
-using ArtemisBankingPro.Application.DTOs.Account;
+using ArtemisBankingPro.WebApp.Models;
+using ArtemisBankingPro.WebApp.ViewModels;
 using AutoMapper;
 
 namespace ArtemisBankingPro.WebApp.Mappings
@@ -71,6 +72,20 @@ namespace ArtemisBankingPro.WebApp.Mappings
                 .ForMember(dest => dest.CardNumber, opt => opt.MapFrom(src => src.CardNumber))
                 .ForMember(dest => dest.Amount, opt => opt.MapFrom(src => src.Amount))
                 .ForMember(dest => dest.UserId, opt => opt.Ignore());
+
+            CreateMap<LoanPaymentViewModel, PayLoanCommand>()
+                .ForMember(dest => dest.SourceAccountNumber, opt => opt.MapFrom(src => src.SourceAccountNumber))
+                .ForMember(dest => dest.LoanNumber, opt => opt.MapFrom(src => src.LoanNumber))
+                .ForMember(dest => dest.Amount, opt => opt.MapFrom(src => src.Amount))
+                .ForMember(dest => dest.CashierId, opt => opt.Ignore())
+                .ForMember(dest => dest.CashierId, opt => opt.Ignore());
+
+            CreateMap<AssignCreditCardViewModel, AssignCreditCardCommand>()
+                .ForMember(dest => dest.ClientId, opt => opt.MapFrom(src => src.ClientId.ToString()))
+                .ForMember(dest => dest.AdminId, opt => opt.Ignore());
+           
+            CreateMap<CreditCardPaymentViewModel, PayCreditCardCommand>()
+                .ForMember(dest => dest.CashierId, opt => opt.Ignore());
         }
     }
 }

@@ -54,16 +54,15 @@ namespace ArtemisBankingPro.Persistence.Repositories
 
             if (hasCedula)
             {
-                query = query.Where(c => c.Client.Id.ToString() == cedula);
+                query = query.Where(c => c.Client.Cedula == cedula);
             }
 
             if (hasStatus)
             {
                 query = query.Where(c => c.Status == status);
             }
-            else if (!hasCedula && string.IsNullOrWhiteSpace(status)) 
+            else if (!hasCedula && string.IsNullOrWhiteSpace(status))
             {
-               
                 query = query.Where(c => c.Status == "Activa");
             }
 

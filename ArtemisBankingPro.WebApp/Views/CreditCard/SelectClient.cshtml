@@ -6,98 +6,109 @@
 }
 
 <div class="container mt-4 mb-5">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Asignar Tarjeta de Crédito — Seleccionar Cliente</h2>
-        <a asp-action="Index" class="btn btn-outline-secondary">Volver atrás</a>
+    <div class="d-flex align-items-center mb-4">
+        <a asp-action="Index" class="btn btn-outline-secondary btn-sm me-3">&larr; Volver atrás</a>
+        <h2 class="mb-0">Seleccionar Cliente</h2>
     </div>
 
-    <div class="alert alert-info d-flex justify-content-between align-items-center">
-        <span>Deuda promedio de los clientes activos del sistema</span>
-        <strong>RD$ @Model.SystemAverageDebt.ToString("N2")</strong>
-    </div>
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
 
     <div class="card shadow border-0 mb-4">
         <div class="card-body">
-            <form method="get" asp-action="SelectClient" class="row gx-3 gy-2 align-items-center">
-                <div class="col-sm-5">
-                    <input type="text" name="cedula" value="@ViewBag.Cedula"
-                           class="form-control" placeholder="Buscar por cédula..." />
-                </div>
-                <div class="col-auto">
-                    <button type="submit" class="btn btn-outline-secondary">Buscar</button>
-                </div>
-                <div class="col-auto">
-                    <a asp-action="SelectClient" class="btn btn-outline-danger">Limpiar</a>
-                </div>
-            </form>
+            <small class="text-muted d-block">Deuda promedio de clientes activos</small>
+            <h4 class="mb-0">RD$ @Model.SystemAverageDebt.ToString("N2")</h4>
         </div>
     </div>
+
+    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+    <form method="get" asp-action="SelectClient" class="row g-2 mb-3">
+        <div class="col-sm-4">
+            <input type="text" name="cedula" value="@ViewBag.Cedula"
+                   class="form-control" placeholder="Buscar por cédula..." />
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-outline-secondary">Buscar</button>
+        </div>
+        <div class="col-auto">
+            <a asp-action="SelectClient" class="btn btn-outline-danger">Limpiar</a>
+        </div>
+    </form>
 
     <form asp-action="SelectClient" method="post">
         <input type="hidden" name="Cedula" value="@ViewBag.Cedula" />
 
         <div class="card shadow border-0">
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle">
-                        <thead class="table-dark">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th></th>
+                            <th>Cédula</th>
+                            <th>Nombre y apellido</th>
+                            <th>Correo electrónico</th>
+                            <th>Monto total de deuda</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.Clients.Items.Any())
+                        {
                             <tr>
-                                <th></th>
-                                <th>Cédula</th>
-                                <th>Nombre y Apellido</th>
-                                <th>Correo</th>
-                                <th>Deuda Total</th>
+                                <td colspan="5" class="text-center text-muted py-4">No se encontraron clientes.</td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            @if (!Model.Clients.Items.Any())
-                            {
-                                <tr>
-                                    <td colspan="5" class="text-center text-muted py-4">No se encontraron clientes.</td>
-                                </tr>
-                            }
-                            @foreach (var client in Model.Clients.Items)
-                            {
-                                <tr>
-                                    <td>
-                                        <input class="form-check-input" type="radio"
-                                               name="SelectedClientId" value="@client.Id" required />
-                                    </td>
-                                    <td>@client.Cedula</td>
-                                    <td>@client.FullName</td>
-                                    <td>@client.Email</td>
-                                    <td>RD$ @client.TotalDebt.ToString("N2")</td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
+                        }
+                        @foreach (var client in Model.Clients.Items)
+                        {
+                            <tr>
+                                <td>
+                                    <input type="radio" name="SelectedClientId" value="@client.Id" class="form-check-input" />
+                                </td>
+                                <td>@client.Cedula</td>
+                                <td>@client.FullName</td>
+                                <td>@client.Email</td>
+                                <td>RD$ @client.TotalDebt.ToString("N2")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
             </div>
         </div>
 
-        @if (ViewData.ModelState[string.Empty]?.Errors.Count > 0)
-        {
-            <div class="alert alert-danger mt-3">
-                @ViewData.ModelState[string.Empty].Errors.First().ErrorMessage
-            </div>
-        }
-
-        <div class="d-flex justify-content-between mt-4">
-            <a asp-action="Index" class="btn btn-outline-secondary">Volver atrás</a>
+        <div class="d-flex gap-2 mt-4">
             <button type="submit" class="btn btn-primary">Siguiente paso</button>
+            <a asp-action="Index" class="btn btn-outline-secondary">Volver atrás</a>
         </div>
     </form>
 
+    @* Paginación *@
     @if (Model.Clients.TotalPages > 1)
     {
         <nav aria-label="Paginación de clientes" class="mt-4">
             <ul class="pagination justify-content-center">
+                <li class="page-item @(Model.Clients.PageNumber == 1 ? "disabled" : "")">
+                    <a class="page-link" asp-action="SelectClient"
+                       asp-route-page="@(Model.Clients.PageNumber - 1)"
+                       asp-route-cedula="@ViewBag.Cedula">Anterior</a>
+                </li>
                 @for (int i = 1; i <= Model.Clients.TotalPages; i++)
                 {
-                    <li class="page-item @(ViewBag.CurrentPage == i ? "active" : "")">
-                        <a class="page-link" asp-action="SelectClient" asp-route-page="@i" asp-route-cedula="@ViewBag.Cedula">@i</a>
+                    <li class="page-item @(Model.Clients.PageNumber == i ? "active" : "")">
+                        <a class="page-link" asp-action="SelectClient"
+                           asp-route-page="@i"
+                           asp-route-cedula="@ViewBag.Cedula">@i</a>
                     </li>
                 }
+                <li class="page-item @(Model.Clients.PageNumber == Model.Clients.TotalPages ? "disabled" : "")">
+                    <a class="page-link" asp-action="SelectClient"
+                       asp-route-page="@(Model.Clients.PageNumber + 1)"
+                       asp-route-cedula="@ViewBag.Cedula">Siguiente</a>
+                </li>
             </ul>
         </nav>
     }
