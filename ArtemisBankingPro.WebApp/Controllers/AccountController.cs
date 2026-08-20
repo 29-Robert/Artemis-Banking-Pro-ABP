@@ -1,4 +1,5 @@
 using ArtemisBankingPro.Application.Features.Users.Commands.ActivateUser;
+using ArtemisBankingPro.Application.Features.Users.Commands.CreateUser;
 using ArtemisBankingPro.Application.Features.Users.Commands.ForgotPassword;
 using ArtemisBankingPro.Application.Features.Users.Commands.ResetPassword;
 using ArtemisBankingPro.Application.Interfaces.Repositories;
@@ -77,6 +78,54 @@ namespace ArtemisBankingPro.WebApp.Controllers
                 3 => RedirectToAction("Index", "Client"),
                 _ => RedirectToAction("Index", "Home")
             };
+        }
+
+        [HttpGet]
+        public IActionResult Register()
+        {
+            if (User.Identity != null && User.Identity.IsAuthenticated)
+            {
+                var role = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
+                if (role == "Administrador") return RedirectToAction("Index", "Admin");
+                if (role == "Cajero") return RedirectToAction("Index", "Cashier");
+                if (role == "Cliente") return RedirectToAction("Index", "Client");
+
+                return RedirectToAction("Index", "Home");
+            }
+            return View();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Register(RegisterViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            var command = new CreateUserCommand
+            {
+                FirstName = model.FirstName,
+                LastName = model.LastName,
+                Cedula = model.Cedula,
+                Email = model.Email,
+                Username = model.Username,
+                Password = model.Password,
+                RoleId = model.RoleId,
+                InitialAmount = 0
+            };
+
+            try
+            {
+                await mediator.Send(command);
+                TempData["SuccessMessage"] = "Su cuenta ha sido creada correctamente. Verifique su correo electrónico para activarla.";
+                return RedirectToAction("Login");
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError(string.Empty, ex.Message);
+                return View(model);
+            }
         }
 
         [HttpGet]

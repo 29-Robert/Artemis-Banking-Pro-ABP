@@ -13,7 +13,7 @@
             
             <div class="mb-3 border-bottom pb-2">
                 <span class="text-muted d-block small">Tarjeta de Crédito (Origen):</span>
-                <span class="fs-5 fw-bold text-dark">@Model.CardNumber</span>
+                <span class="fs-5 fw-bold text-dark">@Model.CardNumber.MaskCardNumber()</span>
             </div>
 
             <div class="mb-3 border-bottom pb-2">

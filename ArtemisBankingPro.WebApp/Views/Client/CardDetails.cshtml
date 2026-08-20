@@ -15,7 +15,7 @@
             <h5 class="card-title fw-bold text-primary">Información de la Tarjeta</h5>
             <div class="row mt-3">
                 <div class="col-sm-6">
-                    <p class="card-text mb-1"><strong>Número de Tarjeta:</strong> @Model.CardNumber</p>
+                    <p class="card-text mb-1"><strong>Número de Tarjeta:</strong> @Model.CardNumber.MaskCardNumber()</p>
                     <p class="card-text mb-1"><strong>Límite de Crédito:</strong> RD$ @Model.CreditLimit.ToString("N2")</p>
                     <p class="card-text mb-1"><strong>Deuda Actual:</strong> <span class="text-danger fw-bold">RD$ @Model.CurrentDebt.ToString("N2")</span></p>
                 </div>
