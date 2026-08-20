@@ -67,14 +67,14 @@ namespace ArtemisBankingPro.WebApp.Controllers
             }
             catch (HighRiskClientException ex)
             {
-                // Guardar los datos de riesgo en TempData para mostrarlos en la vista
+                
                 TempData["HighRiskMessage"] = ex.Message;
                 TempData["HighRiskType"] = ex.RiskType;
                 TempData["HighRiskCurrentDebt"] = ex.CurrentDebt.ToString("N2");
                 TempData["HighRiskProjectedDebt"] = ex.ProjectedDebt.ToString("N2");
                 TempData["HighRiskAverageDebt"] = ex.AverageDebt.ToString("N2");
 
-                // Volver al formulario con ConfirmHighRisk=false para que el admin pueda confirmar
+                
                 vm.ConfirmHighRisk = false;
                 return View(vm);
             }

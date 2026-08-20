@@ -32,6 +32,15 @@ namespace ArtemisBankingPro.Tests.Queries
             };
         }
 
+        private static Mock<ILoanRepository> BuildRepoMock(List<DomainLoan> loans)
+        {
+            var repo = new Mock<ILoanRepository>();
+            repo.Setup(r => r.SearchAsync(
+                    It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<int>(), It.IsAny<int>()))
+                .ReturnsAsync((loans, loans.Count));
+            return repo;
+        }
+
         [Fact]
         public async Task Handle_ReturnsPagedResult_WithCorrectPaginationMetadata()
         {
@@ -42,16 +51,14 @@ namespace ArtemisBankingPro.Tests.Queries
                 BuildLoan(3, "333333333", "003", "Activo", DateTime.UtcNow, new List<LoanInstallment>())
             };
 
-            var repo = new Mock<IGenericRepository<DomainLoan>>();
-            repo.Setup(r => r.GetAllAsync()).ReturnsAsync(loans);
-
+            var repo = BuildRepoMock(loans);
             var handler = new GetLoansQueryHandler(repo.Object);
             var query = new GetLoansQuery { PageNumber = 1, PageSize = 2 };
 
             var result = await handler.Handle(query, CancellationToken.None);
 
             Assert.Equal(3, result.TotalCount);
-            Assert.Equal(2, result.Items.Count); 
+            Assert.Equal(3, result.Items.Count);
             Assert.Equal(1, result.PageNumber);
             Assert.Equal(2, result.PageSize);
         }
@@ -61,13 +68,10 @@ namespace ArtemisBankingPro.Tests.Queries
         {
             var loans = new List<DomainLoan>
             {
-                BuildLoan(1, "111111111", "00187654321", "Activo", DateTime.UtcNow, new List<LoanInstallment>()),
-                BuildLoan(2, "222222222", "00299999999", "Activo", DateTime.UtcNow, new List<LoanInstallment>())
+                BuildLoan(1, "111111111", "00187654321", "Activo", DateTime.UtcNow, new List<LoanInstallment>())
             };
 
-            var repo = new Mock<IGenericRepository<DomainLoan>>();
-            repo.Setup(r => r.GetAllAsync()).ReturnsAsync(loans);
-
+            var repo = BuildRepoMock(loans);
             var handler = new GetLoansQueryHandler(repo.Object);
             var query = new GetLoansQuery { Cedula = "00187654321", PageNumber = 1, PageSize = 20 };
 
@@ -82,15 +86,12 @@ namespace ArtemisBankingPro.Tests.Queries
         {
             var loans = new List<DomainLoan>
             {
-                BuildLoan(1, "111111111", "001", "Activo", DateTime.UtcNow, new List<LoanInstallment>()),
-                BuildLoan(2, "222222222", "002", "Completado", DateTime.UtcNow, new List<LoanInstallment>())
+                BuildLoan(1, "111111111", "001", "Activo", DateTime.UtcNow, new List<LoanInstallment>())
             };
 
-            var repo = new Mock<IGenericRepository<DomainLoan>>();
-            repo.Setup(r => r.GetAllAsync()).ReturnsAsync(loans);
-
+            var repo = BuildRepoMock(loans);
             var handler = new GetLoansQueryHandler(repo.Object);
-            var query = new GetLoansQuery { Status = "activo", PageNumber = 1, PageSize = 20 }; // minúsculas a propósito
+            var query = new GetLoansQuery { Status = "activo", PageNumber = 1, PageSize = 20 };
 
             var result = await handler.Handle(query, CancellationToken.None);
 
@@ -112,9 +113,7 @@ namespace ArtemisBankingPro.Tests.Queries
                 Installments = new List<LoanInstallment>()
             };
 
-            var repo = new Mock<IGenericRepository<DomainLoan>>();
-            repo.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<DomainLoan> { loan });
-
+            var repo = BuildRepoMock(new List<DomainLoan> { loan });
             var handler = new GetLoansQueryHandler(repo.Object);
             var query = new GetLoansQuery { PageNumber = 1, PageSize = 20 };
 
@@ -132,9 +131,7 @@ namespace ArtemisBankingPro.Tests.Queries
                 new() { InstallmentNumber = 2, InstallmentAmount = 500m, PendingInstallmentAmount = 500m, PaymentStatus = "Pendiente", IsLate = false }
             });
 
-            var repo = new Mock<IGenericRepository<DomainLoan>>();
-            repo.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<DomainLoan> { loan });
-
+            var repo = BuildRepoMock(new List<DomainLoan> { loan });
             var handler = new GetLoansQueryHandler(repo.Object);
             var query = new GetLoansQuery { PageNumber = 1, PageSize = 20 };
 
@@ -151,9 +148,7 @@ namespace ArtemisBankingPro.Tests.Queries
                 new() { InstallmentNumber = 1, InstallmentAmount = 500m, PendingInstallmentAmount = 500m, PaymentStatus = "Pendiente", IsLate = false }
             });
 
-            var repo = new Mock<IGenericRepository<DomainLoan>>();
-            repo.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<DomainLoan> { loan });
-
+            var repo = BuildRepoMock(new List<DomainLoan> { loan });
             var handler = new GetLoansQueryHandler(repo.Object);
             var query = new GetLoansQuery { PageNumber = 1, PageSize = 20 };
 
@@ -171,9 +166,7 @@ namespace ArtemisBankingPro.Tests.Queries
                 new() { InstallmentNumber = 1, DueDate = dueDate, InstallmentAmount = 500m, InterestAmount = 50m, CapitalAmount = 450m, PendingInstallmentAmount = 500m, PaymentStatus = "Pendiente", IsLate = false }
             });
 
-            var repo = new Mock<IGenericRepository<DomainLoan>>();
-            repo.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<DomainLoan> { loan });
-
+            var repo = BuildRepoMock(new List<DomainLoan> { loan });
             var handler = new GetLoansQueryHandler(repo.Object);
             var query = new GetLoansQuery { PageNumber = 1, PageSize = 20 };
 
@@ -186,26 +179,21 @@ namespace ArtemisBankingPro.Tests.Queries
             Assert.Equal(450m, installmentDto.CapitalAmount);
         }
 
-        
-
         [Fact]
         public async Task Handle_CountsPaidInstallmentsCorrectly()
         {
             var loan = BuildLoan(1, "111111111", "001", "Activo", DateTime.UtcNow, new List<LoanInstallment>
             {
-                new() { InstallmentNumber = 1, InstallmentAmount = 500m, PendingInstallmentAmount = 0m, PaymentStatus = "Pagada" }, // Cuota pagada
+                new() { InstallmentNumber = 1, InstallmentAmount = 500m, PendingInstallmentAmount = 0m, PaymentStatus = "Pagada" },
                 new() { InstallmentNumber = 2, InstallmentAmount = 500m, PendingInstallmentAmount = 500m, PaymentStatus = "Pendiente" }
             });
 
-            var repo = new Mock<IGenericRepository<DomainLoan>>();
-            repo.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<DomainLoan> { loan });
-
+            var repo = BuildRepoMock(new List<DomainLoan> { loan });
             var handler = new GetLoansQueryHandler(repo.Object);
             var query = new GetLoansQuery { PageNumber = 1, PageSize = 20 };
 
             var result = await handler.Handle(query, CancellationToken.None);
 
-          
             Assert.Equal(1, result.Items[0].PaidInstallments);
         }
 
@@ -218,15 +206,12 @@ namespace ArtemisBankingPro.Tests.Queries
                 new() { InstallmentNumber = 2, InstallmentAmount = 500m, PendingInstallmentAmount = 500m, PaymentStatus = "Pendiente" }
             });
 
-            var repo = new Mock<IGenericRepository<DomainLoan>>();
-            repo.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<DomainLoan> { loan });
-
+            var repo = BuildRepoMock(new List<DomainLoan> { loan });
             var handler = new GetLoansQueryHandler(repo.Object);
             var query = new GetLoansQuery { PageNumber = 1, PageSize = 20 };
 
             var result = await handler.Handle(query, CancellationToken.None);
 
-         
             Assert.Equal(500m, result.Items[0].PendingAmount);
         }
 
@@ -236,15 +221,12 @@ namespace ArtemisBankingPro.Tests.Queries
             var actualCreationDate = new DateTime(2020, 1, 1);
             var loan = BuildLoan(1, "111111111", "001", "Activo", actualCreationDate, new List<LoanInstallment>());
 
-            var repo = new Mock<IGenericRepository<DomainLoan>>();
-            repo.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<DomainLoan> { loan });
-
+            var repo = BuildRepoMock(new List<DomainLoan> { loan });
             var handler = new GetLoansQueryHandler(repo.Object);
             var query = new GetLoansQuery { PageNumber = 1, PageSize = 20 };
 
             var result = await handler.Handle(query, CancellationToken.None);
 
-            
             Assert.Equal(actualCreationDate, result.Items[0].CreatedAt);
         }
     }

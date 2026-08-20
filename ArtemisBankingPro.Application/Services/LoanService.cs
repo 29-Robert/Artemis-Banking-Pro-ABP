@@ -100,9 +100,9 @@ namespace ArtemisBankingPro.Application.Services
             var allUsers = await _userRepository.GetAllAsync();
 
             var candidates = allUsers
-                .Where(u => u.IsActive && u.Role?.Name == "Cliente")
-                .Where(u => string.IsNullOrWhiteSpace(cedula) || u.Cedula.Contains(cedula))
-                .ToList();
+           .Where(u => u.IsActive && u.RoleId == (int)ArtemisBankingPro.Domain.Enums.Roles.Cliente)
+           .Where(u => string.IsNullOrWhiteSpace(cedula) || u.Cedula.Contains(cedula))
+           .ToList();
 
             var eligible = new List<EligibleClientDto>();
             foreach (var user in candidates)

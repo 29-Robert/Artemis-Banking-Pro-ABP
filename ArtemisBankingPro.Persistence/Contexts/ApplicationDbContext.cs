@@ -99,6 +99,10 @@ namespace ArtemisBankingPro.Persistence.Contexts
             // Se usa un hash estático (generado previamente para '123P@$$word!') para evitar que EF Core detecte cambios pendientes infinitamente.
             var passHash = "$2a$11$1qnRUBRJHLZJfRzSwt2iuurx7EVZyXvctT5h1.wrMvUSlgV2CWBha";
 
+            //La contrasena generica es 123P@$$word!
+
+
+
             modelBuilder.Entity<User>().HasData(
                 new User
                 {
