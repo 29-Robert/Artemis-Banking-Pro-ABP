@@ -42,105 +42,112 @@ namespace ArtemisBankingPro.WebApp.Controllers
         }
 
 
-            [HttpPost]
-            public IActionResult SelectClient(SelectClientViewModel model)
-            {
-                if (!ModelState.IsValid)
-                    return RedirectToAction(nameof(SelectClient), new { cedula = model.Cedula });
+        [HttpPost]
+        public IActionResult SelectClient(SelectClientViewModel model)
+        {
+            if (!ModelState.IsValid)
+                return RedirectToAction(nameof(SelectClient), new { cedula = model.Cedula });
 
-                return RedirectToAction(nameof(Assign), new { clientId = model.SelectedClientId });
+            return RedirectToAction(nameof(Assign), new { clientId = model.SelectedClientId });
+        }
+
+
+
+        [HttpGet]
+        public IActionResult Assign(int clientId)
+        {
+            return View(new AssignCreditCardViewModel { ClientId = clientId });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Assign(AssignCreditCardViewModel model)
+        {
+            if (!ModelState.IsValid) return View(model);
+
+            try
+            {
+                var adminIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                int.TryParse(adminIdClaim, out var adminId);
+
+                var command = mapper.Map<AssignCreditCardCommand>(model);
+                command.AdminId = adminId;
+
+                var result = await mediator.Send(command);
+
+                TempData["SuccessMessage"] = "Tarjeta asignada correctamente.";
+                TempData["NewCardNumber"] = result.MaskedCardNumber;
+                TempData["NewCardCvc"] = result.Cvc;
+                TempData["NewCardExpiration"] = result.ExpirationDate;
+
+                return RedirectToAction(nameof(Index));
             }
-
-
-
-            [HttpGet]
-            public IActionResult Assign(int clientId)
+            catch (Exception ex)
             {
-                return View(new AssignCreditCardViewModel { ClientId = clientId });
-            }
-
-            [HttpPost]
-            public async Task<IActionResult> Assign(AssignCreditCardViewModel model)
-            {
-                if (!ModelState.IsValid) return View(model);
-
-                try
-                {
-                    var adminIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                    int.TryParse(adminIdClaim, out var adminId);
-
-                    var command = mapper.Map<AssignCreditCardCommand>(model);
-                    command.AdminId = adminId;
-
-                    await mediator.Send(command);
-                    TempData["SuccessMessage"] = "Tarjeta asignada correctamente.";
-                    return RedirectToAction(nameof(Index));
-                }
-                catch (Exception ex)
-                {
-                    ModelState.AddModelError(string.Empty, ex.Message);
-                    return View(model);
-                }
-            }
-
-            [HttpGet]
-            public async Task<IActionResult> Details(int id)
-            {
-                var result = await mediator.Send(new GetCreditCardByIdQuery { Id = id });
-                if (result == null) return NotFound();
-
-                return View(result);
-            }
-
-            [HttpGet]
-            public async Task<IActionResult> EditLimit(int id)
-            {
-                var card = await mediator.Send(new GetCreditCardByIdQuery { Id = id });
-                if (card == null) return NotFound();
-
-                var model = new EditCreditLimitViewModel
-                {
-                    CardId = id,
-                    MaskedCardNumber = card.MaskedCardNumber,
-                    NewCreditLimit = card.CreditLimit
-                };
-
+                ModelState.AddModelError(string.Empty, ex.Message);
                 return View(model);
             }
 
-            [HttpPost]
-            public async Task<IActionResult> EditLimit(int id, EditCreditLimitViewModel model)
-            {
-                if (!ModelState.IsValid) return View(model);
+        }
+        
 
-                try
-                {
-                    await mediator.Send(new UpdateCreditLimitCommand { CardId = id, NewCreditLimit = model.NewCreditLimit });
-                    TempData["SuccessMessage"] = "Límite actualizado correctamente.";
-                    return RedirectToAction(nameof(Index));
-                }
-                catch (Exception ex)
-                {
-                    ModelState.AddModelError(string.Empty, ex.Message);
-                    model.CardId = id;
-                    return View(model);
-                }
-            }
+            [HttpGet]
+        public async Task<IActionResult> Details(int id)
+        {
+            var result = await mediator.Send(new GetCreditCardByIdQuery { Id = id });
+            if (result == null) return NotFound();
 
-            [HttpPost]
-            public async Task<IActionResult> Cancel(int id)
+            return View(result);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> EditLimit(int id)
+        {
+            var card = await mediator.Send(new GetCreditCardByIdQuery { Id = id });
+            if (card == null) return NotFound();
+
+            var model = new EditCreditLimitViewModel
             {
-                try
-                {
-                    await mediator.Send(new CancelCreditCardCommand { CardId = id });
-                    TempData["SuccessMessage"] = "Tarjeta cancelada correctamente.";
-                }
-                catch (Exception ex)
-                {
-                    TempData["ErrorMessage"] = ex.Message;
-                }
+                CardId = id,
+                MaskedCardNumber = card.MaskedCardNumber,
+                NewCreditLimit = card.CreditLimit
+            };
+
+            return View(model);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> EditLimit(int id, EditCreditLimitViewModel model)
+        {
+            if (!ModelState.IsValid) return View(model);
+
+            try
+            {
+                await mediator.Send(new UpdateCreditLimitCommand { CardId = id, NewCreditLimit = model.NewCreditLimit });
+                TempData["SuccessMessage"] = "Límite actualizado correctamente.";
                 return RedirectToAction(nameof(Index));
             }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError(string.Empty, ex.Message);
+                model.CardId = id;
+                return View(model);
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Cancel(int id)
+        {
+            try
+            {
+                await mediator.Send(new CancelCreditCardCommand { CardId = id });
+                TempData["SuccessMessage"] = "Tarjeta cancelada correctamente.";
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = ex.Message;
+            }
+            return RedirectToAction(nameof(Index));
+        }
 
         [HttpGet]
         public async Task<IActionResult> SelectClient(string? cedula, int page = 1)
@@ -154,4 +161,8 @@ namespace ArtemisBankingPro.WebApp.Controllers
             return View(result);
         }
     }
-    }
+}
+
+
+
+
