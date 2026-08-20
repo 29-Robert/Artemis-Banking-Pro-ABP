@@ -24,6 +24,7 @@ namespace ArtemisBankingPro.Tests.Features.Commerces.Handlers
         [Fact]
         public async Task Handle_ValidRequest_ShouldCreateCommerceAndReturnDto()
         {
+            // Arrange
             var command = new CreateCommerceCommand
             {
                 BusinessName = "Supermercado XYZ",
@@ -51,6 +52,7 @@ namespace ArtemisBankingPro.Tests.Features.Commerces.Handlers
                 d.Address == command.Address)))
                 .ReturnsAsync(expectedDto);
 
+            // Act
             var result = await _handler.Handle(command, CancellationToken.None);
 
             result.Should().NotBeNull();
@@ -99,7 +101,7 @@ namespace ArtemisBankingPro.Tests.Features.Commerces.Handlers
                 .ThrowsAsync(new InvalidOperationException("El correo electrónico 'contacto@xyz.com' ya está registrado."));
 
             Func<Task> act = async () => await _handler.Handle(command, CancellationToken.None);
-
+            
             await act.Should().ThrowAsync<InvalidOperationException>()
                 .WithMessage("El correo electrónico 'contacto@xyz.com' ya está registrado.");
         }

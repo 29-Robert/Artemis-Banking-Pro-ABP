@@ -26,6 +26,7 @@ namespace ArtemisBankingPro.Tests.Features.Commerces.Handlers
         [Fact]
         public async Task Handle_ValidRequest_ShouldUpdateCommerceAndReturnUnit()
         {
+            // Arrange
             var command = new UpdateCommerceCommand
             {
                 Id = 1,
@@ -44,6 +45,7 @@ namespace ArtemisBankingPro.Tests.Features.Commerces.Handlers
                 d.Address == command.Address)))
                 .Returns(Task.CompletedTask);
 
+            // Act
             var result = await _handler.Handle(command, CancellationToken.None);
 
             result.Should().Be(Unit.Value);
@@ -65,7 +67,7 @@ namespace ArtemisBankingPro.Tests.Features.Commerces.Handlers
 
             _commerceServiceMock.Setup(s => s.UpdateCommerceAsync(command.Id, It.IsAny<UpdateCommerceDto>()))
                 .ThrowsAsync(new KeyNotFoundException($"No se encontró el comercio con el ID {command.Id}."));
-
+            
             Func<Task> act = async () => await _handler.Handle(command, CancellationToken.None);
 
             await act.Should().ThrowAsync<KeyNotFoundException>()

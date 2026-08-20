@@ -68,6 +68,17 @@ namespace ArtemisBankingPro.Application.Features.Users.Commands.CreateUser
                 var newAccount = await accountRepository.AddAsync(account);
                 await accountRepository.SaveChangesAsync();
 
+                if (newUser.RoleId == (int)ArtemisBankingPro.Domain.Enums.Roles.Comercio && newUser.CommerceId.HasValue)
+                {
+                    var commerce = await commerceRepository.GetByIdAsync(newUser.CommerceId.Value);
+                    if (commerce != null)
+                    {
+                        commerce.PrincipalAccountNumber = newAccount.AccountNumber;
+                        await commerceRepository.UpdateAsync(commerce);
+                        await commerceRepository.SaveChangesAsync();
+                    }
+                }
+
                 if (request.InitialAmount > 0)
                 {
                     var initialTransaction = new DomainTransaction

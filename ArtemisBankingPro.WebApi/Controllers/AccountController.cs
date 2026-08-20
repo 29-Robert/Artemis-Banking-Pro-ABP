@@ -63,7 +63,7 @@ namespace ArtemisBankingPro.WebApi.Controllers
                 throw new ArgumentException("El token es requerido en el cuerpo de la petición.");
 
             await mediator.Send(command);
-            return Ok(new { Message = "Su cuenta ha sido activada exitosamente. Ya puede iniciar sesión." });
+            return NoContent();
         }
 
         /// <summary>
@@ -89,7 +89,7 @@ namespace ArtemisBankingPro.WebApi.Controllers
         /// </summary>
         [HttpPost("get-reset-token")]
         [AllowAnonymous]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> GetResetToken([FromBody] ArtemisBankingPro.Application.Features.Users.Commands.ForgotPassword.ForgotPasswordCommand command)
         {
@@ -97,7 +97,7 @@ namespace ArtemisBankingPro.WebApi.Controllers
                 throw new ArgumentException("El nombre de usuario es requerido.");
 
             await mediator.Send(command);
-            return Ok(new { Message = "Si el usuario existe y tiene un correo registrado, se le ha enviado un enlace de recuperación." });
+            return NoContent();
         }
 
         /// <summary>
@@ -105,7 +105,7 @@ namespace ArtemisBankingPro.WebApi.Controllers
         /// </summary>
         [HttpPost("reset-password")]
         [AllowAnonymous]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> ResetPassword([FromBody] ArtemisBankingPro.Application.Features.Users.Commands.ResetPassword.ResetPasswordCommand command)
         {
@@ -113,7 +113,7 @@ namespace ArtemisBankingPro.WebApi.Controllers
                 throw new ArgumentException("El token y la nueva contraseña son requeridos.");
 
             await mediator.Send(command);
-            return Ok(new { Message = "Su contraseña ha sido restablecida exitosamente. Su cuenta ha sido reactivada." });
+            return NoContent();
         }
     }
 }

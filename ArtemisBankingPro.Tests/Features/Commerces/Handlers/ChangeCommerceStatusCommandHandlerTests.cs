@@ -38,12 +38,13 @@ namespace ArtemisBankingPro.Tests.Features.Commerces.Handlers
 
         [Fact]
         public async Task Handle_Reactivation_ShouldPassIsActiveTrueToService()
-        {
+            {
             var command = new ChangeCommerceStatusCommand { Id = 1, IsActive = true };
 
             _commerceServiceMock.Setup(s => s.ChangeStatusAsync(command.Id, command.IsActive))
                 .Returns(Task.CompletedTask);
 
+            // Act
             var result = await _handler.Handle(command, CancellationToken.None);
 
             result.Should().Be(Unit.Value);
@@ -59,7 +60,7 @@ namespace ArtemisBankingPro.Tests.Features.Commerces.Handlers
                 .ThrowsAsync(new KeyNotFoundException($"No se encontró el comercio con el ID {command.Id}."));
 
             Func<Task> act = async () => await _handler.Handle(command, CancellationToken.None);
-
+            
             await act.Should().ThrowAsync<KeyNotFoundException>()
                 .WithMessage($"No se encontró el comercio con el ID {command.Id}.");
         }
