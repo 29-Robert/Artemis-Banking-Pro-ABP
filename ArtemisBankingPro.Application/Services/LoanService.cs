@@ -21,7 +21,7 @@ namespace ArtemisBankingPro.Application.Services
         private readonly ICreditCardRepository _creditCardRepository;
         private readonly ISavingsAccountRepository _accountRepository;
         private readonly ITransactionRepository _transactionRepository;
-        private readonly IGenericRepository<User> _userRepository;
+        private readonly IUserRepository _userRepository;
         private readonly IEmailService _emailService;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
@@ -33,8 +33,8 @@ namespace ArtemisBankingPro.Application.Services
             ICreditCardRepository creditCardRepository,
             ISavingsAccountRepository accountRepository,
             ITransactionRepository transactionRepository,
-            IGenericRepository<User> userRepository,
             IEmailService emailService,
+            IUserRepository userRepository,
             IUnitOfWork unitOfWork,
             IMapper mapper,
             ILogger<LoanService> logger)
@@ -233,10 +233,10 @@ namespace ArtemisBankingPro.Application.Services
                 CreatedAt = DateTime.UtcNow
             };
 
-            
+
             Loan createdLoan = null!;
 
-            
+
             await _unitOfWork.BeginTransactionAsync();
 
             try
@@ -250,7 +250,7 @@ namespace ArtemisBankingPro.Application.Services
                 await _installmentRepository.AddRangeAsync(installments);
                 await _installmentRepository.SaveChangesAsync();
 
-                
+
                 principalAccount.Balance += request.CapitalAmount;
 
                 await _accountRepository.UpdateAsync(principalAccount);
@@ -268,12 +268,12 @@ namespace ArtemisBankingPro.Application.Services
 
                 await _accountRepository.SaveChangesAsync();
 
-                
+
                 await _unitOfWork.CommitAsync();
             }
             catch
             {
-                
+
                 await _unitOfWork.RollbackAsync();
                 throw;
             }
@@ -283,33 +283,65 @@ namespace ArtemisBankingPro.Application.Services
 
             var response = _mapper.Map<LoanResponseDto>(loanWithDetails);
 
-            
-            try
-            {
-                var monthlyPayment = installments.First().InstallmentAmount;
 
-                await _emailService.SendNotificationEmailAsync(
-                    client.Email,
-                    "Préstamo aprobado",
-                    $"Su préstamo ha sido aprobado correctamente.\n" +
-                    $"Número de préstamo: {loanNumber}\n" +
-                    $"Monto aprobado: RD${request.CapitalAmount:N2}\n" +
-                    $"Plazo: {request.TermInMonths} meses\n" +
-                    $"Tasa de interés anual: {request.AnnualInterestRate}%\n" +
-                    $"Cuota mensual: RD${monthlyPayment:N2}\n" +
-                    "El monto aprobado ha sido depositado en su cuenta de ahorro principal.");
-            }
-            catch
+            if (string.IsNullOrWhiteSpace(client.Email))
             {
-                // El préstamo ya fue creado correctamente.
-                // Solo informamos que falló el email.
+                _logger.LogWarning(
+                    "El cliente {ClientId} no tiene un correo registrado.",
+                    clientId);
+
                 response.EmailNotificationFailed = true;
             }
+            else
+            {
+                try
+                {
+                    var monthlyPayment = installments.First().InstallmentAmount;
 
-            _logger.LogInformation("PRÉSTAMO ASIGNADO: Número: {LoanNo}, Cliente ID: {ClientId}, Capital: RD$ {Capital:N2}, Admin: {AdminId}", loanNumber, clientId, request.CapitalAmount, adminId);
+                    var subject = $"Préstamo aprobado - {loanNumber}";
+
+                    var body = $@"
+            <p>Hola {client.FirstName},</p>
+
+            <p>Su préstamo ha sido aprobado correctamente.</p>
+
+            <ul>
+                <li><strong>Número de préstamo:</strong> {loanNumber}</li>
+                <li><strong>Monto aprobado:</strong> RD${request.CapitalAmount:N2}</li>
+                <li><strong>Plazo:</strong> {request.TermInMonths} meses</li>
+                <li><strong>Tasa de interés anual:</strong> {request.AnnualInterestRate}%</li>
+                <li><strong>Cuota mensual:</strong> RD${monthlyPayment:N2}</li>
+            </ul>
+
+            <p>
+                El monto aprobado ha sido depositado en su cuenta de ahorro principal.
+            </p>";
+
+                    await _emailService.SendNotificationEmailAsync(
+                        client.Email,
+                        subject,
+                        body);
+
+                    _logger.LogInformation(
+                        "Correo de préstamo enviado correctamente a {Email}. Préstamo: {LoanNumber}",
+                        client.Email,
+                        loanNumber);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(
+                        ex,
+                        "Error enviando correo de préstamo a {Email}. Préstamo: {LoanNumber}",
+                        client.Email,
+                        loanNumber);
+
+                    response.EmailNotificationFailed = true;
+                }
+            }
 
             return response;
         }
+
         // MODIFICAR TASA
 
         public async Task<LoanResponseDto> UpdateInterestRateAsync(int loanId, decimal newAnnualRate)
