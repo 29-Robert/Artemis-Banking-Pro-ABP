@@ -15,7 +15,7 @@ namespace ArtemisBankingPro.Application.Features.Commerces.Commands
                 BusinessName = request.BusinessName,
                 RNC = request.RNC,
                 Email = request.Email,
-                Password = request.Password,
+                
                 Phone = request.Phone,
                 Address = request.Address
             };

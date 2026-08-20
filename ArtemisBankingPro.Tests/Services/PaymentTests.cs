@@ -40,7 +40,7 @@ namespace ArtemisBankingPro.Tests
             var db = GetInMemoryDbContext();
             
             // Seed Commerce
-            var commerce = new Commerce
+            db.Roles.Add(new Role { Id = 4, Name = "Comercio",  }); await db.SaveChangesAsync(); var commerce = new Commerce
             {
                 BusinessName = "Tienda ABC",
                 RNC = "101002028",
@@ -116,7 +116,7 @@ namespace ArtemisBankingPro.Tests
             var commerceRepo = new CommerceRepository(db);
             var cardRepo = new CreditCardRepository(db);
             var consumptionRepo = new CreditCardConsumptionRepository(db);
-            var userRepo = new GenericRepository<User>(db);
+            var userRepo = new UserRepository(db);
             var accountRepo = new SavingsAccountRepository(db);
             var transactionRepo = new TransactionRepository(db);
             var emailServiceMock = new Mock<IEmailService>();
@@ -184,7 +184,7 @@ namespace ArtemisBankingPro.Tests
             var db = GetInMemoryDbContext();
             
             // Seed Commerce
-            var commerce = new Commerce
+            db.Roles.Add(new Role { Id = 4, Name = "Comercio",  }); await db.SaveChangesAsync(); var commerce = new Commerce
             {
                 BusinessName = "Tienda ABC",
                 RNC = "101002028",
@@ -245,7 +245,7 @@ namespace ArtemisBankingPro.Tests
             var commerceRepo = new CommerceRepository(db);
             var cardRepo = new CreditCardRepository(db);
             var consumptionRepo = new CreditCardConsumptionRepository(db);
-            var userRepo = new GenericRepository<User>(db);
+            var userRepo = new UserRepository(db);
             var accountRepo = new SavingsAccountRepository(db);
             var transactionRepo = new TransactionRepository(db);
             var emailServiceMock = new Mock<IEmailService>();
@@ -306,7 +306,7 @@ namespace ArtemisBankingPro.Tests
             var db = GetInMemoryDbContext();
             
             // Seed Commerce
-            var commerce = new Commerce
+            db.Roles.Add(new Role { Id = 4, Name = "Comercio",  }); await db.SaveChangesAsync(); var commerce = new Commerce
             {
                 BusinessName = "Tienda ABC",
                 RNC = "101002028",
@@ -381,7 +381,7 @@ namespace ArtemisBankingPro.Tests
             var commerceRepo = new CommerceRepository(db);
             var cardRepo = new CreditCardRepository(db);
             var consumptionRepo = new CreditCardConsumptionRepository(db);
-            var userRepo = new GenericRepository<User>(db);
+            var userRepo = new UserRepository(db);
             var accountRepo = new SavingsAccountRepository(db);
             var transactionRepo = new TransactionRepository(db);
 

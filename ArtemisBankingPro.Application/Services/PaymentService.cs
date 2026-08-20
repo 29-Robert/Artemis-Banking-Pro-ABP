@@ -20,7 +20,7 @@ namespace ArtemisBankingPro.Application.Services
         ICommerceRepository commerceRepository,
         ICreditCardRepository creditCardRepository,
         ICreditCardConsumptionRepository creditCardConsumptionRepository,
-        IGenericRepository<User> userRepository,
+        IUserRepository userRepository,
         ISavingsAccountRepository savingsAccountRepository,
         ITransactionRepository transactionRepository,
         IEmailService emailService,
@@ -139,15 +139,13 @@ namespace ArtemisBankingPro.Application.Services
                 await creditCardConsumptionRepository.SaveChangesAsync();
 
                 // Acreditación al comercio
-                var allUsers = await userRepository.GetAllAsync();
-                var commerceUser = allUsers.FirstOrDefault(u => u.CommerceId == commerceId);
+                var commerceUser = await userRepository.GetByCommerceIdAsync(commerceId);
                 if (commerceUser == null)
                 {
                     throw new InvalidOperationException("El comercio no tiene un usuario administrador asociado.");
                 }
 
-                var allAccounts = await savingsAccountRepository.GetAllAsync();
-                var account = allAccounts.FirstOrDefault(a => a.UserId == commerceUser.Id && a.IsPrincipal);
+                var account = await savingsAccountRepository.GetPrincipalByClientAsync(commerceUser.Id);
                 if (account == null)
                 {
                     throw new InvalidOperationException("El comercio no tiene una cuenta de ahorros principal activa.");

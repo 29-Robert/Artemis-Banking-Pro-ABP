@@ -8,12 +8,10 @@ namespace ArtemisBankingPro.WebApi.Services
     public class CurrentUserService : ICurrentUserService
     {
         private readonly IHttpContextAccessor _httpContextAccessor;
-        private readonly IUserRepository _userRepository;
 
-        public CurrentUserService(IHttpContextAccessor httpContextAccessor, IUserRepository userRepository)
+        public CurrentUserService(IHttpContextAccessor httpContextAccessor)
         {
             _httpContextAccessor = httpContextAccessor;
-            _userRepository = userRepository;
         }
 
         public int UserId
@@ -39,11 +37,12 @@ namespace ArtemisBankingPro.WebApi.Services
         {
             get
             {
-                if (UserId == 0) return null;
-
-                var user = _userRepository.GetByIdAsync(UserId).GetAwaiter().GetResult();
-
-                return user?.CommerceId;
+                var commerceIdClaim = _httpContextAccessor.HttpContext?.User?.FindFirst("CommerceId")?.Value;
+                if (!string.IsNullOrEmpty(commerceIdClaim) && int.TryParse(commerceIdClaim, out int commerceId))
+                {
+                    return commerceId;
+                }
+                return null;
             }
         }
     }

@@ -48,7 +48,7 @@ namespace ArtemisBankingPro.Tests
                 BusinessName = "Comercio Test S.A.",
                 RNC = "101001018",
                 Email = "contacto@comerciotest.com",
-                Password = "password123",
+                
                 Phone = "8095551234",
                 Address = "Santo Domingo, RD"
             };
@@ -96,7 +96,7 @@ namespace ArtemisBankingPro.Tests
                 BusinessName = "Farmacia Y",
                 RNC = "101001018", // RNC Duplicado
                 Email = "farmaciay@mail.com",
-                Password = "password123",
+                
                 Phone = "8095551234",
                 Address = "Santo Domingo, RD"
             };
@@ -133,7 +133,7 @@ namespace ArtemisBankingPro.Tests
                 BusinessName = "Farmacia Y",
                 RNC = "202002029",
                 Email = "farmaciax@mail.com", // Duplicate Email
-                Password = "password123",
+                
                 Phone = "8095551234",
                 Address = "Santo Domingo, RD"
             };
