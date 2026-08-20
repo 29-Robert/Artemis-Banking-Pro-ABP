@@ -6,17 +6,31 @@ using ArtemisBankingPro.Application.Features.Users.Queries.GetAllUsers;
 using ArtemisBankingPro.Application.Features.Users.Queries.GetCommerceUsers;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Security.Claims;
+using System.Threading.Tasks;
 
 namespace ArtemisBankingPro.WebApi.Controllers
 {
+    /// <summary>
+    /// Controlador para la gestión administrativa de usuarios en el sistema.
+    /// </summary>
     [Route("api/[controller]")]
     [ApiController]
     [Authorize(Roles = "Administrador")]
+    [Produces("application/json")]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
     public class UsersController(IMediator mediator) : ControllerBase
     {
+        /// <summary>
+        /// Obtiene un listado de todos los usuarios registrados, filtrado opcionalmente por rol.
+        /// </summary>
         [HttpGet]
+        [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> GetAll([FromQuery] string? roleFilter, [FromQuery] int page = 1)
         {
             var query = new GetAllUsersQuery
@@ -30,7 +44,11 @@ namespace ArtemisBankingPro.WebApi.Controllers
             return Ok(result);
         }
 
+        /// <summary>
+        /// Obtiene un listado paginado de los usuarios vinculados a comercios.
+        /// </summary>
         [HttpGet("commerce")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> GetCommerceUsers([FromQuery] int page = 1)
         {
             var query = new GetCommerceUsersQuery
@@ -43,7 +61,12 @@ namespace ArtemisBankingPro.WebApi.Controllers
             return Ok(result);
         }
 
+        /// <summary>
+        /// Crea un nuevo usuario en el sistema. No se permite crear rol Comercio por este endpoint.
+        /// </summary>
         [HttpPost]
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> CreateUser([FromBody] CreateUserCommand command)
         {
             if (command.RoleId == (int)ArtemisBankingPro.Domain.Enums.Roles.Comercio)
@@ -60,7 +83,12 @@ namespace ArtemisBankingPro.WebApi.Controllers
             }
         }
 
+        /// <summary>
+        /// Crea un nuevo usuario asociado a un comercio específico.
+        /// </summary>
         [HttpPost("commerce/{commerceId}")]
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> CreateCommerceUser(int commerceId, [FromBody] CreateUserCommand command)
         {
             try
@@ -77,7 +105,12 @@ namespace ArtemisBankingPro.WebApi.Controllers
             }
         }
 
+        /// <summary>
+        /// Actualiza la información general de un usuario existente.
+        /// </summary>
         [HttpPut("{id}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> UpdateUser(int id, [FromBody] UpdateUserCommand command)
         {
             if (id != command.Id)
@@ -94,7 +127,12 @@ namespace ArtemisBankingPro.WebApi.Controllers
             }
         }
 
+        /// <summary>
+        /// Activa o desactiva el estado de acceso de un usuario.
+        /// </summary>
         [HttpPatch("{id}/status")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> ToggleStatus(int id)
         {
             var currentUserIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
@@ -116,7 +154,12 @@ namespace ArtemisBankingPro.WebApi.Controllers
             }
         }
 
+        /// <summary>
+        /// Obtiene la información de un usuario por su identificador único.
+        /// </summary>
         [HttpGet("{id}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetUserById(int id)
         {
             var query = new GetUserByIdQuery { Id = id };

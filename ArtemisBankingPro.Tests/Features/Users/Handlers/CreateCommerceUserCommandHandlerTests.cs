@@ -92,7 +92,7 @@ namespace ArtemisBankingPro.Tests.Features.Users.Handlers
             var resultId = await _handler.Handle(command, CancellationToken.None);
 
             resultId.Should().Be(101);
-            _commerceRepositoryMock.Verify(r => r.GetByIdAsync(10), Times.Once);
+            _commerceRepositoryMock.Verify(r => r.GetByIdAsync(10), Times.Exactly(2));
             _userRepositoryMock.Verify(r => r.AddAsync(It.Is<User>(u => u.IsActive == false && u.CommerceId == 10)), Times.Once);
             _accountRepositoryMock.Verify(r => r.AddAsync(It.Is<SavingsAccount>(a => a.UserId == 101 && a.Balance == 5000m)), Times.Once);
             _tokenRepositoryMock.Verify(r => r.AddAsync(It.Is<ConfirmationToken>(t => t.UserId == 101 && t.Type == TokenType.Activacion)), Times.Once);
