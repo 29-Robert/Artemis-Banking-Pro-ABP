@@ -66,6 +66,8 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.ExpireTimeSpan = TimeSpan.FromHours(1);
     });
 
+builder.Services.AddHttpClient();
+
 builder.Services.AddControllersWithViews()
     .AddJsonOptions(options =>
     {

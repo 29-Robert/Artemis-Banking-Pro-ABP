@@ -65,13 +65,12 @@ namespace ArtemisBankingPro.Tests.Features.Users.Handlers
         [Fact]
         public async Task Handle_ExistingCommerceUser_ThrowsException()
         {
-            // Arrange
             var existingUser = new User { Username = "other", RoleId = 4, CommerceId = 1 };
             _userRepositoryMock.Setup(repo => repo.GetAllAsync()).ReturnsAsync(new List<User> { existingUser });
+            _commerceRepositoryMock.Setup(repo => repo.GetByIdAsync(1)).ReturnsAsync(new Commerce { Id = 1, BusinessName = "Test" });
 
             var command = new CreateUserCommand { Username = "newuser", RoleId = 4, CommerceId = 1, Email = "test@test.com", Cedula = "123" };
 
-            // Act & Assert
             var ex = await Assert.ThrowsAsync<Exception>(() => _handler.Handle(command, CancellationToken.None));
             Assert.Contains("El comercio seleccionado ya tiene un usuario asociado", ex.Message);
         }

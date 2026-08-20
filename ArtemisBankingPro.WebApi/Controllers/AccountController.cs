@@ -33,22 +33,8 @@ namespace ArtemisBankingPro.WebApi.Controllers
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> Login([FromBody] LoginRequestDto request) 
         {
-            if (string.IsNullOrEmpty(request.Username) || string.IsNullOrEmpty(request.Password))
-                throw new ArgumentException("Faltan parámetros requeridos.");
-
-            var user = await userRepository.GetByUsernameAsync(request.Username);
-
-            if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
-                throw new UnauthorizedAccessException("Credenciales inválidas.");
-
-            if (!user.IsActive)
-                throw new UnauthorizedAccessException("Su cuenta se encuentra inactiva. Debe activar su cuenta antes de iniciar sesión.");
-
-            if (user.RoleId != (int)ArtemisBankingPro.Domain.Enums.Roles.Administrador && user.RoleId != (int)ArtemisBankingPro.Domain.Enums.Roles.Comercio)
-                throw new UnauthorizedAccessException("Acceso denegado. No tiene permisos para utilizar este recurso.");
-
-            var token = jwtService.GenerateToken(user);
-            return Ok(new { Jwt = token });
+            var result = await mediator.Send(new ArtemisBankingPro.Application.Features.Users.Commands.Login.LoginCommand { Username = request.Username, Password = request.Password });
+            return Ok(new { Jwt = result.Token });
         }
 
         /// <summary>
