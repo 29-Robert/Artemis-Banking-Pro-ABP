@@ -26,6 +26,18 @@
         </div>
     }
 
+    @if (TempData["NewCardCvc"] != null)
+    {
+        <div class="alert alert-warning shadow-sm">
+            <h5 class="alert-heading">⚠️ Datos de la nueva tarjeta — Guárdelos ahora</h5>
+            <p class="mb-1"><strong>Tarjeta:</strong> <code>@TempData["NewCardNumber"]</code></p>
+            <p class="mb-1"><strong>CVC:</strong> <code class="fs-5">@TempData["NewCardCvc"]</code></p>
+            <p class="mb-0"><strong>Vencimiento:</strong> @TempData["NewCardExpiration"]</p>
+            <hr />
+            <small class="text-muted">Por seguridad, este código no podrá visualizarse nuevamente después de salir de esta pantalla.</small>
+        </div>
+    }
+
     @* Filtros *@
     <div class="card shadow border-0 mb-4">
         <div class="card-body">
