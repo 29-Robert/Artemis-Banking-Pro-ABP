@@ -1,3 +1,4 @@
+using ArtemisBankingPro.Application.Features.Admin.Queries;
 using ArtemisBankingPro.Application.Features.Users.Commands.CreateUser;
 using ArtemisBankingPro.Application.Features.Users.Commands.ToggleUserStatus;
 using ArtemisBankingPro.Application.Features.Users.Commands.UpdateUser;
@@ -13,8 +14,17 @@ namespace ArtemisBankingPro.WebApp.Controllers
     [Authorize(Roles = "Administrador")]
     public class AdminController(IMediator mediator) : Controller
     {
+        // GET: /Admin/Index -> Dashboard
         [HttpGet]
-        public async Task<IActionResult> Index(string roleFilter, int page = 1)
+        public async Task<IActionResult> Index()
+        {
+            var indicators = await mediator.Send(new GetAdminHomeDataQuery());
+            return View(indicators);
+        }
+
+        // GET: /Admin/Users -> Listado de usuarios (antes era Index)
+        [HttpGet]
+        public async Task<IActionResult> Users(string roleFilter, int page = 1)
         {
             var query = new GetAllUsersQuery
             {
@@ -40,7 +50,7 @@ namespace ArtemisBankingPro.WebApp.Controllers
                 if (int.TryParse(currentUserIdClaim, out int currentUserId) && currentUserId == userId)
                 {
                     TempData["ErrorMessage"] = "No puede cambiar su propio estado.";
-                    return RedirectToAction("Index");
+                    return RedirectToAction(nameof(Users));
                 }
 
                 var command = new ToggleUserStatusCommand { UserId = userId };
@@ -52,7 +62,7 @@ namespace ArtemisBankingPro.WebApp.Controllers
                 TempData["ErrorMessage"] = ex.Message;
             }
 
-            return RedirectToAction("Index");
+            return RedirectToAction(nameof(Users));
         }
 
         [HttpGet]
@@ -88,7 +98,7 @@ namespace ArtemisBankingPro.WebApp.Controllers
 
                 await mediator.Send(command);
                 TempData["SuccessMessage"] = "Usuario creado y notificación enviada correctamente.";
-                return RedirectToAction(nameof(Index));
+                return RedirectToAction(nameof(Users));
             }
             catch (Exception ex)
             {
@@ -149,7 +159,7 @@ namespace ArtemisBankingPro.WebApp.Controllers
 
                 await mediator.Send(command);
                 TempData["SuccessMessage"] = "Usuario actualizado correctamente.";
-                return RedirectToAction(nameof(Index));
+                return RedirectToAction(nameof(Users));
             }
             catch (Exception ex)
             {
