@@ -66,14 +66,6 @@ namespace ArtemisBankingPro.Tests
             var dbCommerce = await db.Commerces.FirstOrDefaultAsync(c => c.Id == result.Id);
             Assert.NotNull(dbCommerce);
             Assert.Equal("contacto@comerciotest.com", dbCommerce.Email);
-
-            var user = await db.Users.FirstOrDefaultAsync(u => u.CommerceId == result.Id);
-            Assert.NotNull(user);
-            Assert.Equal(4, user.RoleId);
-
-            var account = await db.SavingsAccounts.FirstOrDefaultAsync(a => a.UserId == user.Id);
-            Assert.NotNull(account);
-            Assert.True(account.IsPrincipal);
         }
 
         [Fact]

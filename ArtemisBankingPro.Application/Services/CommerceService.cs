@@ -82,36 +82,6 @@ namespace ArtemisBankingPro.Application.Services
                 await commerceRepository.AddAsync(commerce);
                 await commerceRepository.SaveChangesAsync();
 
-                var user = new User
-                {
-                    FirstName = "Comercio",
-                    LastName = dto.BusinessName,
-                    Username = dto.RNC,
-                    Email = dto.Email,
-                    PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
-                    Cedula = "COM-" + dto.RNC,
-                    PhoneNumber = dto.Phone,
-                    RoleId = 4,
-                    IsActive = true,
-                    CommerceId = commerce.Id
-                };
-
-                await userRepository.AddAsync(user);
-                await userRepository.SaveChangesAsync();
-
-                var account = new SavingsAccount
-                {
-                    UserId = user.Id,
-                    AccountNumber = principalAccountNumber,
-                    Balance = 0,
-                    IsPrincipal = true,
-                    Status = AccountStatus.Activa,
-                    Type = AccountType.Principal
-                };
-
-                await accountRepository.AddAsync(account);
-                await accountRepository.SaveChangesAsync();
-
                 transaction.Complete();
 
                 return new CommerceListItemDto

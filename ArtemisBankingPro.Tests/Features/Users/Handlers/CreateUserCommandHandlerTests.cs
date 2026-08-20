@@ -22,6 +22,7 @@ namespace ArtemisBankingPro.Tests.Features.Users.Handlers
         private readonly Mock<IGenericRepository<SavingsAccount>> _accountRepositoryMock;
         private readonly Mock<IGenericRepository<ConfirmationToken>> _tokenRepositoryMock;
         private readonly Mock<IGenericRepository<DomainTransaction>> _transactionRepositoryMock;
+        private readonly Mock<IGenericRepository<Commerce>> _commerceRepositoryMock;
         private readonly Mock<IEmailService> _emailServiceMock;
         private readonly Mock<IMapper> _mapperMock;
         private readonly CreateUserCommandHandler _handler;
@@ -32,6 +33,7 @@ namespace ArtemisBankingPro.Tests.Features.Users.Handlers
             _accountRepositoryMock = new Mock<IGenericRepository<SavingsAccount>>();
             _tokenRepositoryMock = new Mock<IGenericRepository<ConfirmationToken>>();
             _transactionRepositoryMock = new Mock<IGenericRepository<DomainTransaction>>();
+            _commerceRepositoryMock = new Mock<IGenericRepository<Commerce>>();
             _emailServiceMock = new Mock<IEmailService>();
             _mapperMock = new Mock<IMapper>();
 
@@ -40,6 +42,7 @@ namespace ArtemisBankingPro.Tests.Features.Users.Handlers
                 _accountRepositoryMock.Object,
                 _tokenRepositoryMock.Object,
                 _transactionRepositoryMock.Object,
+                _commerceRepositoryMock.Object,
                 _emailServiceMock.Object,
                 _mapperMock.Object
             );
