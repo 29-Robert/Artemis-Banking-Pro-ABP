@@ -1,9 +1,11 @@
+using ArtemisBankingPro.Application.DTOs.Account;
 using ArtemisBankingPro.Application.Features.Accounts.Commands;
 using ArtemisBankingPro.Application.Features.Accounts.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace ArtemisBankingPro.WebApi.Controllers
@@ -14,6 +16,7 @@ namespace ArtemisBankingPro.WebApi.Controllers
     [ApiController]
     [Route("api/savings-account")]
     [Authorize(Roles = "Administrador")]
+    [Consumes("application/json")]
     [Produces("application/json")]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -23,14 +26,8 @@ namespace ArtemisBankingPro.WebApi.Controllers
         /// <summary>
         /// Obtiene un listado paginado de cuentas de ahorro filtrado por estado, tipo o cédula del cliente.
         /// </summary>
-        /// <param name="page">Número de página.</param>
-        /// <param name="pageSize">Tamaño de la página.</param>
-        /// <param name="status">Filtrar por estado de la cuenta.</param>
-        /// <param name="type">Filtrar por tipo de cuenta.</param>
-        /// <param name="cedula">Filtrar por cédula del titular.</param>
-        /// <returns>Listado paginado de cuentas de ahorro.</returns>
         [HttpGet]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(PagedAccountResponseDto), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> GetPaged(
             [FromQuery] int page = 1,
@@ -54,10 +51,8 @@ namespace ArtemisBankingPro.WebApi.Controllers
         /// <summary>
         /// Crea una nueva cuenta de ahorro secundaria para un cliente existente.
         /// </summary>
-        /// <param name="command">Datos para la creación de la cuenta secundaria.</param>
-        /// <returns>Detalles de la cuenta de ahorro creada.</returns>
         [HttpPost]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(SavingsAccountDetailDto), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> CreateSecondary([FromBody] CreateSecondaryAccountCommand command)
         {
@@ -68,12 +63,8 @@ namespace ArtemisBankingPro.WebApi.Controllers
         /// <summary>
         /// Obtiene el historial de transacciones de una cuenta de ahorros específica de forma paginada.
         /// </summary>
-        /// <param name="accountNumber">Número de cuenta de ahorros.</param>
-        /// <param name="page">Número de página.</param>
-        /// <param name="pageSize">Tamaño de la página.</param>
-        /// <returns>Historial paginado de transacciones.</returns>
         [HttpGet("{accountNumber}/transactions")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(IEnumerable<TransactionDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetTransactions(
@@ -94,8 +85,6 @@ namespace ArtemisBankingPro.WebApi.Controllers
         /// <summary>
         /// Cancela una cuenta de ahorro secundaria y transfiere sus fondos restantes a la cuenta de ahorro principal.
         /// </summary>
-        /// <param name="accountNumber">Número de cuenta secundaria a cancelar.</param>
-        /// <returns>Mensaje confirmando la cancelación y transferencia.</returns>
         [HttpPatch("{accountNumber}/cancel")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]

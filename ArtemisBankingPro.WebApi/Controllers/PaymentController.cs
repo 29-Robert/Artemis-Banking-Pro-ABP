@@ -8,7 +8,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace ArtemisBankingPro.WebApi.Controllers
@@ -19,6 +18,7 @@ namespace ArtemisBankingPro.WebApi.Controllers
     [ApiController]
     [Route("pay")]
     [Authorize(Roles = "Administrador,Comercio")]
+    [Consumes("application/json")]
     [Produces("application/json")]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -30,14 +30,12 @@ namespace ArtemisBankingPro.WebApi.Controllers
         /// <summary>
         /// Procesa un pago/consumo a través de una tarjeta de crédito en Hermes Pay.
         /// </summary>
-        /// <param name="commerceId">ID del comercio destino (ignorado para usuarios con rol Comercio).</param>
-        /// <param name="request">Datos de la tarjeta de crédito y detalles del pago.</param>
-        /// <returns>La información del consumo procesado, incluyendo código de autorización si aplica.</returns>
         [HttpPost("process-payment/{commerceId}")]
         [ProducesResponseType(typeof(TransactionResponseDto), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(TransactionResponseDto), StatusCodes.Status422UnprocessableEntity)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
         public async Task<IActionResult> ProcessPayment(string commerceId, [FromBody] ProcessPaymentRequestDto request)
         {
             var userRole = currentUserService.Role;
@@ -52,7 +50,7 @@ namespace ArtemisBankingPro.WebApi.Controllers
                 }
                 resolvedCommerceId = jwtCommerceId.Value;
             }
-            else // Administrador
+            else
             {
                 if (!int.TryParse(commerceId, out var parsedCommerceId) || parsedCommerceId <= 0)
                 {
@@ -93,10 +91,6 @@ namespace ArtemisBankingPro.WebApi.Controllers
         /// <summary>
         /// Obtiene un historial paginado de transacciones y consumos de tarjetas de crédito procesadas por un comercio.
         /// </summary>
-        /// <param name="commerceId">ID del comercio (ignorado para usuarios con rol Comercio).</param>
-        /// <param name="page">Número de página actual.</param>
-        /// <param name="limit">Cantidad máxima de registros por página.</param>
-        /// <returns>Listado paginado de transacciones del comercio.</returns>
         [HttpGet("get-transactions/{commerceId}")]
         [ProducesResponseType(typeof(PagedTransactionsDto), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
@@ -115,7 +109,7 @@ namespace ArtemisBankingPro.WebApi.Controllers
                 }
                 resolvedCommerceId = jwtCommerceId.Value;
             }
-            else // Administrador
+            else
             {
                 if (!int.TryParse(commerceId, out var parsedCommerceId) || parsedCommerceId <= 0)
                 {
