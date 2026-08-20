@@ -1,6 +1,5 @@
 using ArtemisBankingPro.Application.DTOs.Account;
 using ArtemisBankingPro.Application.Features.Accounts.Commands;
-using ArtemisBankingPro.Application.Features.Commerces.Commands;
 using ArtemisBankingPro.Application.Features.CreditCard.Commands;
 using ArtemisBankingPro.Domain.Entities;
 using ArtemisBankingPro.WebApp.Models;
@@ -49,8 +48,6 @@ namespace ArtemisBankingPro.WebApp.Mappings
                 .ForMember(dest => dest.Amount, opt => opt.MapFrom(src => src.Amount))
                 .ForMember(dest => dest.CashierId, opt => opt.Ignore());
 
-            CreateMap<CreateCommerceViewModel, CreateCommerceCommand>();
-            CreateMap<UpdateCommerceViewModel, UpdateCommerceCommand>();
             CreateMap<CreateBeneficiaryViewModel, CreateBeneficiaryCommand>();
             CreateMap<CreditCardPaymentViewModel, PayCreditCardOwnAccountCommand>()
                 .ForMember(dest => dest.SourceAccountNumber, opt => opt.MapFrom(src => src.SourceAccountNumber))

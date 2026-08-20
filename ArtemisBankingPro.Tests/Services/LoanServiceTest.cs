@@ -1,4 +1,4 @@
-using ArtemisBankingPro.Application.Common;
+﻿using ArtemisBankingPro.Application.Common;
 using ArtemisBankingPro.Application.DTOs.Loan;
 using ArtemisBankingPro.Application.Exceptions;
 using ArtemisBankingPro.Application.Interfaces.Repositories;
@@ -75,7 +75,7 @@ namespace ArtemisBankingPro.Tests
                 t.Amount == 100000m &&
                 t.Status == TransactionStatus.Aprobada)), Times.Once);
             installments.Verify(x => x.AddRangeAsync(It.Is<IEnumerable<LoanInstallment>>(list => list.Count() == 12)), Times.Once);
-            emailService.Verify(x => x.SendNotificationEmailAsync(client.Email, "Préstamo aprobado", It.IsAny<string>()), Times.Once);
+            emailService.Verify(x => x.SendNotificationEmailAsync(client.Email, It.IsAny<string>(), It.IsAny<string>()), Times.Once);
         }
 
         [Fact]
