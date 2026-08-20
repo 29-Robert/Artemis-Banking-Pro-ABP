@@ -8,5 +8,6 @@ namespace ArtemisBankingPro.Application.Interfaces.Repositories
         Task<User> GetByCedulaAsync(string cedula);
         Task<User> GetByIdAsync(int id);
         Task<User?> GetByUsernameAsync(string username);
+        Task<IReadOnlyList<User>> GetAllAsync();
     }
 }

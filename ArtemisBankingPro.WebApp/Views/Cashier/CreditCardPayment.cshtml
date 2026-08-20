@@ -13,22 +13,30 @@
 
     <div class="card shadow border-0">
         <div class="card-body p-4">
-            <form asp-action="CreditCardPayment" method="post">
+            <form asp-action="CreditCardPayment" method="post" id="paymentForm">
                 <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
 
                 <div class="mb-3">
                     <label asp-for="SourceAccountNumber" class="form-label fw-semibold"></label>
-                    <input asp-for="SourceAccountNumber" class="form-control"
-                           placeholder="Número de cuenta origen del pago" />
+                    <div class="input-group">
+                        <input asp-for="SourceAccountNumber" id="accountNumberInput" class="form-control"
+                               placeholder="Número de cuenta origen del pago" autocomplete="off" />
+                        <button type="button" id="verifyAccountBtn" class="btn btn-outline-primary">Verificar</button>
+                    </div>
                     <span asp-validation-for="SourceAccountNumber" class="text-danger small"></span>
                 </div>
+                <div id="accountPreviewBox" class="mb-3 p-3 rounded d-none"></div>
 
                 <div class="mb-3">
                     <label asp-for="CardNumber" class="form-label fw-semibold"></label>
-                    <input asp-for="CardNumber" class="form-control" maxlength="16"
-                           placeholder="16 dígitos de la tarjeta" />
+                    <div class="input-group">
+                        <input asp-for="CardNumber" id="cardNumberInput" class="form-control" maxlength="16"
+                               placeholder="16 dígitos de la tarjeta" autocomplete="off" />
+                        <button type="button" id="verifyCardBtn" class="btn btn-outline-primary">Verificar</button>
+                    </div>
                     <span asp-validation-for="CardNumber" class="text-danger small"></span>
                 </div>
+                <div id="cardPreviewBox" class="mb-3 p-3 rounded d-none"></div>
 
                 <div class="mb-4">
                     <label asp-for="Amount" class="form-label fw-semibold"></label>
@@ -41,7 +49,9 @@
                 </div>
 
                 <div class="d-flex gap-2">
-                    <button type="submit" class="btn btn-primary px-4 fw-semibold">Realizar Pago</button>
+                    <button type="submit" id="submitBtn" class="btn btn-primary px-4 fw-semibold" disabled>
+                        Realizar Pago
+                    </button>
                     <a asp-action="Index" class="btn btn-outline-secondary px-4">Cancelar</a>
                 </div>
             </form>
@@ -50,5 +60,123 @@
 </div>
 
 @section Scripts {
-    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+        (function () {
+            const accountInput = document.getElementById('accountNumberInput');
+            const verifyAccountBtn = document.getElementById('verifyAccountBtn');
+            const accountPreviewBox = document.getElementById('accountPreviewBox');
+
+            const cardInput = document.getElementById('cardNumberInput');
+            const verifyCardBtn = document.getElementById('verifyCardBtn');
+            const cardPreviewBox = document.getElementById('cardPreviewBox');
+
+            const submitBtn = document.getElementById('submitBtn');
+
+            let accountVerified = false;
+            let cardVerified = false;
+
+            function updateSubmitState() {
+                submitBtn.disabled = !(accountVerified && cardVerified);
+            }
+
+            function resetAccountPreview() {
+                accountPreviewBox.classList.add('d-none');
+                accountPreviewBox.innerHTML = '';
+                accountVerified = false;
+                updateSubmitState();
+            }
+
+            function resetCardPreview() {
+                cardPreviewBox.classList.add('d-none');
+                cardPreviewBox.innerHTML = '';
+                cardVerified = false;
+                updateSubmitState();
+            }
+
+            accountInput.addEventListener('input', resetAccountPreview);
+            cardInput.addEventListener('input', resetCardPreview);
+
+            verifyAccountBtn.addEventListener('click', async function () {
+                const accountNumber = accountInput.value.trim();
+                if (!accountNumber) { resetAccountPreview(); return; }
+
+                verifyAccountBtn.disabled = true;
+                verifyAccountBtn.textContent = 'Verificando...';
+
+                try {
+                    const response = await fetch(`/Cashier/PreviewAccount?accountNumber=${encodeURIComponent(accountNumber)}`);
+                    const data = await response.json();
+
+                    if (data.success) {
+                        const isActive = data.status === 'Activa';
+                        accountPreviewBox.className = `mb-3 p-3 rounded border ${isActive ? 'border-success bg-success-subtle' : 'border-danger bg-danger-subtle'}`;
+                        accountPreviewBox.innerHTML = `
+                            <p class="mb-1"><strong>Titular:</strong> ${data.holderName}</p>
+                            <p class="mb-0"><strong>Estado de la cuenta:</strong> ${data.status}</p>
+                        `;
+                        accountPreviewBox.classList.remove('d-none');
+                        accountVerified = isActive;
+                    } else {
+                        accountPreviewBox.className = 'mb-3 p-3 rounded border border-danger bg-danger-subtle';
+                        accountPreviewBox.innerHTML = `<p class="mb-0 text-danger">${data.message}</p>`;
+                        accountPreviewBox.classList.remove('d-none');
+                        accountVerified = false;
+                    }
+                } catch (err) {
+                    accountPreviewBox.className = 'mb-3 p-3 rounded border border-danger bg-danger-subtle';
+                    accountPreviewBox.innerHTML = `<p class="mb-0 text-danger">No fue posible verificar la cuenta.</p>`;
+                    accountPreviewBox.classList.remove('d-none');
+                    accountVerified = false;
+                } finally {
+                    verifyAccountBtn.disabled = false;
+                    verifyAccountBtn.textContent = 'Verificar';
+                    updateSubmitState();
+                }
+            });
+
+            verifyCardBtn.addEventListener('click', async function () {
+                const cardNumber = cardInput.value.trim();
+                if (!cardNumber) { resetCardPreview(); return; }
+
+                verifyCardBtn.disabled = true;
+                verifyCardBtn.textContent = 'Verificando...';
+
+                try {
+                    const response = await fetch(`/Cashier/PreviewCreditCard?cardNumber=${encodeURIComponent(cardNumber)}`);
+                    const data = await response.json();
+
+                    if (data.success) {
+                        const isActive = data.status === 'Activa';
+                        cardPreviewBox.className = `mb-3 p-3 rounded border ${isActive ? 'border-success bg-success-subtle' : 'border-danger bg-danger-subtle'}`;
+                        cardPreviewBox.innerHTML = `
+                            <p class="mb-1"><strong>Tarjeta:</strong> ${data.maskedCardNumber}</p>
+                            <p class="mb-1"><strong>Titular:</strong> ${data.holderName}</p>
+                            <p class="mb-1"><strong>Deuda actual:</strong> RD$ ${Number(data.currentDebt).toLocaleString('es-DO', {minimumFractionDigits: 2})}</p>
+                            <p class="mb-0"><strong>Estado:</strong> ${data.status}</p>
+                        `;
+                        cardPreviewBox.classList.remove('d-none');
+                        cardVerified = isActive;
+                    } else {
+                        cardPreviewBox.className = 'mb-3 p-3 rounded border border-danger bg-danger-subtle';
+                        cardPreviewBox.innerHTML = `<p class="mb-0 text-danger">${data.message}</p>`;
+                        cardPreviewBox.classList.remove('d-none');
+                        cardVerified = false;
+                    }
+                } catch (err) {
+                    cardPreviewBox.className = 'mb-3 p-3 rounded border border-danger bg-danger-subtle';
+                    cardPreviewBox.innerHTML = `<p class="mb-0 text-danger">No fue posible verificar la tarjeta.</p>`;
+                    cardPreviewBox.classList.remove('d-none');
+                    cardVerified = false;
+                } finally {
+                    verifyCardBtn.disabled = false;
+                    verifyCardBtn.textContent = 'Verificar';
+                    updateSubmitState();
+                }
+            });
+        })();
+    </script>
 }
