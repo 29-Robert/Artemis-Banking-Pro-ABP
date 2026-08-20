@@ -29,7 +29,7 @@
                         @if (User.Identity != null && User.Identity.IsAuthenticated && User.IsInRole("Administrador"))
                         {
                             <li class="nav-item">
-                                <a class="nav-link" asp-controller="Admin" asp-action="Index">Usuarios</a>
+                                <a class="nav-link" asp-controller="Admin" asp-action="Users">Usuarios</a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link" asp-controller="SavingsAccount" asp-action="Index">Cuentas</a>
@@ -83,10 +83,16 @@
         </main>
     </div>
 
-    <footer class="border-top footer text-muted mt-5">
-        <div class="container py-3">
-            &copy; 2026 - Artemis Banking Pro - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacidad</a>
-        </div>
+    @if (User.Identity != null && User.Identity.IsAuthenticated)
+        {
+            <a asp-controller="Home" asp-action="Index"
+            class="btn btn-outline-secondary shadow-sm"
+            style="position: fixed; bottom: 24px; right: 24px; z-index: 1050;">
+                &larr; Volver al inicio
+            </a>
+        }
+
+    
     </footer>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>

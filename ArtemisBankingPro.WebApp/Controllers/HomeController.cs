@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace ArtemisBankingPro.WebApp.Controllers
 {
@@ -15,6 +16,11 @@ namespace ArtemisBankingPro.WebApp.Controllers
 
         public IActionResult Index()
         {
+            if (User.IsInRole("Administrador"))
+            {
+                return RedirectToAction("Index", "Admin");
+            }
+
             return View();
         }
 

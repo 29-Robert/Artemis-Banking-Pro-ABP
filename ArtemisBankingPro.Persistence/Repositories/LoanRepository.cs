@@ -23,8 +23,9 @@ namespace ArtemisBankingPro.Persistence.Repositories
         {
             var trimmed = loanNumber?.Trim() ?? string.Empty;
             return await _dbContext.Set<Loan>()
+                .Include(l => l.Client)
                 .Include(l => l.Installments)
-                .FirstOrDefaultAsync(l => l.LoanNumber.Trim() == trimmed);
+                .FirstOrDefaultAsync(l => l.LoanNumber.Trim() == trimmed); 
         }
 
         public async Task<bool> HasActiveLoanAsync(int clientId)

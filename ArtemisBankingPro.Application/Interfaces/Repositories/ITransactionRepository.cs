@@ -14,5 +14,6 @@ namespace ArtemisBankingPro.Application.Interfaces.Repositories
         Task<IEnumerable<Transaction>> GetPagedByAccountAsync(string accountNumber, int page, int pageSize);
         Task AddCrossEntryAsync(Transaction debit, Transaction credit);
         Task<IEnumerable<Transaction>> GetByPerformedUserAndDateAsync(int cashierId,DateTime date);
+        Task<IReadOnlyList<Transaction>> GetAllApprovedAsync();
     }
 }

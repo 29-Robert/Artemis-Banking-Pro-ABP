@@ -1,0 +1,140 @@
+@model IEnumerable<ArtemisBankingPro.Application.DTOs.UserDto>
+
+@{
+    ViewData["Title"] = "Gestión de Usuarios";
+}
+
+<div class="page-header">
+    <h2>Gestión de Usuarios</h2>
+    <a asp-action="Create" class="btn btn-primary">+ Crear Usuario</a>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body py-3">
+        <form method="get" asp-action="Users" class="row gx-3 gy-2 align-items-center">
+            <div class="col-sm-4">
+                <select name="roleFilter" id="roleFilter" class="form-select">
+                    <option value="" selected="@(string.IsNullOrEmpty((string)ViewBag.RoleFilter) ? "selected" : null)">Todos (Excluye Comercio)</option>
+                    <option value="Administrador" selected="@((string)ViewBag.RoleFilter == "Administrador" ? "selected" : null)">Administrador</option>
+                    <option value="Cajero" selected="@((string)ViewBag.RoleFilter == "Cajero" ? "selected" : null)">Cajero</option>
+                    <option value="Cliente" selected="@((string)ViewBag.RoleFilter == "Cliente" ? "selected" : null)">Cliente</option>
+                </select>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-outline-secondary">Filtrar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show">
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover table-abp align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th class="ps-3">ID</th>
+                        <th>Nombre Completo</th>
+                        <th>Usuario</th>
+                        <th>Correo</th>
+                        <th>Cédula</th>
+                        <th>Rol</th>
+                        <th>Estado</th>
+                        <th class="text-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var user in Model)
+                    {
+                        <tr>
+                            <td class="ps-3"><span class="text-muted">#@user.Id</span></td>
+                            <td class="fw-semibold">@user.FirstName @user.LastName</td>
+                            <td>@user.Username</td>
+                            <td><span class="text-muted">@user.Email</span></td>
+                            <td>@user.Cedula</td>
+                            <td>
+                                @{
+                                    var roleName = user.RoleId switch
+                                    {
+                                        1 => "Administrador",
+                                        2 => "Cajero",
+                                        3 => "Cliente",
+                                        4 => "Comercio",
+                                        _ => "Desconocido"
+                                    };
+                                    var roleColor = user.RoleId switch
+                                    {
+                                        1 => "primary",
+                                        2 => "info",
+                                        3 => "success",
+                                        4 => "secondary",
+                                        _ => "dark"
+                                    };
+                                }
+                                <span class="badge bg-@roleColor">@roleName</span>
+                            </td>
+                            <td>
+                                @if (user.IsActive)
+                                {
+                                    <span class="badge badge-activo">Activo</span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-inactivo">Inactivo</span>
+                                }
+                            </td>
+                            <td class="text-center">
+                                <div class="btn-group btn-group-sm">
+                                    <a asp-action="Edit" asp-route-id="@user.Id" class="btn btn-outline-primary">Editar</a>
+                                    <form asp-action="ToggleStatus" method="post" class="d-inline">
+                                        <input type="hidden" name="userId" value="@user.Id" />
+                                        @if (user.IsActive)
+                                        {
+                                            <button type="submit" class="btn btn-outline-danger">Inactivar</button>
+                                        }
+                                        else
+                                        {
+                                            <button type="submit" class="btn btn-outline-success">Activar</button>
+                                        }
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<nav aria-label="Navegación de páginas">
+    <ul class="pagination justify-content-center mt-4">
+        <li class="page-item @(ViewBag.CurrentPage == 1 ? "disabled" : "")">
+            <a class="page-link" asp-action="Index" asp-route-page="@(ViewBag.CurrentPage - 1)" asp-route-roleFilter="@ViewBag.RoleFilter">« Anterior</a>
+        </li>
+        @for (int i = 1; i <= ViewBag.TotalPages; i++)
+        {
+            <li class="page-item @(ViewBag.CurrentPage == i ? "active" : "")">
+                <a class="page-link" asp-action="Users" asp-route-page="@i" asp-route-roleFilter="@ViewBag.RoleFilter">@i</a>
+            </li>
+        }
+        <li class="page-item @(ViewBag.CurrentPage == ViewBag.TotalPages ? "disabled" : "")">
+            <a class="page-link" asp-action="Users" asp-route-page="@(ViewBag.CurrentPage + 1)" asp-route-roleFilter="@ViewBag.RoleFilter">Siguiente »</a>
+        </li>
+    </ul>
+</nav>
