@@ -83,7 +83,8 @@ namespace ArtemisBankingPro.WebApp.Controllers
                     Username = vm.Username,
                     Password = vm.Password!,
                     RoleId = vm.RoleId,
-                    InitialAmount = vm.InitialAmount
+                    InitialAmount = vm.InitialAmount,
+                    ActivationUrlFormat = Url.Action("Activate", "Account", new { token = "TOKENPLACEHOLDER" }, Request.Scheme)
                 };
 
                 await mediator.Send(command);

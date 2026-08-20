@@ -108,7 +108,7 @@ namespace ArtemisBankingPro.Tests.Features.Users.Handlers
             _accountRepositoryMock.Verify(r => r.AddAsync(It.Is<SavingsAccount>(a => a.UserId == 10 && a.Balance == 1000m && a.IsPrincipal == true)), Times.Once);
             _transactionRepositoryMock.Verify(r => r.AddAsync(It.Is<DomainTransaction>(t => t.Amount == 1000m && t.Type == TransactionType.Credito)), Times.Once);
             _tokenRepositoryMock.Verify(r => r.AddAsync(It.Is<ConfirmationToken>(t => t.UserId == 10 && t.Type == TokenType.Activacion)), Times.Once);
-            _emailServiceMock.Verify(s => s.SendActivationEmailAsync("test@test.com", It.IsAny<string>()), Times.Once);
+            _emailServiceMock.Verify(s => s.SendActivationEmailAsync("test@test.com", It.IsAny<string>(), It.IsAny<string>()), Times.Once);
         }
     }
 }

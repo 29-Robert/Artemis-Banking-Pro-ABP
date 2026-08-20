@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 
 namespace ArtemisBankingPro.Application.Features.Users.Commands.CreateUser
 {
@@ -14,5 +14,6 @@ namespace ArtemisBankingPro.Application.Features.Users.Commands.CreateUser
         public int? CommerceId { get; set; }
 
         public decimal InitialAmount { get; set; }
+        public string? ActivationUrlFormat { get; set; }
     }
 }

@@ -9,6 +9,7 @@ namespace ArtemisBankingPro.Application.Features.Users.Commands.ForgotPassword
     public class ForgotPasswordCommand : IRequest<bool>
     {
         public string Username { get; set; } = string.Empty;
+        public string? ResetUrlFormat { get; set; }
     }
 
     public class ForgotPasswordCommandHandler(
@@ -25,10 +26,10 @@ namespace ArtemisBankingPro.Application.Features.Users.Commands.ForgotPassword
                 throw new Exception("No existe un usuario registrado con este nombre de usuario.");
 
             if (string.IsNullOrEmpty(user.Email))
-                throw new Exception("Este usuario no tiene un correo electrónico registrado. No es posible enviar la solicitud de restablecimiento.");
+                throw new Exception("Este usuario no tiene un correo electrï¿½nico registrado. No es posible enviar la solicitud de restablecimiento.");
 
             if (user.RoleId == (int)ArtemisBankingPro.Domain.Enums.Roles.Comercio)
-                throw new Exception("Este usuario no tiene permisos para acceder a la aplicación web.");
+                throw new Exception("Este usuario no tiene permisos para acceder a la aplicaciï¿½n web.");
 
             user.IsActive = false;
 
@@ -49,7 +50,8 @@ namespace ArtemisBankingPro.Application.Features.Users.Commands.ForgotPassword
 
             try
             {
-                await emailService.SendPasswordResetEmailAsync(user.Email, resetToken);
+                var url = string.IsNullOrEmpty(request.ResetUrlFormat) ? null : request.ResetUrlFormat.Replace("TOKENPLACEHOLDER", resetToken);
+                await emailService.SendPasswordResetEmailAsync(user.Email, resetToken, url);
             }
             catch
             {

@@ -58,7 +58,7 @@ namespace ArtemisBankingPro.Tests.Features.Users.Handlers
             Assert.False(user.IsActive); // Should be deactivated temporarily
             _userRepositoryMock.Verify(r => r.SaveChangesAsync(), Times.Once);
             _tokenRepositoryMock.Verify(r => r.AddAsync(It.Is<ConfirmationToken>(t => t.UserId == 1 && t.Type == TokenType.RestablecimientoContrasena)), Times.Once);
-            _emailServiceMock.Verify(s => s.SendPasswordResetEmailAsync("test@test.com", It.IsAny<string>()), Times.Once);
+            _emailServiceMock.Verify(s => s.SendPasswordResetEmailAsync("test@test.com", It.IsAny<string>(), It.IsAny<string>()), Times.Once);
         }
     }
 }
