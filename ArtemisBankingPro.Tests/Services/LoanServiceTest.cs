@@ -520,14 +520,14 @@ namespace ArtemisBankingPro.Tests
             await Assert.ThrowsAsync<KeyNotFoundException>(() => service.GetLoanByIdAsync(99));
         }
 
-        
+
         // CLIENTES ELEGIBLES
-        
+
         [Fact]
         public async Task GetEligibleClientsAsync_ExcludesClientsWithActiveLoan()
         {
-            var eligibleClient = new User { Id = 1, IsActive = true, Cedula = "001", FirstName = "Ana", LastName = "Ruiz", Email = "ana@artemis.com", Role = new Role { Name = "Cliente" } };
-            var withActiveLoanClient = new User { Id = 2, IsActive = true, Cedula = "002", FirstName = "Luis", LastName = "Diaz", Email = "luis@artemis.com", Role = new Role { Name = "Cliente" } };
+            var eligibleClient = new User { Id = 1, IsActive = true, Cedula = "001", FirstName = "Ana", LastName = "Ruiz", Email = "ana@artemis.com", RoleId = (int)ArtemisBankingPro.Domain.Enums.Roles.Cliente, Role = new Role { Name = "Cliente" } };
+            var withActiveLoanClient = new User { Id = 2, IsActive = true, Cedula = "002", FirstName = "Luis", LastName = "Diaz", Email = "luis@artemis.com", RoleId = (int)ArtemisBankingPro.Domain.Enums.Roles.Cliente, Role = new Role { Name = "Cliente" } };
 
             var users = new Mock<IGenericRepository<User>>();
             var loans = new Mock<ILoanRepository>();

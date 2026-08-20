@@ -1,6 +1,7 @@
+using ArtemisBankingPro.Application.DTOs.Commerces;
 using ArtemisBankingPro.Application.DTOs.CreditCard;
 using ArtemisBankingPro.Application.DTOs.Loan;
-using ArtemisBankingPro.Application.DTOs.Commerces;
+using ArtemisBankingPro.Application.Features.Accounts.Commands;
 using ArtemisBankingPro.Domain.Entities;
 using AutoMapper;
 using System.Linq;
@@ -41,7 +42,8 @@ namespace ArtemisBankingPro.Application.Mappings
                 .ForMember(d => d.EmailNotificationFailed, o => o.Ignore());
 
             CreateMap<LoanInstallment, LoanInstallmentDto>();
-           
+            
+
 
 
             // CREDIT CARD

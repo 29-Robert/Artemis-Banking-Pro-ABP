@@ -83,23 +83,31 @@ namespace ArtemisBankingPro.Tests.Repositories
         }
 
         [Fact]
-        public async Task SearchAsync_PorDefecto_DeberiaMostrarSoloActivosOrdenadosPorFechaDesc()
+        public async Task SearchAsync_PorDefecto_DeberiaMostrarTodosOrdenadosPorFechaDesc()
         {
             await using var context = CreateContext();
 
             var client = new User { Id = 1, Cedula = "40200000001", FirstName = "John", LastName = "Doe" };
             context.Users.Add(client);
 
-            context.Loans.Add(new Loan { ClientId = 1, LoanNumber = "100000005", Status = "Activo", AdminId = 1, CreatedAt = DateTime.UtcNow.AddDays(-2) });
-            context.Loans.Add(new Loan { ClientId = 1, LoanNumber = "100000006", Status = "Activo", AdminId = 1, CreatedAt = DateTime.UtcNow });
-            context.Loans.Add(new Loan { ClientId = 1, LoanNumber = "100000007", Status = "Completado", AdminId = 1, CreatedAt = DateTime.UtcNow });
+            var loan1 = new Loan { ClientId = 1, LoanNumber = "100000005", Status = "Activo", AdminId = 1 };
+            var loan2 = new Loan { ClientId = 1, LoanNumber = "100000006", Status = "Activo", AdminId = 1 };
+            var loan3 = new Loan { ClientId = 1, LoanNumber = "100000007", Status = "Completado", AdminId = 1 };
+
+            context.Loans.AddRange(loan1, loan2, loan3);
+            await context.SaveChangesAsync(); 
+
+          
+            loan1.CreatedAt = DateTime.UtcNow.AddDays(-2);
+            loan2.CreatedAt = DateTime.UtcNow;
+            loan3.CreatedAt = DateTime.UtcNow.AddDays(-1);
             await context.SaveChangesAsync();
 
             var repository = new LoanRepository(context);
 
             var (items, totalCount) = await repository.SearchAsync(cedula: null, status: null, pageNumber: 1, pageSize: 20);
 
-            Assert.Equal(2, totalCount);
+            Assert.Equal(3, totalCount);
             Assert.Equal("100000006", items.First().LoanNumber);
         }
 

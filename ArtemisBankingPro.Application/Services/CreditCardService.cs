@@ -49,7 +49,7 @@ namespace ArtemisBankingPro.Application.Services
             if (!string.IsNullOrWhiteSpace(cedula))
             {
                 var client = (await _userRepository.GetAllAsync())
-                    .FirstOrDefault(u => u.Cedula == cedula && u.Role?.Name == "Cliente");
+                .FirstOrDefault(u => u.Cedula == cedula && u.RoleId == (int)ArtemisBankingPro.Domain.Enums.Roles.Cliente);
 
                 if (client == null)
                     throw new KeyNotFoundException("No existe un cliente registrado con esta cédula.");
@@ -235,12 +235,11 @@ namespace ArtemisBankingPro.Application.Services
         public async Task<EligibleClientsResponseDto> GetEligibleClientsAsync(string? cedula, int pageNumber, int pageSize)
         {
             var allUsers = await _userRepository.GetAllAsync();
-
+            
             var candidates = allUsers
-                .Where(u => u.IsActive && u.Role?.Name == "Cliente")
+                .Where(u => u.IsActive && u.RoleId == (int)ArtemisBankingPro.Domain.Enums.Roles.Cliente)
                 .Where(u => string.IsNullOrWhiteSpace(cedula) || u.Cedula.Contains(cedula))
                 .ToList();
-
             var eligible = new List<EligibleClientDto>();
             foreach (var user in candidates)
             {

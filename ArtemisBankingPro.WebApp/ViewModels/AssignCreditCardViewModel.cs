@@ -12,5 +12,8 @@ namespace ArtemisBankingPro.WebApp.ViewModels
         [Range(0.01, double.MaxValue, ErrorMessage = "El límite de crédito debe ser mayor que cero.")]
         [Display(Name = "Límite de crédito")]
         public decimal CreditLimit { get; set; }
+
+        [Display(Name = "Confirmar asignación a cliente de alto riesgo")]
+        public bool ConfirmHighRisk { get; set; }
     }
 }

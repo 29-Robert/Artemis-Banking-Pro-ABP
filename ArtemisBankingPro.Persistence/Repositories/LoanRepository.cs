@@ -13,16 +13,18 @@ namespace ArtemisBankingPro.Persistence.Repositories
 
         public async Task<Loan> GetByLoanNumberAsync(string loanNumber)
         {
+            var trimmed = loanNumber?.Trim() ?? string.Empty;
             return await _dbContext.Set<Loan>()
                 .Include(l => l.Installments)
-                .FirstOrDefaultAsync(l => l.LoanNumber == loanNumber);
+                .FirstOrDefaultAsync(l => l.LoanNumber.Trim() == trimmed);
         }
 
         public async Task<Loan> GetByLoanNumberWithInstallmentsAsync(string loanNumber)
         {
+            var trimmed = loanNumber?.Trim() ?? string.Empty;
             return await _dbContext.Set<Loan>()
                 .Include(l => l.Installments)
-                .FirstOrDefaultAsync(l => l.LoanNumber == loanNumber);
+                .FirstOrDefaultAsync(l => l.LoanNumber.Trim() == trimmed);
         }
 
         public async Task<bool> HasActiveLoanAsync(int clientId)
@@ -66,11 +68,6 @@ namespace ArtemisBankingPro.Persistence.Repositories
             if (!string.IsNullOrWhiteSpace(status) && status != "Todos" && status != "Todas" && status != "Todos/Todas")
             {
                 query = query.Where(l => l.Status == status);
-            }
-            else if (string.IsNullOrWhiteSpace(status) && string.IsNullOrWhiteSpace(cedula))
-            {
-                
-                query = query.Where(l => l.Status == "Activo");
             }
 
             query = query.OrderByDescending(l => l.CreatedAt);
