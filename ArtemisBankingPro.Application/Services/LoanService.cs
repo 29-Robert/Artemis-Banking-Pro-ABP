@@ -198,6 +198,7 @@ namespace ArtemisBankingPro.Application.Services
             {
                 if (averageDebt > 0 && currentDebt > averageDebt)
                 {
+                    _logger.LogWarning("CLIENTE DE ALTO RIESGO DETECTADO: Cliente ID: {ClientId}, Tipo: {RiskType}, Deuda Actual: RD$ {CurrentDebt:N2}, Deuda Proyectada: RD$ {ProjectedDebt:N2}, Promedio Sistema: RD$ {AverageDebt:N2}", clientId, "CurrentHighRisk", currentDebt, projectedDebt, averageDebt);
                     throw new HighRiskClientException(
                         "Este cliente se considera de alto riesgo, ya que su deuda actual supera el promedio del sistema.",
                         "CurrentHighRisk",
@@ -208,6 +209,7 @@ namespace ArtemisBankingPro.Application.Services
 
                 if (averageDebt > 0 && projectedDebt > averageDebt)
                 {
+                    _logger.LogWarning("CLIENTE DE ALTO RIESGO DETECTADO: Cliente ID: {ClientId}, Tipo: {RiskType}, Deuda Actual: RD$ {CurrentDebt:N2}, Deuda Proyectada: RD$ {ProjectedDebt:N2}, Promedio Sistema: RD$ {AverageDebt:N2}", clientId, "ProjectedHighRisk", currentDebt, projectedDebt, averageDebt);
                     throw new HighRiskClientException(
                         "Asignar este préstamo convertirá al cliente en un cliente de alto riesgo, ya que su deuda superará el umbral promedio del sistema.",
                         "ProjectedHighRisk",
@@ -304,6 +306,8 @@ namespace ArtemisBankingPro.Application.Services
                 response.EmailNotificationFailed = true;
             }
 
+            _logger.LogInformation("PRÉSTAMO ASIGNADO: Número: {LoanNo}, Cliente ID: {ClientId}, Capital: RD$ {Capital:N2}, Admin: {AdminId}", loanNumber, clientId, request.CapitalAmount, adminId);
+
             return response;
         }
         // MODIFICAR TASA
@@ -317,6 +321,8 @@ namespace ArtemisBankingPro.Application.Services
                 throw new InvalidOperationException("Solo se puede modificar la tasa de interés de préstamos activos.");
             if (newAnnualRate < 0)
                 throw new ArgumentException("La tasa de interés anual no puede ser negativa.");
+
+            var oldRate = loan.AnnualInterestRate;
 
             var now = DateTime.UtcNow;
             var futurePending = loan.Installments
@@ -380,6 +386,8 @@ namespace ArtemisBankingPro.Application.Services
                 {
                     response.EmailNotificationFailed = true;
                 }
+
+                _logger.LogInformation("TASA DE INTERÉS DE PRÉSTAMO ACTUALIZADA: Préstamo ID: {LoanId}, Tasa Anterior: {OldRate}%, Nueva Tasa: {NewRate}%", loanId, oldRate, newAnnualRate);
 
                 return response;
             }
