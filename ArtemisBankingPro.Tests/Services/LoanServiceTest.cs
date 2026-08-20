@@ -29,7 +29,7 @@ namespace ArtemisBankingPro.Tests
             var client = new User { Id = 20, IsActive = true, Cedula = "00187654321", FirstName = "María", LastName = "Gómez", Email = "maria@artemis.com", RoleId = 3, Role = new Role { Name = "Cliente" } };
             var principalAccount = new SavingsAccount { AccountNumber = "123456789", Balance = 5000m, Status = AccountStatus.Activa, Type = AccountType.Principal };
 
-            var users = new Mock<IGenericRepository<User>>();
+            var users = new Mock<IUserRepository>();
             var loans = new Mock<ILoanRepository>();
             var installments = new Mock<ILoanInstallmentRepository>();
             var cards = new Mock<ICreditCardRepository>();
@@ -81,8 +81,8 @@ namespace ArtemisBankingPro.Tests
         [Fact]
         public async Task AssignLoanAsync_WhenClientDoesNotExist_ThrowsKeyNotFound()
         {
-            var users = new Mock<IGenericRepository<User>>();
-            users.Setup(x => x.GetByIdAsync(It.IsAny<int>())).ReturnsAsync((User)null);
+            var users = new Mock<IUserRepository>();
+            users.Setup(x => x.GetByIdAsync(20)).ReturnsAsync((User)null);
 
             var service = CreateService(users: users);
 
@@ -94,8 +94,8 @@ namespace ArtemisBankingPro.Tests
         public async Task AssignLoanAsync_WhenClientInactive_ThrowsInvalidOperation()
         {
             var client = new User { Id = 20, IsActive = false };
-            var users = new Mock<IGenericRepository<User>>();
-            users.Setup(x => x.GetByIdAsync(It.IsAny<int>())).ReturnsAsync(client);
+            var users = new Mock<IUserRepository>();
+            users.Setup(x => x.GetByIdAsync(20)).ReturnsAsync(client);
 
             var service = CreateService(users: users);
 
@@ -107,7 +107,7 @@ namespace ArtemisBankingPro.Tests
         public async Task AssignLoanAsync_WhenClientHasActiveLoan_ThrowsInvalidOperation()
         {
             var client = new User { Id = 20, IsActive = true };
-            var users = new Mock<IGenericRepository<User>>();
+            var users = new Mock<IUserRepository>();
             var loans = new Mock<ILoanRepository>();
 
             users.Setup(x => x.GetByIdAsync(It.IsAny<int>())).ReturnsAsync(client);
@@ -126,7 +126,7 @@ namespace ArtemisBankingPro.Tests
         public async Task AssignLoanAsync_WhenTermIsInvalid_ThrowsArgumentException(int invalidTerm)
         {
             var client = new User { Id = 20, IsActive = true };
-            var users = new Mock<IGenericRepository<User>>();
+            var users = new Mock<IUserRepository>();
             var loans = new Mock<ILoanRepository>();
 
             users.Setup(x => x.GetByIdAsync(It.IsAny<int>())).ReturnsAsync(client);
@@ -142,7 +142,7 @@ namespace ArtemisBankingPro.Tests
         public async Task AssignLoanAsync_WhenCapitalAmountIsZeroOrLess_ThrowsArgumentException()
         {
             var client = new User { Id = 20, IsActive = true };
-            var users = new Mock<IGenericRepository<User>>();
+            var users = new Mock<IUserRepository>();
             var loans = new Mock<ILoanRepository>();
 
             users.Setup(x => x.GetByIdAsync(It.IsAny<int>())).ReturnsAsync(client);
@@ -158,7 +158,7 @@ namespace ArtemisBankingPro.Tests
         public async Task AssignLoanAsync_WhenNegativeInterestRate_ThrowsArgumentException()
         {
             var client = new User { Id = 20, IsActive = true };
-            var users = new Mock<IGenericRepository<User>>();
+            var users = new Mock<IUserRepository>();
             var loans = new Mock<ILoanRepository>();
 
             users.Setup(x => x.GetByIdAsync(It.IsAny<int>())).ReturnsAsync(client);
@@ -174,7 +174,7 @@ namespace ArtemisBankingPro.Tests
         public async Task AssignLoanAsync_WhenClientHasNoActivePrincipalAccount_ThrowsInvalidOperation()
         {
             var client = new User { Id = 20, IsActive = true };
-            var users = new Mock<IGenericRepository<User>>();
+            var users = new Mock<IUserRepository>();
             var loans = new Mock<ILoanRepository>();
             var accounts = new Mock<ISavingsAccountRepository>();
 
@@ -194,7 +194,7 @@ namespace ArtemisBankingPro.Tests
             var client = new User { Id = 20, IsActive = true, RoleId = 3, Role = new Role { Name = "Cliente" } };
             var principalAccount = new SavingsAccount { AccountNumber = "123456789", Balance = 5000m, Status = AccountStatus.Activa };
 
-            var users = new Mock<IGenericRepository<User>>();
+            var users = new Mock<IUserRepository>();
             var loans = new Mock<ILoanRepository>();
             var cards = new Mock<ICreditCardRepository>();
             var accounts = new Mock<ISavingsAccountRepository>();
@@ -223,7 +223,7 @@ namespace ArtemisBankingPro.Tests
             var client = new User { Id = 20, IsActive = true, RoleId = 3, Role = new Role { Name = "Cliente" } };
             var principalAccount = new SavingsAccount { AccountNumber = "123456789", Balance = 5000m, Status = AccountStatus.Activa };
 
-            var users = new Mock<IGenericRepository<User>>();
+            var users = new Mock<IUserRepository>();
             var loans = new Mock<ILoanRepository>();
             var cards = new Mock<ICreditCardRepository>();
             var accounts = new Mock<ISavingsAccountRepository>();
@@ -252,7 +252,7 @@ namespace ArtemisBankingPro.Tests
             var client = new User { Id = 20, IsActive = true, Email = "maria@artemis.com", RoleId = 3, Role = new Role { Name = "Cliente" } };
             var principalAccount = new SavingsAccount { AccountNumber = "123456789", Balance = 5000m, Status = AccountStatus.Activa };
 
-            var users = new Mock<IGenericRepository<User>>();
+            var users = new Mock<IUserRepository>();
             var loans = new Mock<ILoanRepository>();
             var installments = new Mock<ILoanInstallmentRepository>();
             var cards = new Mock<ICreditCardRepository>();
@@ -292,7 +292,7 @@ namespace ArtemisBankingPro.Tests
             var client = new User { Id = 20, IsActive = true, Email = "maria@artemis.com", RoleId = 3, Role = new Role { Name = "Cliente" } };
             var principalAccount = new SavingsAccount { AccountNumber = "123456789", Balance = 5000m, Status = AccountStatus.Activa };
 
-            var users = new Mock<IGenericRepository<User>>();
+            var users = new Mock<IUserRepository>();
             var loans = new Mock<ILoanRepository>();
             var installments = new Mock<ILoanInstallmentRepository>();
             var cards = new Mock<ICreditCardRepository>();
@@ -463,7 +463,7 @@ namespace ArtemisBankingPro.Tests
         public async Task GetLoansAsync_WhenCedulaNotFound_ThrowsKeyNotFound()
         {
             var loans = new Mock<ILoanRepository>();
-            var users = new Mock<IGenericRepository<User>>();
+            var users = new Mock<IUserRepository>();
 
             loans.Setup(x => x.SearchAsync("000000000", null, 1, 20)).ReturnsAsync((new List<Loan>(), 0));
             users.Setup(x => x.GetAllAsync()).ReturnsAsync(new List<User>());
@@ -479,7 +479,7 @@ namespace ArtemisBankingPro.Tests
             var existingClient = new User { Cedula = "00187654321", RoleId = 3, Role = new Role { Name = "Cliente" } };
 
             var loans = new Mock<ILoanRepository>();
-            var users = new Mock<IGenericRepository<User>>();
+            var users = new Mock<IUserRepository>();
 
             loans.Setup(x => x.SearchAsync("00187654321", null, 1, 20)).ReturnsAsync((new List<Loan>(), 0));
             users.Setup(x => x.GetAllAsync()).ReturnsAsync(new List<User> { existingClient });
@@ -529,7 +529,7 @@ namespace ArtemisBankingPro.Tests
             var eligibleClient = new User { Id = 1, IsActive = true, Cedula = "001", FirstName = "Ana", LastName = "Ruiz", Email = "ana@artemis.com", RoleId = 3, Role = new Role { Name = "Cliente" } };
             var withActiveLoanClient = new User { Id = 2, IsActive = true, Cedula = "002", FirstName = "Luis", LastName = "Diaz", Email = "luis@artemis.com", RoleId = 3, Role = new Role { Name = "Cliente" } };
 
-            var users = new Mock<IGenericRepository<User>>();
+            var users = new Mock<IUserRepository>();
             var loans = new Mock<ILoanRepository>();
             var cards = new Mock<ICreditCardRepository>();
 
@@ -552,7 +552,7 @@ namespace ArtemisBankingPro.Tests
         [Fact]
         public async Task GetEligibleClientsAsync_WhenNoActiveClients_ReturnsZeroAverageDebt()
         {
-            var users = new Mock<IGenericRepository<User>>();
+            var users = new Mock<IUserRepository>();
             users.Setup(x => x.GetAllAsync()).ReturnsAsync(new List<User>());
 
             var service = CreateService(users: users);
@@ -563,19 +563,19 @@ namespace ArtemisBankingPro.Tests
             Assert.Empty(result.Clients.Items);
         }
 
-        
+
         // Factory
-        
+
         private static LoanService CreateService(
-            Mock<IGenericRepository<User>>? users = null,
-            Mock<ILoanRepository>? loans = null,
-            Mock<ILoanInstallmentRepository>? installments = null,
-            Mock<ICreditCardRepository>? cards = null,
-            Mock<ISavingsAccountRepository>? accounts = null,
-            Mock<ITransactionRepository>? transactions = null,
-            Mock<IEmailService>? emailService = null,
-            Mock<IUnitOfWork>? unitOfWork = null,
-            Mock<IMapper>? mapper = null)
+      Mock<IUserRepository>? users = null,
+      Mock<ILoanRepository>? loans = null,
+      Mock<ILoanInstallmentRepository>? installments = null,
+      Mock<ICreditCardRepository>? cards = null,
+      Mock<ISavingsAccountRepository>? accounts = null,
+      Mock<ITransactionRepository>? transactions = null,
+      Mock<IEmailService>? emailService = null,
+      Mock<IUnitOfWork>? unitOfWork = null,
+      Mock<IMapper>? mapper = null)
         {
             return new LoanService(
                 loans?.Object ?? Mock.Of<ILoanRepository>(),
@@ -583,8 +583,8 @@ namespace ArtemisBankingPro.Tests
                 cards?.Object ?? Mock.Of<ICreditCardRepository>(),
                 accounts?.Object ?? Mock.Of<ISavingsAccountRepository>(),
                 transactions?.Object ?? Mock.Of<ITransactionRepository>(),
-                users?.Object ?? Mock.Of<IGenericRepository<User>>(),
                 emailService?.Object ?? Mock.Of<IEmailService>(),
+                users?.Object ?? Mock.Of<IUserRepository>(),
                 unitOfWork?.Object ?? Mock.Of<IUnitOfWork>(),
                 mapper?.Object ?? Mock.Of<IMapper>(),
                 Mock.Of<ILogger<LoanService>>());
