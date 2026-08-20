@@ -1,140 +1,152 @@
-@model IEnumerable<ArtemisBankingPro.Application.DTOs.UserDto>
+﻿@using ArtemisBankingPro.Application.DTOs.Admin
+@model AdminHomeIndicatorsDto
 
 @{
-    ViewData["Title"] = "Gestión de Usuarios";
+    ViewData["Title"] = "Panel del Administrador";
+    var userName = User.Identity?.Name ?? "Administrador";
+    var hour = DateTime.Now.Hour;
+    var saludo = hour < 12 ? "Buenos días" : hour < 19 ? "Buenas tardes" : "Buenas noches";
 }
 
-<div class="page-header">
-    <h2>Gestión de Usuarios</h2>
-    <a asp-action="Create" class="btn btn-primary">+ Crear Usuario</a>
-</div>
+<div class="container mt-4 mb-5">
 
-<div class="card mb-4">
-    <div class="card-body py-3">
-        <form method="get" asp-action="Index" class="row gx-3 gy-2 align-items-center">
-            <div class="col-sm-4">
-                <select name="roleFilter" id="roleFilter" class="form-select">
-                    <option value="" selected="@(string.IsNullOrEmpty((string)ViewBag.RoleFilter) ? "selected" : null)">Todos (Excluye Comercio)</option>
-                    <option value="Administrador" selected="@((string)ViewBag.RoleFilter == "Administrador" ? "selected" : null)">Administrador</option>
-                    <option value="Cajero" selected="@((string)ViewBag.RoleFilter == "Cajero" ? "selected" : null)">Cajero</option>
-                    <option value="Cliente" selected="@((string)ViewBag.RoleFilter == "Cliente" ? "selected" : null)">Cliente</option>
-                </select>
+    @* Bienvenida *@
+    <div class="container mt-4">
+        <div class="row mb-5">
+            <div class="col-12 text-center">
+                <h1 class="display-5 fw-bold" style="color: var(--abp-primary);">Bienvenido a Artemis Banking Pro</h1>
+                <p class="lead text-muted">Hola, <strong>@User.Identity?.Name</strong>. ¡Qué bueno tenerte en el sistema!</p>
             </div>
-            <div class="col-auto">
-                <button type="submit" class="btn btn-outline-secondary">Filtrar</button>
+        </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @* Transacciones y pagos *@
+    <h5 class="text-muted mb-3">Actividad del Sistema</h5>
+    <div class="row g-3 mb-4">
+        <div class="col-md-3 col-sm-6">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <small class="text-muted d-block">Transacciones Históricas</small>
+                            <h3 class="mb-0 fw-bold">@Model.TotalTransactionsHistorical</h3>
+                        </div>
+                        <span class="fs-3">📊</span>
+                    </div>
+                </div>
             </div>
-        </form>
-    </div>
-</div>
-
-@if (TempData["SuccessMessage"] != null)
-{
-    <div class="alert alert-success alert-dismissible fade show">
-        @TempData["SuccessMessage"]
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-}
-@if (TempData["ErrorMessage"] != null)
-{
-    <div class="alert alert-danger alert-dismissible fade show">
-        @TempData["ErrorMessage"]
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-}
-
-<div class="card">
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover table-abp align-middle mb-0">
-                <thead>
-                    <tr>
-                        <th class="ps-3">ID</th>
-                        <th>Nombre Completo</th>
-                        <th>Usuario</th>
-                        <th>Correo</th>
-                        <th>Cédula</th>
-                        <th>Rol</th>
-                        <th>Estado</th>
-                        <th class="text-center">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var user in Model)
-                    {
-                        <tr>
-                            <td class="ps-3"><span class="text-muted">#@user.Id</span></td>
-                            <td class="fw-semibold">@user.FirstName @user.LastName</td>
-                            <td>@user.Username</td>
-                            <td><span class="text-muted">@user.Email</span></td>
-                            <td>@user.Cedula</td>
-                            <td>
-                                @{
-                                    var roleName = user.RoleId switch
-                                    {
-                                        1 => "Administrador",
-                                        2 => "Cajero",
-                                        3 => "Cliente",
-                                        4 => "Comercio",
-                                        _ => "Desconocido"
-                                    };
-                                    var roleColor = user.RoleId switch
-                                    {
-                                        1 => "primary",
-                                        2 => "info",
-                                        3 => "success",
-                                        4 => "secondary",
-                                        _ => "dark"
-                                    };
-                                }
-                                <span class="badge bg-@roleColor">@roleName</span>
-                            </td>
-                            <td>
-                                @if (user.IsActive)
-                                {
-                                    <span class="badge badge-activo">Activo</span>
-                                }
-                                else
-                                {
-                                    <span class="badge badge-inactivo">Inactivo</span>
-                                }
-                            </td>
-                            <td class="text-center">
-                                <div class="btn-group btn-group-sm">
-                                    <a asp-action="Edit" asp-route-id="@user.Id" class="btn btn-outline-primary">Editar</a>
-                                    <form asp-action="ToggleStatus" method="post" class="d-inline">
-                                        <input type="hidden" name="userId" value="@user.Id" />
-                                        @if (user.IsActive)
-                                        {
-                                            <button type="submit" class="btn btn-outline-danger">Inactivar</button>
-                                        }
-                                        else
-                                        {
-                                            <button type="submit" class="btn btn-outline-success">Activar</button>
-                                        }
-                                    </form>
-                                </div>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="card shadow-sm border-0 h-100 border-start border-4 border-primary">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <small class="text-muted d-block">Transacciones Hoy</small>
+                            <h3 class="mb-0 fw-bold text-primary">@Model.TotalTransactionsToday</h3>
+                        </div>
+                        <span class="fs-3">🕐</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <small class="text-muted d-block">Pagos Históricos</small>
+                            <h3 class="mb-0 fw-bold">@Model.TotalPaymentsHistorical</h3>
+                        </div>
+                        <span class="fs-3">💳</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="card shadow-sm border-0 h-100 border-start border-4 border-primary">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <small class="text-muted d-block">Pagos Hoy</small>
+                            <h3 class="mb-0 fw-bold text-primary">@Model.TotalPaymentsToday</h3>
+                        </div>
+                        <span class="fs-3">✅</span>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
-</div>
 
-<nav aria-label="Navegación de páginas">
-    <ul class="pagination justify-content-center mt-4">
-        <li class="page-item @(ViewBag.CurrentPage == 1 ? "disabled" : "")">
-            <a class="page-link" asp-action="Index" asp-route-page="@(ViewBag.CurrentPage - 1)" asp-route-roleFilter="@ViewBag.RoleFilter">« Anterior</a>
-        </li>
-        @for (int i = 1; i <= ViewBag.TotalPages; i++)
-        {
-            <li class="page-item @(ViewBag.CurrentPage == i ? "active" : "")">
-                <a class="page-link" asp-action="Index" asp-route-page="@i" asp-route-roleFilter="@ViewBag.RoleFilter">@i</a>
-            </li>
-        }
-        <li class="page-item @(ViewBag.CurrentPage == ViewBag.TotalPages ? "disabled" : "")">
-            <a class="page-link" asp-action="Index" asp-route-page="@(ViewBag.CurrentPage + 1)" asp-route-roleFilter="@ViewBag.RoleFilter">Siguiente »</a>
-        </li>
-    </ul>
-</nav>
+    @* Clientes y productos *@
+    <h5 class="text-muted mb-3">Clientes y Productos Financieros</h5>
+    <div class="row g-3 mb-4">
+        <div class="col-md-3 col-sm-6">
+            <div class="card shadow-sm border-0 h-100 border-start border-4 border-success">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <small class="text-muted d-block">Clientes Activos</small>
+                            <h3 class="mb-0 fw-bold text-success">@Model.ActiveClients</h3>
+                        </div>
+                        <span class="fs-3">🟢</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="card shadow-sm border-0 h-100 border-start border-4 border-secondary">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <small class="text-muted d-block">Clientes Inactivos</small>
+                            <h3 class="mb-0 fw-bold text-secondary">@Model.InactiveClients</h3>
+                        </div>
+                        <span class="fs-3">⚪</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <small class="text-muted d-block">Productos Financieros Activos</small>
+                            <h3 class="mb-0 fw-bold">@Model.ActiveFinancialProducts</h3>
+                        </div>
+                        <span class="fs-3">🏦</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="card shadow-sm border-0 h-100 border-start border-4 border-danger">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <small class="text-muted d-block">Deuda Promedio / Cliente</small>
+                            <h3 class="mb-0 fw-bold text-danger">RD$ @Model.AverageDebtPerClient.ToString("N2")</h3>
+                        </div>
+                        <span class="fs-3">💰</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* Accesos rápidos *@
+    <h5 class="text-muted mb-3">Accesos Rápidos</h5>
+    <div class="d-flex gap-2 flex-wrap">
+        <a asp-controller="Admin" asp-action="Users" class="btn btn-outline-primary">👤 Gestión de Usuarios</a>
+        <a asp-controller="Loan" asp-action="Index" class="btn btn-outline-primary">💵 Préstamos</a>
+        <a asp-controller="CreditCard" asp-action="Index" class="btn btn-outline-primary">💳 Tarjetas de Crédito</a>
+    </div>
+
+</div>

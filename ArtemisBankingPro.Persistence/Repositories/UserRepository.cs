@@ -28,5 +28,13 @@ namespace ArtemisBankingPro.Persistence.Repositories
                 .Include(u => u.Role)
                 .FirstOrDefaultAsync(u => u.Username == username);
         }
+
+        public async Task<IReadOnlyList<User>> GetAllAsync()
+        {
+            return await _dbContext.Users
+                .Include(u => u.Role)
+                .ToListAsync();
+        }
+
     }
 }

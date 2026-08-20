@@ -13,15 +13,20 @@
 
     <div class="card shadow border-0">
         <div class="card-body p-4">
-            <form asp-action="Withdrawal" method="post">
+            <form asp-action="Withdrawal" method="post" id="withdrawalForm">
                 <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
 
                 <div class="mb-3">
                     <label asp-for="SourceAccountNumber" class="form-label fw-semibold"></label>
-                    <input asp-for="SourceAccountNumber" class="form-control"
-                           placeholder="Número de cuenta origen" />
+                    <div class="input-group">
+                        <input asp-for="SourceAccountNumber" id="accountNumberInput" class="form-control"
+                               placeholder="Número de cuenta origen" autocomplete="off" />
+                        <button type="button" id="verifyBtn" class="btn btn-outline-primary">Verificar</button>
+                    </div>
                     <span asp-validation-for="SourceAccountNumber" class="text-danger small"></span>
                 </div>
+
+                <div id="previewBox" class="mb-3 p-3 rounded d-none"></div>
 
                 <div class="mb-4">
                     <label asp-for="Amount" class="form-label fw-semibold"></label>
@@ -34,7 +39,9 @@
                 </div>
 
                 <div class="d-flex gap-2">
-                    <button type="submit" class="btn btn-warning px-4 fw-semibold">Realizar Retiro</button>
+                    <button type="submit" id="submitBtn" class="btn btn-warning px-4 fw-semibold" disabled>
+                        Realizar Retiro
+                    </button>
                     <a asp-action="Index" class="btn btn-outline-secondary px-4">Cancelar</a>
                 </div>
             </form>
@@ -43,5 +50,64 @@
 </div>
 
 @section Scripts {
-    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+        (function () {
+            const accountInput = document.getElementById('accountNumberInput');
+            const verifyBtn = document.getElementById('verifyBtn');
+            const previewBox = document.getElementById('previewBox');
+            const submitBtn = document.getElementById('submitBtn');
+
+            function resetPreview() {
+                previewBox.classList.add('d-none');
+                previewBox.innerHTML = '';
+                submitBtn.disabled = true;
+            }
+
+            accountInput.addEventListener('input', resetPreview);
+
+            verifyBtn.addEventListener('click', async function () {
+                const accountNumber = accountInput.value.trim();
+                if (!accountNumber) {
+                    resetPreview();
+                    return;
+                }
+
+                verifyBtn.disabled = true;
+                verifyBtn.textContent = 'Verificando...';
+
+                try {
+                    const response = await fetch(`/Cashier/PreviewAccount?accountNumber=${encodeURIComponent(accountNumber)}`);
+                    const data = await response.json();
+
+                    if (data.success) {
+                        const isActive = data.status === 'Activa';
+                        previewBox.className = `mb-3 p-3 rounded border ${isActive ? 'border-success bg-success-subtle' : 'border-danger bg-danger-subtle'}`;
+                        previewBox.innerHTML = `
+                            <p class="mb-1"><strong>Titular:</strong> ${data.holderName}</p>
+                            <p class="mb-0"><strong>Estado de la cuenta:</strong> ${data.status}</p>
+                        `;
+                        previewBox.classList.remove('d-none');
+                        submitBtn.disabled = !isActive;
+                    } else {
+                        previewBox.className = 'mb-3 p-3 rounded border border-danger bg-danger-subtle';
+                        previewBox.innerHTML = `<p class="mb-0 text-danger">${data.message}</p>`;
+                        previewBox.classList.remove('d-none');
+                        submitBtn.disabled = true;
+                    }
+                } catch (err) {
+                    previewBox.className = 'mb-3 p-3 rounded border border-danger bg-danger-subtle';
+                    previewBox.innerHTML = `<p class="mb-0 text-danger">No fue posible verificar la cuenta. Intente nuevamente.</p>`;
+                    previewBox.classList.remove('d-none');
+                    submitBtn.disabled = true;
+                } finally {
+                    verifyBtn.disabled = false;
+                    verifyBtn.textContent = 'Verificar';
+                }
+            });
+        })();
+    </script>
 }

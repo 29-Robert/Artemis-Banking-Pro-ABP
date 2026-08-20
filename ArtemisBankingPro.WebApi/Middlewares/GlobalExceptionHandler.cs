@@ -1,5 +1,8 @@
+using ArtemisBankingPro.Application.Exceptions;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+
+
 
 namespace ArtemisBankingPro.WebApi.Middlewares
 {
@@ -40,6 +43,21 @@ namespace ArtemisBankingPro.WebApi.Middlewares
                     Title = "Error de validación",
                     Detail = string.Join("; ", validationEx.Errors.Select(e => e.ErrorMessage))
                 },
+                HighRiskClientException highRiskEx => new ProblemDetails
+                {
+                    Status = StatusCodes.Status409Conflict,
+                    Title = "Cliente de alto riesgo",
+                    Detail = highRiskEx.Message,
+                    Extensions =
+                  {
+                    ["riskType"] = highRiskEx.RiskType,
+                ["currentDebt"] = highRiskEx.CurrentDebt,
+                ["projectedDebt"] = highRiskEx.ProjectedDebt,
+                 ["averageDebt"] = highRiskEx.AverageDebt
+                  }
+                },
+
+
                 InvalidOperationException => new ProblemDetails
                 {
                     Status = StatusCodes.Status400BadRequest,

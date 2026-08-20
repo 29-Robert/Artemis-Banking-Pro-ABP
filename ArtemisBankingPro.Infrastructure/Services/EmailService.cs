@@ -13,29 +13,53 @@ namespace ArtemisBankingPro.Infrastructure.Services
     {
         private readonly MailSettings _mailSettings = mailSettings.Value;
 
-        public async Task SendActivationEmailAsync(string to, string token)
+        public async Task SendActivationEmailAsync(string to, string token, string? activationUrl = null)
         {
             var subject = "Activación de cuenta";
             var body = $@"
                 <p>Hola,</p>
-                <p>Su cuenta ha sido creada correctamente en Artemis Banking.</p>
+                <p>Su cuenta ha sido creada correctamente en Artemis Banking.</p>";
+
+            if (!string.IsNullOrEmpty(activationUrl))
+            {
+                body += $@"
+                <p>Para activar su usuario, haga clic en el siguiente enlace:</p>
+                <p><a href=""{activationUrl}"">Activar cuenta</a></p>";
+            }
+            else
+            {
+                body += $@"
                 <p>Utilice el siguiente token para activar su cuenta desde el endpoint correspondiente:</p>
-                <h3>{token}</h3>
-                <p>Si usted no esperaba la creación de esta cuenta, ignore este mensaje.</p>";
+                <h3>{token}</h3>";
+            }
+
+            body += "<p>Si usted no esperaba la creación de esta cuenta, ignore este mensaje.</p>";
 
             await SendNotificationEmailAsync(to, subject, body);
         }
 
-        public async Task SendPasswordResetEmailAsync(string to, string token)
+        public async Task SendPasswordResetEmailAsync(string to, string token, string? resetUrl = null)
         {
             var subject = "Token de restablecimiento de contraseña";
             var body = $@"
                 <p>Hola,</p>
-                <p>Se ha generado un token para restablecer la contraseña de su cuenta.</p>
+                <p>Se ha generado un token para restablecer la contraseña de su cuenta.</p>";
+
+            if (!string.IsNullOrEmpty(resetUrl))
+            {
+                body += $@"
+                <p>Para continuar, haga clic en el siguiente enlace:</p>
+                <p><a href=""{resetUrl}"">Restablecer contraseña</a></p>";
+            }
+            else
+            {
+                body += $@"
                 <p>Token de restablecimiento:</p>
                 <h3>{token}</h3>
-                <p>Utilice este token en el endpoint correspondiente para completar el cambio de contraseña.</p>
-                <p>Si usted no solicitó este cambio, ignore este mensaje.</p>";
+                <p>Utilice este token en el endpoint correspondiente para completar el cambio de contraseña.</p>";
+            }
+
+            body += "<p>Si usted no solicitó este cambio, ignore este mensaje.</p>";
 
             await SendNotificationEmailAsync(to, subject, body);
         }

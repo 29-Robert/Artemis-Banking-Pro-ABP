@@ -112,7 +112,8 @@ namespace ArtemisBankingPro.WebApp.Controllers
                 Username = model.Username,
                 Password = model.Password,
                 RoleId = model.RoleId,
-                InitialAmount = 0
+                InitialAmount = 0,
+                ActivationUrlFormat = Url.Action("Activate", "Account", new { token = "TOKENPLACEHOLDER" }, Request.Scheme)
             };
 
             try
@@ -163,7 +164,11 @@ namespace ArtemisBankingPro.WebApp.Controllers
         {
             if (!ModelState.IsValid) return View(model);
 
-            var command = new ForgotPasswordCommand { Username = model.Username };
+            var command = new ForgotPasswordCommand 
+            { 
+                Username = model.Username,
+                ResetUrlFormat = Url.Action("ResetPassword", "Account", new { token = "TOKENPLACEHOLDER" }, Request.Scheme)
+            };
 
             try
             {

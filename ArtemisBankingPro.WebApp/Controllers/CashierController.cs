@@ -7,11 +7,12 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using ArtemisBankingPro.Application.Interfaces.Services;
 
 namespace ArtemisBankingPro.WebApp.Controllers
 {
     [Authorize(Roles = "Cajero")]
-    public class CashierController(IMediator mediator, IMapper mapper) : Controller
+    public class CashierController(IMediator mediator, IMapper mapper, ICashierService cashierService) : Controller
     {
         public async Task<IActionResult> Index()
         {
@@ -167,6 +168,77 @@ namespace ArtemisBankingPro.WebApp.Controllers
             {
                 ModelState.AddModelError(string.Empty, "Ocurrió un error inesperado: " + ex.Message);
                 return View(model);
+            }
+        }
+   
+
+        [HttpGet]
+        public async Task<IActionResult> PreviewAccount(string accountNumber)
+        {
+            if (string.IsNullOrWhiteSpace(accountNumber))
+                return Json(new { success = false, message = "Debe ingresar un número de cuenta." });
+
+            try
+            {
+                var preview = await cashierService.GetAccountPreviewAsync(accountNumber);
+                return Json(new
+                {
+                    success = true,
+                    holderName = preview.AccountHolderFullName,
+                    status = preview.Status
+                });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> PreviewCreditCard(string cardNumber)
+        {
+            if (string.IsNullOrWhiteSpace(cardNumber))
+                return Json(new { success = false, message = "Debe ingresar un número de tarjeta." });
+
+            try
+            {
+                var preview = await cashierService.GetCreditCardPreviewAsync(cardNumber);
+                return Json(new
+                {
+                    success = true,
+                    maskedCardNumber = preview.MaskedCardNumber,
+                    holderName = preview.ClientFullName,
+                    currentDebt = preview.CurrentDebt,
+                    status = preview.Status
+                });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> PreviewLoan(string loanNumber)
+        {
+            if (string.IsNullOrWhiteSpace(loanNumber))
+                return Json(new { success = false, message = "Debe ingresar un número de préstamo." });
+
+            try
+            {
+                var preview = await cashierService.GetLoanPreviewAsync(loanNumber);
+                return Json(new
+                {
+                    success = true,
+                    loanNumber = preview.LoanNumber,
+                    holderName = preview.ClientFullName,
+                    remainingBalance = preview.RemainingBalance,
+                    status = preview.Status
+                });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return Json(new { success = false, message = ex.Message });
             }
         }
 

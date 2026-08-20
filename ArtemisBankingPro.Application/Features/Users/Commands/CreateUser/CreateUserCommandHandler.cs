@@ -87,7 +87,8 @@ namespace ArtemisBankingPro.Application.Features.Users.Commands.CreateUser
 
             transaction.Complete();
 
-            try { await emailService.SendActivationEmailAsync(newUser.Email, activationToken); }
+            var url = string.IsNullOrEmpty(request.ActivationUrlFormat) ? null : request.ActivationUrlFormat.Replace("TOKENPLACEHOLDER", activationToken);
+            try { await emailService.SendActivationEmailAsync(newUser.Email, activationToken, url); }
             catch { }
 
             return newUser.Id;
