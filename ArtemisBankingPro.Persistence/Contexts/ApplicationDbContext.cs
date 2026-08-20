@@ -59,7 +59,8 @@ namespace ArtemisBankingPro.Persistence.Contexts
             modelBuilder.Entity<CreditCard>()
                .HasMany(c => c.Consumptions)
                .WithOne(c => c.CreditCard)
-               .HasForeignKey(c => c.CreditCardId);
+               .HasForeignKey(c => c.CreditCardId)
+               .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<Commerce>()
                     .HasMany(c => c.Consumptions)

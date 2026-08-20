@@ -4,6 +4,11 @@ using ArtemisBankingPro.Domain.Enums;
 using ArtemisBankingPro.Domain.Interfaces.Repositories;
 using AutoMapper;
 using MediatR;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Transactions;
 
 using DomainTransaction = ArtemisBankingPro.Domain.Entities.Transaction;
@@ -16,6 +21,7 @@ namespace ArtemisBankingPro.Application.Features.Users.Commands.CreateUser
         IGenericRepository<SavingsAccount> accountRepository,
         IGenericRepository<ConfirmationToken> tokenRepository,
         IGenericRepository<DomainTransaction> transactionRepository,
+        IGenericRepository<Commerce> commerceRepository,
         IEmailService emailService,
         IMapper mapper) : IRequestHandler<CreateUserCommand, int>
     {
@@ -29,6 +35,12 @@ namespace ArtemisBankingPro.Application.Features.Users.Commands.CreateUser
 
             if (request.RoleId == (int)ArtemisBankingPro.Domain.Enums.Roles.Comercio && request.CommerceId.HasValue)
             {
+                var commerce = await commerceRepository.GetByIdAsync(request.CommerceId.Value);
+                if (commerce == null)
+                {
+                    throw new KeyNotFoundException($"No se encontró el comercio con el ID {request.CommerceId.Value}.");
+                }
+
                 var commerceHasUser = users.Any(u => u.RoleId == (int)ArtemisBankingPro.Domain.Enums.Roles.Comercio && u.CommerceId == request.CommerceId.Value);
                 if (commerceHasUser)
                 {
@@ -88,8 +100,13 @@ namespace ArtemisBankingPro.Application.Features.Users.Commands.CreateUser
             transaction.Complete();
 
             var url = string.IsNullOrEmpty(request.ActivationUrlFormat) ? null : request.ActivationUrlFormat.Replace("TOKENPLACEHOLDER", activationToken);
-            try { await emailService.SendActivationEmailAsync(newUser.Email, activationToken, url); }
-            catch { }
+            try
+            {
+                await emailService.SendActivationEmailAsync(newUser.Email, activationToken, url);
+            }
+            catch
+            {
+            }
 
             return newUser.Id;
         }

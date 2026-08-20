@@ -22,6 +22,7 @@ namespace ArtemisBankingPro.Tests.Features.Users.Handlers
         private readonly Mock<IGenericRepository<SavingsAccount>> _accountRepositoryMock;
         private readonly Mock<IGenericRepository<ConfirmationToken>> _tokenRepositoryMock;
         private readonly Mock<IGenericRepository<DomainTransaction>> _transactionRepositoryMock;
+        private readonly Mock<IGenericRepository<Commerce>> _commerceRepositoryMock;
         private readonly Mock<IEmailService> _emailServiceMock;
         private readonly Mock<IMapper> _mapperMock;
         private readonly CreateUserCommandHandler _handler;
@@ -32,6 +33,7 @@ namespace ArtemisBankingPro.Tests.Features.Users.Handlers
             _accountRepositoryMock = new Mock<IGenericRepository<SavingsAccount>>();
             _tokenRepositoryMock = new Mock<IGenericRepository<ConfirmationToken>>();
             _transactionRepositoryMock = new Mock<IGenericRepository<DomainTransaction>>();
+            _commerceRepositoryMock = new Mock<IGenericRepository<Commerce>>();
             _emailServiceMock = new Mock<IEmailService>();
             _mapperMock = new Mock<IMapper>();
 
@@ -40,6 +42,7 @@ namespace ArtemisBankingPro.Tests.Features.Users.Handlers
                 _accountRepositoryMock.Object,
                 _tokenRepositoryMock.Object,
                 _transactionRepositoryMock.Object,
+                _commerceRepositoryMock.Object,
                 _emailServiceMock.Object,
                 _mapperMock.Object
             );
@@ -62,13 +65,12 @@ namespace ArtemisBankingPro.Tests.Features.Users.Handlers
         [Fact]
         public async Task Handle_ExistingCommerceUser_ThrowsException()
         {
-            // Arrange
             var existingUser = new User { Username = "other", RoleId = 4, CommerceId = 1 };
             _userRepositoryMock.Setup(repo => repo.GetAllAsync()).ReturnsAsync(new List<User> { existingUser });
+            _commerceRepositoryMock.Setup(repo => repo.GetByIdAsync(1)).ReturnsAsync(new Commerce { Id = 1, BusinessName = "Test" });
 
             var command = new CreateUserCommand { Username = "newuser", RoleId = 4, CommerceId = 1, Email = "test@test.com", Cedula = "123" };
 
-            // Act & Assert
             var ex = await Assert.ThrowsAsync<Exception>(() => _handler.Handle(command, CancellationToken.None));
             Assert.Contains("El comercio seleccionado ya tiene un usuario asociado", ex.Message);
         }
