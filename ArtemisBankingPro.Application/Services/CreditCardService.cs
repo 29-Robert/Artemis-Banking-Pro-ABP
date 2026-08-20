@@ -269,7 +269,7 @@ namespace ArtemisBankingPro.Application.Services
         private async Task<decimal> CalculateSystemAverageDebtAsync()
         {
             var allUsers = await _userRepository.GetAllAsync();
-            var activeClients = allUsers.Count(u => u.IsActive && u.Role?.Name == "Cliente");
+            var activeClients = allUsers.Count(u => u.IsActive && u.RoleId == (int)ArtemisBankingPro.Domain.Enums.Roles.Cliente);
             if (activeClients == 0) return 0m;
 
             var totalLoanDebt = await _loanRepository.GetTotalActiveDebtSystemWideAsync();
