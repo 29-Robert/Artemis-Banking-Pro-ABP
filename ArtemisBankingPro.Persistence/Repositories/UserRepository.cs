@@ -29,6 +29,12 @@ namespace ArtemisBankingPro.Persistence.Repositories
                 .FirstOrDefaultAsync(u => u.Username == username);
         }
 
+        public async Task<User?> GetByCommerceIdAsync(int commerceId)
+        {
+            return await _dbContext.Users
+                .FirstOrDefaultAsync(u => u.CommerceId == commerceId);
+        }
+
         public async Task<IReadOnlyList<User>> GetAllAsync()
         {
             return await _dbContext.Users

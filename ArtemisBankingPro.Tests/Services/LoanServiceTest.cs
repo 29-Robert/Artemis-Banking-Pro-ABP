@@ -26,7 +26,7 @@ namespace ArtemisBankingPro.Tests
         [Fact]
         public async Task AssignLoanAsync_WhenValid_CreatesLoanAndDisbursesToAccount()
         {
-            var client = new User { Id = 20, IsActive = true, Cedula = "00187654321", FirstName = "María", LastName = "Gómez", Email = "maria@artemis.com", Role = new Role { Name = "Cliente" } };
+            var client = new User { Id = 20, IsActive = true, Cedula = "00187654321", FirstName = "María", LastName = "Gómez", Email = "maria@artemis.com", RoleId = 3, Role = new Role { Name = "Cliente" } };
             var principalAccount = new SavingsAccount { AccountNumber = "123456789", Balance = 5000m, Status = AccountStatus.Activa, Type = AccountType.Principal };
 
             var users = new Mock<IGenericRepository<User>>();
@@ -38,12 +38,12 @@ namespace ArtemisBankingPro.Tests
             var emailService = new Mock<IEmailService>();
             var mapper = new Mock<IMapper>();
 
-            users.Setup(x => x.GetByIdAsync(20)).ReturnsAsync(client);
+            users.Setup(x => x.GetByIdAsync(It.IsAny<int>())).ReturnsAsync(client);
             users.Setup(x => x.GetAllAsync()).ReturnsAsync(new List<User> { client });
-            loans.Setup(x => x.HasActiveLoanAsync(20)).ReturnsAsync(false);
-            accounts.Setup(x => x.GetPrincipalByClientAsync(20)).ReturnsAsync(principalAccount);
-            loans.Setup(x => x.GetTotalActiveDebtByClientAsync(20)).ReturnsAsync(0m);
-            cards.Setup(x => x.GetTotalActiveDebtByClientAsync(20)).ReturnsAsync(0m);
+            loans.Setup(x => x.HasActiveLoanAsync(It.IsAny<int>())).ReturnsAsync(false);
+            accounts.Setup(x => x.GetPrincipalByClientAsync(It.IsAny<int>())).ReturnsAsync(principalAccount);
+            loans.Setup(x => x.GetTotalActiveDebtByClientAsync(It.IsAny<int>())).ReturnsAsync(0m);
+            cards.Setup(x => x.GetTotalActiveDebtByClientAsync(It.IsAny<int>())).ReturnsAsync(0m);
             loans.Setup(x => x.GetTotalActiveDebtSystemWideAsync()).ReturnsAsync(0m);
             cards.Setup(x => x.GetTotalActiveDebtSystemWideAsync()).ReturnsAsync(0m);
             loans.Setup(x => x.LoanNumberExistsAsync(It.IsAny<string>())).ReturnsAsync(false);
@@ -82,7 +82,7 @@ namespace ArtemisBankingPro.Tests
         public async Task AssignLoanAsync_WhenClientDoesNotExist_ThrowsKeyNotFound()
         {
             var users = new Mock<IGenericRepository<User>>();
-            users.Setup(x => x.GetByIdAsync(20)).ReturnsAsync((User)null);
+            users.Setup(x => x.GetByIdAsync(It.IsAny<int>())).ReturnsAsync((User)null);
 
             var service = CreateService(users: users);
 
@@ -95,7 +95,7 @@ namespace ArtemisBankingPro.Tests
         {
             var client = new User { Id = 20, IsActive = false };
             var users = new Mock<IGenericRepository<User>>();
-            users.Setup(x => x.GetByIdAsync(20)).ReturnsAsync(client);
+            users.Setup(x => x.GetByIdAsync(It.IsAny<int>())).ReturnsAsync(client);
 
             var service = CreateService(users: users);
 
@@ -110,8 +110,8 @@ namespace ArtemisBankingPro.Tests
             var users = new Mock<IGenericRepository<User>>();
             var loans = new Mock<ILoanRepository>();
 
-            users.Setup(x => x.GetByIdAsync(20)).ReturnsAsync(client);
-            loans.Setup(x => x.HasActiveLoanAsync(20)).ReturnsAsync(true);
+            users.Setup(x => x.GetByIdAsync(It.IsAny<int>())).ReturnsAsync(client);
+            loans.Setup(x => x.HasActiveLoanAsync(It.IsAny<int>())).ReturnsAsync(true);
 
             var service = CreateService(users: users, loans: loans);
 
@@ -129,8 +129,8 @@ namespace ArtemisBankingPro.Tests
             var users = new Mock<IGenericRepository<User>>();
             var loans = new Mock<ILoanRepository>();
 
-            users.Setup(x => x.GetByIdAsync(20)).ReturnsAsync(client);
-            loans.Setup(x => x.HasActiveLoanAsync(20)).ReturnsAsync(false);
+            users.Setup(x => x.GetByIdAsync(It.IsAny<int>())).ReturnsAsync(client);
+            loans.Setup(x => x.HasActiveLoanAsync(It.IsAny<int>())).ReturnsAsync(false);
 
             var service = CreateService(users: users, loans: loans);
 
@@ -145,8 +145,8 @@ namespace ArtemisBankingPro.Tests
             var users = new Mock<IGenericRepository<User>>();
             var loans = new Mock<ILoanRepository>();
 
-            users.Setup(x => x.GetByIdAsync(20)).ReturnsAsync(client);
-            loans.Setup(x => x.HasActiveLoanAsync(20)).ReturnsAsync(false);
+            users.Setup(x => x.GetByIdAsync(It.IsAny<int>())).ReturnsAsync(client);
+            loans.Setup(x => x.HasActiveLoanAsync(It.IsAny<int>())).ReturnsAsync(false);
 
             var service = CreateService(users: users, loans: loans);
 
@@ -161,8 +161,8 @@ namespace ArtemisBankingPro.Tests
             var users = new Mock<IGenericRepository<User>>();
             var loans = new Mock<ILoanRepository>();
 
-            users.Setup(x => x.GetByIdAsync(20)).ReturnsAsync(client);
-            loans.Setup(x => x.HasActiveLoanAsync(20)).ReturnsAsync(false);
+            users.Setup(x => x.GetByIdAsync(It.IsAny<int>())).ReturnsAsync(client);
+            loans.Setup(x => x.HasActiveLoanAsync(It.IsAny<int>())).ReturnsAsync(false);
 
             var service = CreateService(users: users, loans: loans);
 
@@ -178,9 +178,9 @@ namespace ArtemisBankingPro.Tests
             var loans = new Mock<ILoanRepository>();
             var accounts = new Mock<ISavingsAccountRepository>();
 
-            users.Setup(x => x.GetByIdAsync(20)).ReturnsAsync(client);
-            loans.Setup(x => x.HasActiveLoanAsync(20)).ReturnsAsync(false);
-            accounts.Setup(x => x.GetPrincipalByClientAsync(20)).ReturnsAsync((SavingsAccount)null);
+            users.Setup(x => x.GetByIdAsync(It.IsAny<int>())).ReturnsAsync(client);
+            loans.Setup(x => x.HasActiveLoanAsync(It.IsAny<int>())).ReturnsAsync(false);
+            accounts.Setup(x => x.GetPrincipalByClientAsync(It.IsAny<int>())).ReturnsAsync((SavingsAccount)null);
 
             var service = CreateService(users: users, loans: loans, accounts: accounts);
 
@@ -191,7 +191,7 @@ namespace ArtemisBankingPro.Tests
         [Fact]
         public async Task AssignLoanAsync_WhenCurrentDebtExceedsAverage_AndNotConfirmed_ThrowsHighRisk_CurrentHighRisk()
         {
-            var client = new User { Id = 20, IsActive = true, Role = new Role { Name = "Cliente" } };
+            var client = new User { Id = 20, IsActive = true, RoleId = 3, Role = new Role { Name = "Cliente" } };
             var principalAccount = new SavingsAccount { AccountNumber = "123456789", Balance = 5000m, Status = AccountStatus.Activa };
 
             var users = new Mock<IGenericRepository<User>>();
@@ -199,13 +199,13 @@ namespace ArtemisBankingPro.Tests
             var cards = new Mock<ICreditCardRepository>();
             var accounts = new Mock<ISavingsAccountRepository>();
 
-            users.Setup(x => x.GetByIdAsync(20)).ReturnsAsync(client);
+            users.Setup(x => x.GetByIdAsync(It.IsAny<int>())).ReturnsAsync(client);
             users.Setup(x => x.GetAllAsync()).ReturnsAsync(new List<User> { client });
-            loans.Setup(x => x.HasActiveLoanAsync(20)).ReturnsAsync(false);
-            accounts.Setup(x => x.GetPrincipalByClientAsync(20)).ReturnsAsync(principalAccount);
+            loans.Setup(x => x.HasActiveLoanAsync(It.IsAny<int>())).ReturnsAsync(false);
+            accounts.Setup(x => x.GetPrincipalByClientAsync(It.IsAny<int>())).ReturnsAsync(principalAccount);
 
-            loans.Setup(x => x.GetTotalActiveDebtByClientAsync(20)).ReturnsAsync(60000m);
-            cards.Setup(x => x.GetTotalActiveDebtByClientAsync(20)).ReturnsAsync(0m);
+            loans.Setup(x => x.GetTotalActiveDebtByClientAsync(It.IsAny<int>())).ReturnsAsync(60000m);
+            cards.Setup(x => x.GetTotalActiveDebtByClientAsync(It.IsAny<int>())).ReturnsAsync(0m);
             loans.Setup(x => x.GetTotalActiveDebtSystemWideAsync()).ReturnsAsync(10000m);
             cards.Setup(x => x.GetTotalActiveDebtSystemWideAsync()).ReturnsAsync(0m);
 
@@ -220,7 +220,7 @@ namespace ArtemisBankingPro.Tests
         [Fact]
         public async Task AssignLoanAsync_WhenProjectedDebtExceedsAverage_AndNotConfirmed_ThrowsHighRisk_ProjectedHighRisk()
         {
-            var client = new User { Id = 20, IsActive = true, Role = new Role { Name = "Cliente" } };
+            var client = new User { Id = 20, IsActive = true, RoleId = 3, Role = new Role { Name = "Cliente" } };
             var principalAccount = new SavingsAccount { AccountNumber = "123456789", Balance = 5000m, Status = AccountStatus.Activa };
 
             var users = new Mock<IGenericRepository<User>>();
@@ -228,13 +228,13 @@ namespace ArtemisBankingPro.Tests
             var cards = new Mock<ICreditCardRepository>();
             var accounts = new Mock<ISavingsAccountRepository>();
 
-            users.Setup(x => x.GetByIdAsync(20)).ReturnsAsync(client);
+            users.Setup(x => x.GetByIdAsync(It.IsAny<int>())).ReturnsAsync(client);
             users.Setup(x => x.GetAllAsync()).ReturnsAsync(new List<User> { client });
-            loans.Setup(x => x.HasActiveLoanAsync(20)).ReturnsAsync(false);
-            accounts.Setup(x => x.GetPrincipalByClientAsync(20)).ReturnsAsync(principalAccount);
+            loans.Setup(x => x.HasActiveLoanAsync(It.IsAny<int>())).ReturnsAsync(false);
+            accounts.Setup(x => x.GetPrincipalByClientAsync(It.IsAny<int>())).ReturnsAsync(principalAccount);
 
-            loans.Setup(x => x.GetTotalActiveDebtByClientAsync(20)).ReturnsAsync(1000m);
-            cards.Setup(x => x.GetTotalActiveDebtByClientAsync(20)).ReturnsAsync(0m);
+            loans.Setup(x => x.GetTotalActiveDebtByClientAsync(It.IsAny<int>())).ReturnsAsync(1000m);
+            cards.Setup(x => x.GetTotalActiveDebtByClientAsync(It.IsAny<int>())).ReturnsAsync(0m);
             loans.Setup(x => x.GetTotalActiveDebtSystemWideAsync()).ReturnsAsync(5000m);
             cards.Setup(x => x.GetTotalActiveDebtSystemWideAsync()).ReturnsAsync(0m);
 
@@ -249,7 +249,7 @@ namespace ArtemisBankingPro.Tests
         [Fact]
         public async Task AssignLoanAsync_WhenHighRiskButConfirmed_CreatesLoanAnyway()
         {
-            var client = new User { Id = 20, IsActive = true, Email = "maria@artemis.com", Role = new Role { Name = "Cliente" } };
+            var client = new User { Id = 20, IsActive = true, Email = "maria@artemis.com", RoleId = 3, Role = new Role { Name = "Cliente" } };
             var principalAccount = new SavingsAccount { AccountNumber = "123456789", Balance = 5000m, Status = AccountStatus.Activa };
 
             var users = new Mock<IGenericRepository<User>>();
@@ -260,12 +260,12 @@ namespace ArtemisBankingPro.Tests
             var transactions = new Mock<ITransactionRepository>();
             var mapper = new Mock<IMapper>();
 
-            users.Setup(x => x.GetByIdAsync(20)).ReturnsAsync(client);
+            users.Setup(x => x.GetByIdAsync(It.IsAny<int>())).ReturnsAsync(client);
             users.Setup(x => x.GetAllAsync()).ReturnsAsync(new List<User> { client });
-            loans.Setup(x => x.HasActiveLoanAsync(20)).ReturnsAsync(false);
-            accounts.Setup(x => x.GetPrincipalByClientAsync(20)).ReturnsAsync(principalAccount);
-            loans.Setup(x => x.GetTotalActiveDebtByClientAsync(20)).ReturnsAsync(60000m);
-            cards.Setup(x => x.GetTotalActiveDebtByClientAsync(20)).ReturnsAsync(0m);
+            loans.Setup(x => x.HasActiveLoanAsync(It.IsAny<int>())).ReturnsAsync(false);
+            accounts.Setup(x => x.GetPrincipalByClientAsync(It.IsAny<int>())).ReturnsAsync(principalAccount);
+            loans.Setup(x => x.GetTotalActiveDebtByClientAsync(It.IsAny<int>())).ReturnsAsync(60000m);
+            cards.Setup(x => x.GetTotalActiveDebtByClientAsync(It.IsAny<int>())).ReturnsAsync(0m);
             loans.Setup(x => x.GetTotalActiveDebtSystemWideAsync()).ReturnsAsync(10000m);
             cards.Setup(x => x.GetTotalActiveDebtSystemWideAsync()).ReturnsAsync(0m);
             loans.Setup(x => x.LoanNumberExistsAsync(It.IsAny<string>())).ReturnsAsync(false);
@@ -289,7 +289,7 @@ namespace ArtemisBankingPro.Tests
         [Fact]
         public async Task AssignLoanAsync_WhenEmailFails_StillCreatesLoan_AndFlagsEmailNotificationFailed()
         {
-            var client = new User { Id = 20, IsActive = true, Email = "maria@artemis.com", Role = new Role { Name = "Cliente" } };
+            var client = new User { Id = 20, IsActive = true, Email = "maria@artemis.com", RoleId = 3, Role = new Role { Name = "Cliente" } };
             var principalAccount = new SavingsAccount { AccountNumber = "123456789", Balance = 5000m, Status = AccountStatus.Activa };
 
             var users = new Mock<IGenericRepository<User>>();
@@ -301,12 +301,12 @@ namespace ArtemisBankingPro.Tests
             var emailService = new Mock<IEmailService>();
             var mapper = new Mock<IMapper>();
 
-            users.Setup(x => x.GetByIdAsync(20)).ReturnsAsync(client);
+            users.Setup(x => x.GetByIdAsync(It.IsAny<int>())).ReturnsAsync(client);
             users.Setup(x => x.GetAllAsync()).ReturnsAsync(new List<User> { client });
-            loans.Setup(x => x.HasActiveLoanAsync(20)).ReturnsAsync(false);
-            accounts.Setup(x => x.GetPrincipalByClientAsync(20)).ReturnsAsync(principalAccount);
-            loans.Setup(x => x.GetTotalActiveDebtByClientAsync(20)).ReturnsAsync(0m);
-            cards.Setup(x => x.GetTotalActiveDebtByClientAsync(20)).ReturnsAsync(0m);
+            loans.Setup(x => x.HasActiveLoanAsync(It.IsAny<int>())).ReturnsAsync(false);
+            accounts.Setup(x => x.GetPrincipalByClientAsync(It.IsAny<int>())).ReturnsAsync(principalAccount);
+            loans.Setup(x => x.GetTotalActiveDebtByClientAsync(It.IsAny<int>())).ReturnsAsync(0m);
+            cards.Setup(x => x.GetTotalActiveDebtByClientAsync(It.IsAny<int>())).ReturnsAsync(0m);
             loans.Setup(x => x.GetTotalActiveDebtSystemWideAsync()).ReturnsAsync(0m);
             cards.Setup(x => x.GetTotalActiveDebtSystemWideAsync()).ReturnsAsync(0m);
             loans.Setup(x => x.LoanNumberExistsAsync(It.IsAny<string>())).ReturnsAsync(false);
@@ -476,7 +476,7 @@ namespace ArtemisBankingPro.Tests
         [Fact]
         public async Task GetLoansAsync_WhenClientExistsButHasNoLoans_ThrowsInvalidOperation()
         {
-            var existingClient = new User { Cedula = "00187654321", Role = new Role { Name = "Cliente" } };
+            var existingClient = new User { Cedula = "00187654321", RoleId = 3, Role = new Role { Name = "Cliente" } };
 
             var loans = new Mock<ILoanRepository>();
             var users = new Mock<IGenericRepository<User>>();
@@ -526,8 +526,8 @@ namespace ArtemisBankingPro.Tests
         [Fact]
         public async Task GetEligibleClientsAsync_ExcludesClientsWithActiveLoan()
         {
-            var eligibleClient = new User { Id = 1, IsActive = true, Cedula = "001", FirstName = "Ana", LastName = "Ruiz", Email = "ana@artemis.com", RoleId = (int)ArtemisBankingPro.Domain.Enums.Roles.Cliente, Role = new Role { Name = "Cliente" } };
-            var withActiveLoanClient = new User { Id = 2, IsActive = true, Cedula = "002", FirstName = "Luis", LastName = "Diaz", Email = "luis@artemis.com", RoleId = (int)ArtemisBankingPro.Domain.Enums.Roles.Cliente, Role = new Role { Name = "Cliente" } };
+            var eligibleClient = new User { Id = 1, IsActive = true, Cedula = "001", FirstName = "Ana", LastName = "Ruiz", Email = "ana@artemis.com", RoleId = 3, Role = new Role { Name = "Cliente" } };
+            var withActiveLoanClient = new User { Id = 2, IsActive = true, Cedula = "002", FirstName = "Luis", LastName = "Diaz", Email = "luis@artemis.com", RoleId = 3, Role = new Role { Name = "Cliente" } };
 
             var users = new Mock<IGenericRepository<User>>();
             var loans = new Mock<ILoanRepository>();

@@ -1,4 +1,4 @@
-﻿using System.IdentityModel.Tokens.Jwt;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using ArtemisBankingPro.Application.Interfaces.Services;
@@ -18,13 +18,18 @@ namespace ArtemisBankingPro.Infrastructure.Services
             var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.Key));
             var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
 
-            var claims = new[]
+            var claims = new List<Claim>
             {
                 new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
                 new Claim(JwtRegisteredClaimNames.UniqueName, user.Username),
                 new Claim(ClaimTypes.Role, user.Role?.Name ?? "Cliente"),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
+
+            if (user.CommerceId.HasValue)
+            {
+                claims.Add(new Claim("CommerceId", user.CommerceId.Value.ToString()));
+            }
 
             var token = new JwtSecurityToken(
                 issuer: _jwtSettings.Issuer,

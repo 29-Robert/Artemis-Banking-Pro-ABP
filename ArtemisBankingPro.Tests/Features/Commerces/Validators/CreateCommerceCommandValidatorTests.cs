@@ -81,15 +81,7 @@ namespace ArtemisBankingPro.Tests.Features.Commerces.Validators
             result.ShouldNotHaveValidationErrorFor(x => x.Email);
         }
 
-        [Theory]
-        [InlineData("")]
-        [InlineData("12345")]
-        public void Should_Have_Error_When_Password_Is_Too_Short(string password)
-        {
-            var command = new CreateCommerceCommand { Password = password };
-            var result = _validator.TestValidate(command);
-            result.ShouldHaveValidationErrorFor(x => x.Password);
-        }
+
 
         [Theory]
         [InlineData("123456789")] // 9 digits

@@ -30,7 +30,7 @@ namespace ArtemisBankingPro.Tests.Features.Commerces.Handlers
                 BusinessName = "Supermercado XYZ",
                 RNC = "131456789",
                 Email = "contacto@xyz.com",
-                Password = "SecurePassword123!",
+                
                 Phone = "8095550192",
                 Address = "Av. Winston Churchill"
             };
@@ -47,7 +47,7 @@ namespace ArtemisBankingPro.Tests.Features.Commerces.Handlers
                 d.BusinessName == command.BusinessName &&
                 d.RNC == command.RNC &&
                 d.Email == command.Email &&
-                d.Password == command.Password &&
+                
                 d.Phone == command.Phone &&
                 d.Address == command.Address)))
                 .ReturnsAsync(expectedDto);
@@ -70,7 +70,7 @@ namespace ArtemisBankingPro.Tests.Features.Commerces.Handlers
                 BusinessName = "Supermercado XYZ",
                 RNC = "131456789",
                 Email = "contacto@xyz.com",
-                Password = "SecurePassword123!",
+                
                 Phone = "8095550192",
                 Address = "Av. Winston Churchill"
             };
@@ -92,7 +92,7 @@ namespace ArtemisBankingPro.Tests.Features.Commerces.Handlers
                 BusinessName = "Supermercado XYZ",
                 RNC = "131456789",
                 Email = "contacto@xyz.com",
-                Password = "SecurePassword123!",
+                
                 Phone = "8095550192",
                 Address = "Av. Winston Churchill"
             };
