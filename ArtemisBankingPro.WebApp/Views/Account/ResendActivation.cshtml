@@ -1,0 +1,50 @@
+﻿@model ArtemisBankingPro.WebApp.ViewModels.ResendActivationViewModel
+
+@{
+    ViewData["Title"] = "Reenviar Activación";
+}
+
+<div class="auth-wrapper">
+    <div class="auth-card">
+        <div class="card border-0">
+            <div class="card-body p-5">
+                <div class="text-center mb-4">
+                    <h2 class="fw-bold mb-2">Reenviar Activación</h2>
+                    <p class="text-muted">Ingrese su usuario o correo para recibir un nuevo enlace.</p>
+                </div>
+
+                @if (ViewBag.Message != null)
+                {
+                    <div class="alert alert-success text-center">
+                        @ViewBag.Message
+                    </div>
+                    <div class="text-center mt-4">
+                        <a asp-action="Login" class="btn btn-primary px-4">Volver al Inicio</a>
+                    </div>
+                }
+                else
+                {
+                    <form asp-action="ResendActivation" method="post">
+                        <div class="mb-4">
+                            <label asp-for="EmailOrUsername" class="form-label fw-semibold">Usuario o Correo Electrónico</label>
+                            <input asp-for="EmailOrUsername" class="form-control form-control-lg" placeholder="ej. jdoe o jdoe@email.com" />
+                            <span asp-validation-for="EmailOrUsername" class="text-danger small"></span>
+                        </div>
+                        
+                        <div class="d-grid mb-3">
+                            <button type="submit" class="btn btn-primary btn-lg">Enviar Enlace</button>
+                        </div>
+                        
+                        <div class="text-center">
+                            <a asp-action="Login" class="text-decoration-none text-muted">Volver al Inicio</a>
+                        </div>
+                    </form>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

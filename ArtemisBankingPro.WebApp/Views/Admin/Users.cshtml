@@ -1,4 +1,4 @@
-﻿@model IEnumerable<ArtemisBankingPro.Application.DTOs.UserDto>
+@model IEnumerable<ArtemisBankingPro.Application.DTOs.UserDto>
 
 @{
     ViewData["Title"] = "Gestión de Usuarios";
@@ -105,17 +105,58 @@
                             <td class="text-center">
                                 <div class="btn-group btn-group-sm">
                                     <a asp-action="Edit" asp-route-id="@user.Id" class="btn btn-outline-primary">Editar</a>
-                                    <form asp-action="ToggleStatus" method="post" class="d-inline">
-                                        <input type="hidden" name="userId" value="@user.Id" />
-                                        @if (user.IsActive)
-                                        {
-                                            <button type="submit" class="btn btn-outline-danger">Inactivar</button>
-                                        }
-                                        else
-                                        {
-                                            <button type="submit" class="btn btn-outline-success">Activar</button>
-                                        }
-                                    </form>
+                                    @if (user.IsActive)
+                                    {
+                                        <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#modalInactivar-@user.Id">Inactivar</button>
+                                    }
+                                    else
+                                    {
+                                        <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#modalActivar-@user.Id">Activar</button>
+                                    }
+                                </div>
+
+                                <!-- Modal Activar -->
+                                <div class="modal fade text-start" id="modalActivar-@user.Id" tabindex="-1" aria-hidden="true">
+                                    <div class="modal-dialog modal-dialog-centered">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">Activar Usuario</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <p>¿Está seguro que desea activar este usuario?</p>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                                <form asp-action="ToggleStatus" method="post" class="d-inline">
+                                                    <input type="hidden" name="userId" value="@user.Id" />
+                                                    <button type="submit" class="btn btn-success">Aceptar</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Modal Inactivar -->
+                                <div class="modal fade text-start" id="modalInactivar-@user.Id" tabindex="-1" aria-hidden="true">
+                                    <div class="modal-dialog modal-dialog-centered">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">Inactivar Usuario</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <p>¿Está seguro que desea inactivar este usuario?</p>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                                <form asp-action="ToggleStatus" method="post" class="d-inline">
+                                                    <input type="hidden" name="userId" value="@user.Id" />
+                                                    <button type="submit" class="btn btn-danger">Aceptar</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </td>
                         </tr>
@@ -129,7 +170,7 @@
 <nav aria-label="Navegación de páginas">
     <ul class="pagination justify-content-center mt-4">
         <li class="page-item @(ViewBag.CurrentPage == 1 ? "disabled" : "")">
-            <a class="page-link" asp-action="Index" asp-route-page="@(ViewBag.CurrentPage - 1)" asp-route-roleFilter="@ViewBag.RoleFilter">« Anterior</a>
+            <a class="page-link" asp-action="Users" asp-route-page="@(ViewBag.CurrentPage - 1)" asp-route-roleFilter="@ViewBag.RoleFilter">« Anterior</a>
         </li>
         @for (int i = 1; i <= ViewBag.TotalPages; i++)
         {

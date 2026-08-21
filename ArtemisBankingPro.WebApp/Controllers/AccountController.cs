@@ -1,7 +1,7 @@
-using ArtemisBankingPro.Application.Features.Users.Commands.ActivateUser;
-using ArtemisBankingPro.Application.Features.Users.Commands.CreateUser;
+﻿using ArtemisBankingPro.Application.Features.Users.Commands.ActivateUser;
 using ArtemisBankingPro.Application.Features.Users.Commands.ForgotPassword;
 using ArtemisBankingPro.Application.Features.Users.Commands.ResetPassword;
+using ArtemisBankingPro.Application.Features.Users.Commands.RequestResendActivationEmail;
 using ArtemisBankingPro.Application.Interfaces.Repositories;
 using ArtemisBankingPro.Domain.Enums;
 using ArtemisBankingPro.WebApp.ViewModels;
@@ -48,7 +48,7 @@ namespace ArtemisBankingPro.WebApp.Controllers
 
             if (!user.IsActive)
             {
-                ModelState.AddModelError(string.Empty, "Su cuenta se encuentra inactiva. Debe activar su cuenta mediante el enlace enviado a su correo electrónico registrado para poder acceder al sistema.");
+                ModelState.AddModelError(string.Empty, "Su cuenta se encuentra inactiva. Debe activar su cuenta mediante el enlace enviado a su correo electrónico registrado. Si no lo recibió, utilice la opción de reenviar enlace.");
                 return View(model);
             }
 
@@ -81,55 +81,6 @@ namespace ArtemisBankingPro.WebApp.Controllers
         }
 
         [HttpGet]
-        public IActionResult Register()
-        {
-            if (User.Identity != null && User.Identity.IsAuthenticated)
-            {
-                var role = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
-                if (role == "Administrador") return RedirectToAction("Index", "Admin");
-                if (role == "Cajero") return RedirectToAction("Index", "Cashier");
-                if (role == "Cliente") return RedirectToAction("Index", "Client");
-
-                return RedirectToAction("Index", "Home");
-            }
-            return View();
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> Register(RegisterViewModel model)
-        {
-            if (!ModelState.IsValid)
-            {
-                return View(model);
-            }
-
-            var command = new CreateUserCommand
-            {
-                FirstName = model.FirstName,
-                LastName = model.LastName,
-                Cedula = model.Cedula,
-                Email = model.Email,
-                Username = model.Username,
-                Password = model.Password,
-                RoleId = model.RoleId,
-                InitialAmount = 0,
-                ActivationUrlFormat = Url.Action("Activate", "Account", new { token = "TOKENPLACEHOLDER" }, Request.Scheme)
-            };
-
-            try
-            {
-                await mediator.Send(command);
-                TempData["SuccessMessage"] = "Su cuenta ha sido creada correctamente. Verifique su correo electrónico para activarla.";
-                return RedirectToAction("Login");
-            }
-            catch (Exception ex)
-            {
-                ModelState.AddModelError(string.Empty, ex.Message);
-                return View(model);
-            }
-        }
-
-        [HttpGet]
         public async Task<IActionResult> Activate(string token)
         {
             if (string.IsNullOrEmpty(token))
@@ -151,6 +102,29 @@ namespace ArtemisBankingPro.WebApp.Controllers
                 ViewBag.Error = ex.Message;
                 return View();
             }
+        }
+
+        [HttpGet]
+        public IActionResult ResendActivation()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ResendActivation(ResendActivationViewModel model)
+        {
+            if (!ModelState.IsValid) return View(model);
+
+            var command = new RequestResendActivationEmailCommand 
+            { 
+                EmailOrUsername = model.EmailOrUsername,
+                ActivationUrlFormat = Url.Action("Activate", "Account", new { token = "TOKENPLACEHOLDER" }, Request.Scheme)
+            };
+
+            await mediator.Send(command);
+
+            ViewBag.Message = "Si la cuenta existe y está pendiente de activación, se ha enviado un correo con el nuevo enlace.";
+            return View();
         }
 
         [HttpGet]
