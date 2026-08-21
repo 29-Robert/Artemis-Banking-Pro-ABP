@@ -41,7 +41,7 @@ namespace ArtemisBankingPro.Tests
             var accountRepo = new GenericRepository<SavingsAccount>(db);
             var (createVal, updateVal) = GetValidators();
 
-            var service = new CommerceService(commerceRepo, userRepo, accountRepo, createVal, updateVal);
+            var service = new CommerceService(commerceRepo, userRepo, createVal, updateVal);
 
             var dto = new CreateCommerceDto
             {
@@ -89,7 +89,7 @@ namespace ArtemisBankingPro.Tests
             var accountRepo = new GenericRepository<SavingsAccount>(db);
             var (createVal, updateVal) = GetValidators();
 
-            var service = new CommerceService(commerceRepo, userRepo, accountRepo, createVal, updateVal);
+            var service = new CommerceService(commerceRepo, userRepo, createVal, updateVal);
 
             var dto = new CreateCommerceDto
             {
@@ -126,7 +126,7 @@ namespace ArtemisBankingPro.Tests
             var accountRepo = new GenericRepository<SavingsAccount>(db);
             var (createVal, updateVal) = GetValidators();
 
-            var service = new CommerceService(commerceRepo, userRepo, accountRepo, createVal, updateVal);
+            var service = new CommerceService(commerceRepo, userRepo, createVal, updateVal);
 
             var dto = new CreateCommerceDto
             {
@@ -165,7 +165,7 @@ namespace ArtemisBankingPro.Tests
             var accountRepo = new GenericRepository<SavingsAccount>(db);
             var (createVal, updateVal) = GetValidators();
 
-            var service = new CommerceService(commerceRepo, userRepo, accountRepo, createVal, updateVal);
+            var service = new CommerceService(commerceRepo, userRepo, createVal, updateVal);
 
             var updateDto = new UpdateCommerceDto
             {
@@ -223,7 +223,7 @@ namespace ArtemisBankingPro.Tests
             var accountRepo = new GenericRepository<SavingsAccount>(db);
             var (createVal, updateVal) = GetValidators();
 
-            var service = new CommerceService(commerceRepo, userRepo, accountRepo, createVal, updateVal);
+            var service = new CommerceService(commerceRepo, userRepo, createVal, updateVal);
 
             // Act
             await service.ChangeStatusAsync(commerce.Id, false);
@@ -273,7 +273,7 @@ namespace ArtemisBankingPro.Tests
             var accountRepo = new GenericRepository<SavingsAccount>(db);
             var (createVal, updateVal) = GetValidators();
 
-            var service = new CommerceService(commerceRepo, userRepo, accountRepo, createVal, updateVal);
+            var service = new CommerceService(commerceRepo, userRepo, createVal, updateVal);
 
             // Act
             await service.ChangeStatusAsync(commerce.Id, true); // Reactivar comercio

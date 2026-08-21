@@ -12,7 +12,6 @@ namespace ArtemisBankingPro.Application.Services
     public class CommerceService(
         ICommerceRepository commerceRepository,
         IGenericRepository<User> userRepository,
-        IGenericRepository<SavingsAccount> accountRepository,
         IValidator<CreateCommerceDto> createValidator,
         IValidator<UpdateCommerceDto> updateValidator) : ICommerceService
     {

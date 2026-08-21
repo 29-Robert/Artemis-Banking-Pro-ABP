@@ -19,8 +19,6 @@ namespace ArtemisBankingPro.WebApi.Controllers
     [Produces("application/json")]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
     public class AccountController(
-        IUserRepository userRepository,
-        IJwtService jwtService,
         IMediator mediator) : ControllerBase
     {
         /// <summary>
